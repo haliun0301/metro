@@ -1,0 +1,5 @@
+{
+  "name": "Shenzhen Metro AI Map",
+  "description": "Interactive GIS map of the Shenzhen Metro system featuring AI-powered station insights and travel assistance.",
+  "requestFramePermissions": []
+}
