@@ -109,19 +109,24 @@ function GisMap(props: GisMapProps) {
 
     const latLngToPixel = useCallback(
         (lat: number, lng: number, zoom: number) => {
-            const scale = Math.pow(2, zoom)
-            const worldCoordX = ((lng + 180) / 360) * 256 * scale
+            // Clamp latitude to avoid projection blowup at poles
+            const clampedLat = Math.max(-85, Math.min(85, lat));
+            // Clamp longitude to valid range
+            const clampedLng = Math.max(-180, Math.min(180, lng));
+            // Smooth zoom at very low levels to avoid extreme compression
+            const effectiveZoom = Math.max(1, Math.min(zoom, 22));
+            const scale = Math.pow(2, effectiveZoom);
+            // Web Mercator projection
+            const worldCoordX = ((clampedLng + 180) / 360) * 256 * scale;
+            const sinLat = Math.sin((clampedLat * Math.PI) / 180);
+            // Clamp sinLat to avoid NaN at poles
+            const safeSinLat = Math.max(-0.9999, Math.min(0.9999, sinLat));
             const worldCoordY =
-                ((1 -
-                    Math.log(
-                        Math.tan((lat * Math.PI) / 180) +
-                            1 / Math.cos((lat * Math.PI) / 180)
-                    ) /
-                        Math.PI) /
-                    2) *
-                256 *
-                scale
-            return { x: worldCoordX, y: worldCoordY }
+                (0.5 -
+                    Math.log((1 + safeSinLat) / (1 - safeSinLat)) /
+                        (4 * Math.PI)) *
+                256 * scale;
+            return { x: worldCoordX, y: worldCoordY };
         },
         []
     )
@@ -504,8 +509,12 @@ function GisMap(props: GisMapProps) {
     useEffect(() => {
         if (isStatic) return
         if (uniqueLines.length > 0 && visibleLines.size === 0) {
+            // Always include '6B' in visible lines
+            const initialLines = new Set(uniqueLines.map((line) => line.name))
+            initialLines.add('6B')
+            initialLines.add('Line 6B')
             startTransition(() => {
-                setVisibleLines(new Set(uniqueLines.map((line) => line.name)))
+                setVisibleLines(initialLines)
             })
         }
     }, [uniqueLines, visibleLines.size, isStatic])
@@ -619,9 +628,10 @@ function GisMap(props: GisMapProps) {
 
         // Method 1: Draw full lines from metroRoutes
         if (metroRoutes.length > 0) {
+            // To prevent overlapping, keep track of rendered coordinate sets
+            const renderedRanges = new Set();
             metroRoutes.forEach(route => {
                 // Normalize line ID to match visibleLines set (e.g., "1" -> "Line 1")
-                // visibleLines contains "Line 1", "Line 2", etc.
                 const lineNameVariant1 = route.lineId;
                 const lineNameVariant2 = `Line ${route.lineId}`;
                 const lineNameVariant3 = route.lineId.replace("Line ", "");
@@ -629,8 +639,15 @@ function GisMap(props: GisMapProps) {
                 const isVisible = visibleLines.has(lineNameVariant1) ||
                                   visibleLines.has(lineNameVariant2) ||
                                   visibleLines.has(lineNameVariant3);
-
                 if (!isVisible) return;
+
+                // Create a unique key for this route's coordinates
+                const coordKey = route.coordinates.map(c => `${c.lat},${c.lng}`).join("|");
+                if (renderedRanges.has(coordKey)) {
+                    // Already rendered by another line, skip to avoid overlap
+                    return;
+                }
+                renderedRanges.add(coordKey);
 
                 const points = route.coordinates.map(coord => {
                     const pixel = latLngToPixel(coord.lat, coord.lng, currentZoom);
@@ -874,10 +891,10 @@ function GisMap(props: GisMapProps) {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
-            onWheel={handleWheel}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
+            onWheel={e => { e.preventDefault(); e.stopPropagation(); handleWheel(e); }}
+            onTouchStart={e => { e.stopPropagation(); handleTouchStart(e); }}
+            onTouchMove={e => { e.stopPropagation(); handleTouchMove(e); }}
+            onTouchEnd={e => { e.stopPropagation(); handleTouchEnd(e); }}
         >
             {/* ========== COMPONENT: System Background - Metro Map Style ========== */}
             <div
@@ -1028,7 +1045,7 @@ function GisMap(props: GisMapProps) {
             )}
 
             {/* ========== COMPONENT: Route Coordinate Dots (Supplementary) ========== */}
-            {showMetroStations && routesMap.size > 0 && (
+            {showMetroStations && routesMap.size > 0 && currentZoom >= 9 && (
                 <svg
                     style={{
                         position: "absolute",
@@ -1095,7 +1112,7 @@ function GisMap(props: GisMapProps) {
             )}
 
             {/* ========== COMPONENT: Metro stations ========== */}
-            {showMetroStations &&
+            {showMetroStations && currentZoom <= 15 &&
                 visibleStations.map((station, index) => {
                     const stationPixel = latLngToPixel(
                         station.lat,
