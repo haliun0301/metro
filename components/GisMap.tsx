@@ -114,7 +114,7 @@ function GisMap(props: GisMapProps) {
             // Clamp longitude to valid range
             const clampedLng = Math.max(-180, Math.min(180, lng));
             // Smooth zoom at very low levels to avoid extreme compression
-            const effectiveZoom = Math.max(1, Math.min(zoom, 22));
+            const effectiveZoom = Math.max(12, Math.min(zoom, 20));
             const scale = Math.pow(2, effectiveZoom);
             // Web Mercator projection
             const worldCoordX = ((clampedLng + 180) / 360) * 256 * scale;
@@ -136,7 +136,7 @@ function GisMap(props: GisMapProps) {
         []
     )
     const handleZoomOut = useCallback(
-        () => startTransition(() => setCurrentZoom((p) => Math.max(p - 1, 1))),
+        () => startTransition(() => setCurrentZoom((p) => Math.max(p - 1, 12))),
         []
     )
 
@@ -187,7 +187,7 @@ function GisMap(props: GisMapProps) {
 
             startTransition(() => {
                 setCurrentZoom((prevZoom) =>
-                    Math.max(1, Math.min(18, prevZoom + zoomChange))
+                    Math.max(12, Math.min(18, prevZoom + zoomChange))
                 )
             })
         },
@@ -587,32 +587,13 @@ function GisMap(props: GisMapProps) {
     // Detect transfer stations
     const transferStations = useMemo(() => {
         if (isStatic) return new Set()
-        const coordinateMap = new Map<string, MetroStation[]>()
-        const manualTransfers = new Set<string>()
-
-        stations.forEach((station) => {
-            const key = `${station.lat.toFixed(4)},${station.lng.toFixed(4)}`
-            if (!coordinateMap.has(key)) {
-                coordinateMap.set(key, [])
-            }
-            coordinateMap.get(key)!.push(station)
-
-            if (station.isTransfer) {
-                manualTransfers.add(key)
-            }
-        })
-
         const transferCoords = new Set<string>()
-        coordinateMap.forEach((stationsAtLocation, key) => {
-            if (
-                stationsAtLocation.length > 1 ||
-                stationsAtLocation[0].line.includes("&") ||
-                manualTransfers.has(key)
-            ) {
+        stations.forEach((station) => {
+            if (station.isTransfer) {
+                const key = `${station.lat.toFixed(4)},${station.lng.toFixed(4)}`
                 transferCoords.add(key)
             }
         })
-
         return transferCoords
     }, [stations, isStatic])
 
@@ -879,13 +860,16 @@ function GisMap(props: GisMapProps) {
         <div
             ref={mapRef}
             style={{
-                position: "relative",
-                width: "100%",
-                height: "100%",
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
                 overflow: "hidden",
                 backgroundColor: "#F5F5F5",
                 cursor: isDragging ? "grabbing" : "grab",
                 userSelect: "none",
+                zIndex: 0,
             }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -1199,8 +1183,30 @@ function GisMap(props: GisMapProps) {
                                             transform: isHovered
                                                 ? "scale(1.4)"
                                                 : "scale(1)",
+                                            position: "relative",
                                         }}
                                     >
+                                        {/* Line number above icon */}
+                                        {/*
+                                        <div
+                                            style={{
+                                                position: "absolute",
+                                                top: -18,
+                                                left: "50%",
+                                                transform: "translateX(-50%)",
+                                                backgroundColor: stationColor,
+                                                color: "#fff",
+                                                padding: "2px 6px",
+                                                borderRadius: 4,
+                                                fontSize: 12,
+                                                fontWeight: 600,
+                                                boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+                                                whiteSpace: "nowrap",
+                                            }}
+                                        >
+                                            {station.line}
+                                        </div>
+                                        */}
                                         <svg
                                             width={currentZoom < 12 ? "10" : "14"}
                                             height={currentZoom < 12 ? "10" : "14"}
@@ -1321,7 +1327,17 @@ function GisMap(props: GisMapProps) {
                                                 ? station.nameCn
                                                 : station.name}
                                         </div>
-
+                                        <div
+                                            style={{
+                                                fontSize: 13,
+                                                fontWeight: 500,
+                                                color: stationColor,
+                                                marginBottom: 8,
+                                                textAlign: "center",
+                                            }}
+                                        >
+                                            {station.line}
+                                        </div>
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation()
