@@ -1,7 +1,6 @@
 import { MetroStation } from '../types';
 
 export const STATIONS: MetroStation[] = [
-  
   {
     "lat": 22.5333117,
     "lng": 114.1131787,
@@ -10,7 +9,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false,
+    "area": "Bitou",
+    "areaCn": "碧头"
   },
   {
     "lat": 22.5424182,
@@ -20,7 +22,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5472942,
@@ -30,7 +33,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5440767,
@@ -40,7 +44,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.54331,
@@ -50,7 +55,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huaqiang North area",
+    "areaCn": "华强北片区"
   },
   {
     "lat": 22.5430403,
@@ -60,7 +68,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huaqiang North area",
+    "areaCn": "华强北片区"
   },
   {
     "lat": 22.5375885,
@@ -70,7 +81,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5374546,
@@ -80,7 +94,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5362838,
@@ -90,7 +107,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.541655,
@@ -100,7 +120,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Xiangmi Lake area",
+    "areaCn": "香蜜湖片区"
   },
   {
     "lat": 22.5388378,
@@ -110,7 +133,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Chegongmiao area",
+    "areaCn": "车公庙片区"
   },
   {
     "lat": 22.5363142,
@@ -120,7 +146,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5354178,
@@ -130,7 +157,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5364467,
@@ -140,7 +168,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.539854,
@@ -150,7 +179,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5424968,
@@ -160,7 +190,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5432309,
@@ -170,7 +201,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shenzhen University-High-tech Park area",
+    "areaCn": "深大-高新园片区"
   },
   {
     "lat": 22.5405167,
@@ -180,7 +214,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shenzhen University-High-tech Park area",
+    "areaCn": "深大-高新园片区"
   },
   {
     "lat": 22.5353507,
@@ -190,7 +227,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5352462,
@@ -200,7 +238,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5350655,
@@ -210,7 +249,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Qianhaiwan area",
+    "areaCn": "前海湾片区"
   },
   {
     "lat": 22.5403059,
@@ -220,7 +262,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Qianhaiwan area",
+    "areaCn": "前海湾片区"
   },
   {
     "lat": 22.550747,
@@ -230,7 +275,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5576373,
@@ -240,7 +286,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5632358,
@@ -250,7 +297,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.571935,
@@ -260,7 +308,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5790602,
@@ -270,7 +319,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Xixiang area",
+    "areaCn": "西乡片区"
   },
   {
     "lat": 22.6037783,
@@ -280,7 +332,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6317812,
@@ -290,7 +343,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6499762,
@@ -300,7 +354,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 1",
     "lineColor": "#00A651",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.4822397,
@@ -310,7 +365,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.4797136,
@@ -320,7 +376,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shekou area",
+    "areaCn": "蛇口片区"
   },
   {
     "lat": 22.4880191,
@@ -330,7 +389,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shekou area",
+    "areaCn": "蛇口片区"
   },
   {
     "lat": 22.4914656,
@@ -340,7 +402,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shekou area",
+    "areaCn": "蛇口片区"
   },
   {
     "lat": 22.4891582,
@@ -350,7 +415,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Houhai area",
+    "areaCn": "后海片区"
   },
   {
     "lat": 22.4965491,
@@ -360,7 +428,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Houhai area",
+    "areaCn": "后海片区"
   },
   {
     "lat": 22.5031277,
@@ -370,7 +441,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Houhai area",
+    "areaCn": "后海片区"
   },
   {
     "lat": 22.5119037,
@@ -380,7 +454,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Houhai area",
+    "areaCn": "后海片区"
   },
   {
     "lat": 22.521189,
@@ -390,7 +467,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Houhai area",
+    "areaCn": "后海片区"
   },
   {
     "lat": 22.5301339,
@@ -400,7 +480,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shenzhen University-High-tech Park area",
+    "areaCn": "深大-高新园片区"
   },
   {
     "lat": 22.527994,
@@ -410,7 +493,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.539854,
@@ -420,7 +504,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5471125,
@@ -430,7 +515,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5492913,
@@ -440,7 +526,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5516507,
@@ -450,7 +537,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5524763,
@@ -460,7 +548,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Xiangmihu area",
+    "areaCn": "香蜜湖片区"
   },
   {
     "lat": 22.555735,
@@ -470,7 +561,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Xiangmihu area",
+    "areaCn": "香蜜湖片区"
   },
   {
     "lat": 22.5566537,
@@ -480,7 +574,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Xiangmihu area",
+    "areaCn": "香蜜湖片区"
   },
   {
     "lat": 22.5561853,
@@ -490,7 +587,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5498083,
@@ -500,7 +598,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5427538,
@@ -510,7 +611,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5433288,
@@ -520,7 +624,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5434393,
@@ -530,7 +637,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.547012,
@@ -540,7 +650,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huaqiang North area",
+    "areaCn": "华强北片区"
   },
   {
     "lat": 22.5471651,
@@ -550,7 +663,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huaqiang North area",
+    "areaCn": "华强北片区"
   },
   {
     "lat": 22.5440767,
@@ -560,7 +676,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5470077,
@@ -570,7 +687,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5486445,
@@ -580,7 +698,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huangbeiling area",
+    "areaCn": "黄贝岭片区"
   },
   {
     "lat": 22.5505114,
@@ -590,7 +711,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5559169,
@@ -600,7 +722,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5667032,
@@ -610,7 +733,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5668762,
@@ -620,7 +744,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 2",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5107821,
@@ -630,7 +755,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#EC008C",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5188095,
@@ -640,7 +766,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5264418,
@@ -650,7 +777,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5362838,
@@ -660,7 +788,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5427538,
@@ -670,7 +801,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5511793,
@@ -680,7 +814,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5513659,
@@ -690,7 +827,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5517929,
@@ -700,7 +840,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huaqiang North area",
+    "areaCn": "华强北片区"
   },
   {
     "lat": 22.5519567,
@@ -710,7 +853,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huaqiang North area",
+    "areaCn": "华强北片区"
   },
   {
     "lat": 22.5510292,
@@ -720,7 +866,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5472942,
@@ -730,7 +877,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5521161,
@@ -740,7 +888,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5589208,
@@ -750,7 +899,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5699902,
@@ -760,7 +910,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shuibei-Tianbei area",
+    "areaCn": "水贝-田贝片区"
   },
   {
     "lat": 22.5768941,
@@ -770,7 +923,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shuibei-Tianbei area",
+    "areaCn": "水贝-田贝片区"
   },
   {
     "lat": 22.5870347,
@@ -780,7 +936,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6044178,
@@ -790,7 +947,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Buji area",
+    "areaCn": "布吉片区"
   },
   {
     "lat": 22.6097289,
@@ -800,7 +960,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Buji area",
+    "areaCn": "布吉片区"
   },
   {
     "lat": 22.6169094,
@@ -810,7 +973,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6224991,
@@ -820,7 +984,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6370828,
@@ -830,7 +995,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6423791,
@@ -840,7 +1006,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6512666,
@@ -850,7 +1017,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6618394,
@@ -860,7 +1028,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6759094,
@@ -870,7 +1039,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6886005,
@@ -880,7 +1050,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Universiade area",
+    "areaCn": "大运片区"
   },
   {
     "lat": 22.7003234,
@@ -890,7 +1063,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7123307,
@@ -900,7 +1074,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Longcheng Square area",
+    "areaCn": "龙城广场片区"
   },
   {
     "lat": 22.7197393,
@@ -910,7 +1087,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Longcheng Square area",
+    "areaCn": "龙城广场片区"
   },
   {
     "lat": 22.7248176,
@@ -920,7 +1100,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Longcheng Square area",
+    "areaCn": "龙城广场片区"
   },
   {
     "lat": 22.7321167,
@@ -930,7 +1113,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7373526,
@@ -940,7 +1124,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7508486,
@@ -950,7 +1135,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7659289,
@@ -960,7 +1146,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7739622,
@@ -970,7 +1157,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7779096,
@@ -980,7 +1168,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7828303,
@@ -990,7 +1179,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7896962,
@@ -1000,7 +1190,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 3",
     "lineColor": "#F7941D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5179435,
@@ -1010,7 +1201,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5278525,
@@ -1020,7 +1212,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5374546,
@@ -1030,7 +1223,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5433288,
@@ -1040,7 +1236,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5511793,
@@ -1050,7 +1249,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5634938,
@@ -1060,7 +1262,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.573058,
@@ -1070,7 +1273,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.596962,
@@ -1080,7 +1284,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Meilin Checkpoint area",
+    "areaCn": "梅林关片区"
   },
   {
     "lat": 22.6041719,
@@ -1090,7 +1297,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Meilin Checkpoint area",
+    "areaCn": "梅林关片区"
   },
   {
     "lat": 22.6134699,
@@ -1100,7 +1310,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6245545,
@@ -1110,7 +1321,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Hongshan area",
+    "areaCn": "红山片区"
   },
   {
     "lat": 22.6397935,
@@ -1120,7 +1334,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6474027,
@@ -1130,7 +1345,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6543179,
@@ -1140,7 +1356,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6667447,
@@ -1150,7 +1367,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6750063,
@@ -1160,7 +1378,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6895676,
@@ -1170,7 +1389,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7013421,
@@ -1180,7 +1400,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7135204,
@@ -1190,7 +1411,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7179901,
@@ -1200,7 +1422,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7237695,
@@ -1210,7 +1433,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7244021,
@@ -1220,7 +1444,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7265964,
@@ -1230,7 +1455,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 4",
     "lineColor": "#ED1C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.4822397,
@@ -1240,7 +1466,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5011681,
@@ -1250,7 +1477,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5053459,
@@ -1260,7 +1488,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5112033,
@@ -1270,7 +1499,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Qianhaiwan area",
+    "areaCn": "前海湾片区"
   },
   {
     "lat": 22.5197971,
@@ -1280,7 +1512,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Qianhaiwan area",
+    "areaCn": "前海湾片区"
   },
   {
     "lat": 22.5248447,
@@ -1290,7 +1525,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Qianhaiwan area",
+    "areaCn": "前海湾片区"
   },
   {
     "lat": 22.5344306,
@@ -1300,7 +1538,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Qianhaiwan area",
+    "areaCn": "前海湾片区"
   },
   {
     "lat": 22.5403059,
@@ -1310,7 +1551,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Qianhaiwan area",
+    "areaCn": "前海湾片区"
   },
   {
     "lat": 22.5472917,
@@ -1320,7 +1564,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5527242,
@@ -1330,7 +1575,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5576373,
@@ -1340,7 +1586,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5629304,
@@ -1350,7 +1597,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Fanshen area",
+    "areaCn": "翻身片区"
   },
   {
     "lat": 22.572046,
@@ -1360,7 +1610,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5777172,
@@ -1370,7 +1621,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5847838,
@@ -1380,7 +1632,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5834563,
@@ -1390,7 +1643,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5836964,
@@ -1400,7 +1654,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.58515001,
@@ -1410,7 +1665,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "University Town area",
+    "areaCn": "大学城片区"
   },
   {
     "lat": 22.5928643,
@@ -1420,7 +1678,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Tanglang-Changlingpi area",
+    "areaCn": "塘朗-长岭陂片区"
   },
   {
     "lat": 22.602214,
@@ -1430,7 +1691,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Tanglang-Changlingpi area",
+    "areaCn": "塘朗-长岭陂片区"
   },
   {
     "lat": 22.6134699,
@@ -1440,7 +1704,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6203757,
@@ -1450,7 +1715,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6289355,
@@ -1460,7 +1726,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6299949,
@@ -1470,7 +1737,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6292497,
@@ -1480,7 +1748,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6247573,
@@ -1490,7 +1759,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6175248,
@@ -1500,7 +1770,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6110162,
@@ -1510,7 +1781,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Buji area",
+    "areaCn": "布吉片区"
   },
   {
     "lat": 22.6044178,
@@ -1520,7 +1794,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Buji area",
+    "areaCn": "布吉片区"
   },
   {
     "lat": 22.5973734,
@@ -1530,7 +1807,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.583567,
@@ -1540,7 +1818,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.576969,
@@ -1550,7 +1829,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5587011,
@@ -1560,7 +1840,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huangbeiling area",
+    "areaCn": "黄贝岭片区"
   },
   {
     "lat": 22.5486445,
@@ -1570,7 +1853,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 5",
     "lineColor": "#662D91",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huangbeiling area",
+    "areaCn": "黄贝岭片区"
   },
   {
     "lat": 22.54331,
@@ -1580,7 +1866,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huaqiang North area",
+    "areaCn": "华强北片区"
   },
   {
     "lat": 22.5519567,
@@ -1590,7 +1879,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huaqiang North area",
+    "areaCn": "华强北片区"
   },
   {
     "lat": 22.5573385,
@@ -1600,7 +1892,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5633903,
@@ -1610,7 +1903,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.571339,
@@ -1620,7 +1914,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5769536,
@@ -1630,7 +1925,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5972109,
@@ -1640,7 +1936,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Meilin Checkpoint area",
+    "areaCn": "梅林关片区"
   },
   {
     "lat": 22.6134699,
@@ -1650,7 +1949,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6245545,
@@ -1660,7 +1960,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Hongshan area",
+    "areaCn": "红山片区"
   },
   {
     "lat": 22.6432622,
@@ -1670,7 +1973,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6591092,
@@ -1680,7 +1984,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6707384,
@@ -1690,7 +1995,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6862306,
@@ -1700,7 +2006,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6920966,
@@ -1710,7 +2017,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7293188,
@@ -1720,7 +2028,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7504601,
@@ -1730,7 +2039,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Fenghuang Town-Guangming Town area",
+    "areaCn": "凤凰城-光明城片区"
   },
   {
     "lat": 22.7650404,
@@ -1740,7 +2052,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7747902,
@@ -1750,7 +2063,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7804966,
@@ -1760,7 +2074,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7789528,
@@ -1770,7 +2085,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7809074,
@@ -1780,7 +2096,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7793727,
@@ -1790,7 +2107,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7846703,
@@ -1800,7 +2118,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7840518,
@@ -1810,7 +2129,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7812914,
@@ -1820,7 +2140,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7773794,
@@ -1830,7 +2151,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Bitou area",
+    "areaCn": "碧头片区"
   },
   {
     "lat": 22.7751914,
@@ -1840,7 +2164,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6",
     "lineColor": "#00A99D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Bitou area",
+    "areaCn": "碧头片区"
   },
   {
     "lat": 22.595842,
@@ -1850,7 +2177,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Tanglang-Changlingpi area",
+    "areaCn": "塘朗-长岭陂片区"
   },
   {
     "lat": 22.5968908,
@@ -1860,7 +2190,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "University Town area",
+    "areaCn": "大学城片区"
   },
   {
     "lat": 22.5964998,
@@ -1870,7 +2203,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "University Town area",
+    "areaCn": "大学城片区"
   },
   {
     "lat": 22.5836964,
@@ -1880,7 +2216,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5771019,
@@ -1890,7 +2227,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5713017,
@@ -1900,7 +2238,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5671739,
@@ -1910,7 +2249,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5628537,
@@ -1920,7 +2260,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.559407,
@@ -1930,7 +2271,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5516507,
@@ -1940,7 +2282,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5432833,
@@ -1950,7 +2293,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Xiangmihu area",
+    "areaCn": "香蜜湖片区"
   },
   {
     "lat": 22.5388378,
@@ -1960,7 +2306,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Chegongmiao area",
+    "areaCn": "车公庙片区"
   },
   {
     "lat": 22.527363,
@@ -1970,7 +2319,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5234511,
@@ -1980,7 +2330,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5264418,
@@ -1990,7 +2341,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5258467,
@@ -2000,7 +2352,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5278525,
@@ -2010,7 +2363,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5241898,
@@ -2020,7 +2374,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5345383,
@@ -2030,7 +2385,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5407047,
@@ -2040,7 +2396,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huaqiang North area",
+    "areaCn": "华强北片区"
   },
   {
     "lat": 22.547012,
@@ -2050,7 +2409,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huaqiang North area",
+    "areaCn": "华强北片区"
   },
   {
     "lat": 22.5517929,
@@ -2060,7 +2422,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huaqiang North area",
+    "areaCn": "华强北片区"
   },
   {
     "lat": 22.5585802,
@@ -2070,7 +2435,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5633903,
@@ -2080,7 +2446,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5646871,
@@ -2090,7 +2457,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5658661,
@@ -2100,7 +2468,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5686556,
@@ -2110,7 +2479,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shuibei-Tianbei area",
+    "areaCn": "水贝-田贝片区"
   },
   {
     "lat": 22.5699902,
@@ -2120,7 +2492,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shuibei-Tianbei area",
+    "areaCn": "水贝-田贝片区"
   },
   {
     "lat": 22.576969,
@@ -2130,7 +2505,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 7",
     "lineColor": "#0071BC",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5611347,
@@ -2140,7 +2516,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 8",
     "lineColor": "#29ABE2",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5572091,
@@ -2150,7 +2527,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 8",
     "lineColor": "#29ABE2",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shatoujiao area",
+    "areaCn": "沙头角片区"
   },
   {
     "lat": 22.5583269,
@@ -2160,7 +2540,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 8",
     "lineColor": "#29ABE2",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shatoujiao area",
+    "areaCn": "沙头角片区"
   },
   {
     "lat": 22.5649112,
@@ -2170,7 +2553,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 8",
     "lineColor": "#29ABE2",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shatoujiao area",
+    "areaCn": "沙头角片区"
   },
   {
     "lat": 22.5865573,
@@ -2180,7 +2566,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 8",
     "lineColor": "#29ABE2",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5912403,
@@ -2190,7 +2577,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 8",
     "lineColor": "#29ABE2",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5934152,
@@ -2200,7 +2588,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 8",
     "lineColor": "#29ABE2",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5902298,
@@ -2210,7 +2599,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 8",
     "lineColor": "#29ABE2",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5969907,
@@ -2220,7 +2610,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 8",
     "lineColor": "#29ABE2",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6044816,
@@ -2230,7 +2621,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 8",
     "lineColor": "#29ABE2",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5248447,
@@ -2240,7 +2632,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Qianhaiwan area",
+    "areaCn": "前海湾片区"
   },
   {
     "lat": 22.5221008,
@@ -2250,7 +2645,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5186357,
@@ -2260,7 +2656,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5148217,
@@ -2270,7 +2667,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5123465,
@@ -2280,7 +2678,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Nanyou area",
+    "areaCn": "南油片区"
   },
   {
     "lat": 22.5135563,
@@ -2290,7 +2691,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Houhai area",
+    "areaCn": "后海片区"
   },
   {
     "lat": 22.5214793,
@@ -2300,7 +2704,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Houhai area",
+    "areaCn": "后海片区"
   },
   {
     "lat": 22.5290519,
@@ -2310,7 +2717,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shenzhen University-High-tech Park area",
+    "areaCn": "深大-高新园片区"
   },
   {
     "lat": 22.5352211,
@@ -2320,7 +2730,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shenzhen University-High-tech Park area",
+    "areaCn": "深大-高新园片区"
   },
   {
     "lat": 22.5357515,
@@ -2330,7 +2743,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shenzhen University-High-tech Park area",
+    "areaCn": "深大-高新园片区"
   },
   {
     "lat": 22.526104,
@@ -2340,7 +2756,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5260191,
@@ -2350,7 +2767,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5244887,
@@ -2360,7 +2778,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5316545,
@@ -2370,7 +2789,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Chegongmiao area",
+    "areaCn": "车公庙片区"
   },
   {
     "lat": 22.5388378,
@@ -2380,7 +2802,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Chegongmiao area",
+    "areaCn": "车公庙片区"
   },
   {
     "lat": 22.5482775,
@@ -2390,7 +2815,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5561853,
@@ -2400,7 +2826,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5635951,
@@ -2410,7 +2837,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5684708,
@@ -2420,7 +2848,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5711785,
@@ -2430,7 +2859,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.573058,
@@ -2440,7 +2870,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5700289,
@@ -2450,7 +2881,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.571339,
@@ -2460,7 +2892,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5702261,
@@ -2470,7 +2903,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5646871,
@@ -2480,7 +2914,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5588156,
@@ -2490,7 +2925,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5510292,
@@ -2500,7 +2936,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5423222,
@@ -2510,7 +2947,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5383111,
@@ -2520,7 +2958,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5380996,
@@ -2530,7 +2969,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5425522,
@@ -2540,7 +2980,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5450815,
@@ -2550,7 +2991,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 9",
     "lineColor": "#8C6239",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huangbeiling area",
+    "areaCn": "黄贝岭片区"
   },
   {
     "lat": 22.5179435,
@@ -2560,7 +3004,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5278525,
@@ -2570,7 +3015,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5375885,
@@ -2580,7 +3026,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5434393,
@@ -2590,7 +3039,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5513659,
@@ -2600,7 +3052,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5635058,
@@ -2610,7 +3065,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5700289,
@@ -2620,7 +3076,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6064439,
@@ -2630,7 +3087,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6139872,
@@ -2640,7 +3098,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6191375,
@@ -2650,7 +3109,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6289355,
@@ -2660,7 +3120,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6375807,
@@ -2670,7 +3131,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6442907,
@@ -2680,7 +3142,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6531258,
@@ -2690,7 +3153,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6595311,
@@ -2700,7 +3164,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6597064,
@@ -2710,7 +3175,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6503232,
@@ -2720,7 +3186,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6489575,
@@ -2730,7 +3197,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6566764,
@@ -2740,7 +3208,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6726222,
@@ -2750,7 +3219,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6785574,
@@ -2760,7 +3230,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6891212,
@@ -2770,7 +3241,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6964501,
@@ -2780,7 +3252,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.701903,
@@ -2790,7 +3263,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 10",
     "lineColor": "#F06EA9",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5407047,
@@ -2800,7 +3274,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huaqiang North area",
+    "areaCn": "华强北片区"
   },
   {
     "lat": 22.5401886,
@@ -2810,7 +3287,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Huaqiang North area",
+    "areaCn": "华强北片区"
   },
   {
     "lat": 22.5434393,
@@ -2820,7 +3300,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5427538,
@@ -2830,7 +3313,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5388378,
@@ -2840,7 +3326,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Chegongmiao area",
+    "areaCn": "车公庙片区"
   },
   {
     "lat": 22.526104,
@@ -2850,7 +3339,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.521189,
@@ -2860,7 +3350,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Houhai area",
+    "areaCn": "后海片区"
   },
   {
     "lat": 22.527154,
@@ -2870,7 +3363,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5403059,
@@ -2880,7 +3374,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Qianhaiwan area",
+    "areaCn": "前海湾片区"
   },
   {
     "lat": 22.5577281,
@@ -2890,7 +3387,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5787973,
@@ -2900,7 +3398,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.626387,
@@ -2910,7 +3409,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6541954,
@@ -2920,7 +3420,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6783466,
@@ -2930,7 +3431,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6910062,
@@ -2940,7 +3442,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.704935,
@@ -2950,7 +3453,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7198095,
@@ -2960,7 +3464,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7335893,
@@ -2970,7 +3475,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7555536,
@@ -2980,7 +3486,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7751914,
@@ -2990,7 +3497,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Bitou area",
+    "areaCn": "碧头片区"
   },
   {
     "lat": 22.7862306,
@@ -3000,7 +3510,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 11",
     "lineColor": "#58595B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Bitou area",
+    "areaCn": "碧头片区"
   },
   {
     "lat": 22.4734087,
@@ -3010,7 +3523,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.4761311,
@@ -3020,7 +3534,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shekou area",
+    "areaCn": "蛇口片区"
   },
   {
     "lat": 22.4880191,
@@ -3030,7 +3547,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shekou area",
+    "areaCn": "蛇口片区"
   },
   {
     "lat": 22.4972856,
@@ -3040,7 +3560,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shekou area",
+    "areaCn": "蛇口片区"
   },
   {
     "lat": 22.5033048,
@@ -3050,7 +3573,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5135563,
@@ -3060,7 +3584,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Houhai area",
+    "areaCn": "后海片区"
   },
   {
     "lat": 22.5194767,
@@ -3070,7 +3597,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Nanyou area",
+    "areaCn": "南油片区"
   },
   {
     "lat": 22.527154,
@@ -3080,7 +3610,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5353507,
@@ -3090,7 +3621,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5403527,
@@ -3100,7 +3632,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5496509,
@@ -3110,7 +3643,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5593325,
@@ -3120,7 +3654,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Tongle area",
+    "areaCn": "同乐片区"
   },
   {
     "lat": 22.5652752,
@@ -3130,7 +3667,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.572046,
@@ -3140,7 +3678,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5797596,
@@ -3150,7 +3689,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5866899,
@@ -3160,7 +3700,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5925216,
@@ -3170,7 +3711,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5976255,
@@ -3180,7 +3722,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6064509,
@@ -3190,7 +3733,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6140896,
@@ -3200,7 +3744,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6218178,
@@ -3210,7 +3755,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6339294,
@@ -3220,7 +3766,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6459396,
@@ -3230,7 +3777,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6499762,
@@ -3240,7 +3788,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6598467,
@@ -3250,7 +3799,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6693828,
@@ -3260,7 +3810,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6783466,
@@ -3270,7 +3821,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6857775,
@@ -3280,7 +3832,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6912156,
@@ -3290,7 +3843,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6982687,
@@ -3300,7 +3854,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.708033,
@@ -3310,7 +3865,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.721462,
@@ -3320,7 +3876,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7339933,
@@ -3330,7 +3887,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7434607,
@@ -3340,7 +3898,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7425196,
@@ -3350,7 +3909,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7472142,
@@ -3360,7 +3920,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7610369,
@@ -3370,7 +3931,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7703924,
@@ -3380,7 +3942,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Bitou area",
+    "areaCn": "碧头片区"
   },
   {
     "lat": 22.7751914,
@@ -3390,7 +3955,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 12",
     "lineColor": "#39B54A",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Bitou area",
+    "areaCn": "碧头片区"
   },
   {
     "lat": 22.5060327,
@@ -3400,7 +3968,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 13",
     "lineColor": "#FBB03B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Houhai area",
+    "areaCn": "后海片区"
   },
   {
     "lat": 22.5148809,
@@ -3410,7 +3981,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 13",
     "lineColor": "#FBB03B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.521189,
@@ -3420,7 +3992,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 13",
     "lineColor": "#FBB03B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Houhai area",
+    "areaCn": "后海片区"
   },
   {
     "lat": 22.5301339,
@@ -3430,7 +4005,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 13",
     "lineColor": "#FBB03B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shenzhen University-High-tech Park area",
+    "areaCn": "深大-高新园片区"
   },
   {
     "lat": 22.5352211,
@@ -3440,7 +4018,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 13",
     "lineColor": "#FBB03B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shenzhen University-High-tech Park area",
+    "areaCn": "深大-高新园片区"
   },
   {
     "lat": 22.5405167,
@@ -3450,7 +4031,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 13",
     "lineColor": "#FBB03B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shenzhen University-High-tech Park area",
+    "areaCn": "深大-高新园片区"
   },
   {
     "lat": 22.5499638,
@@ -3460,7 +4044,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 13",
     "lineColor": "#FBB03B",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shenzhen University-High-tech Park area",
+    "areaCn": "深大-高新园片区"
   },
   {
     "lat": 22.5434393,
@@ -3470,7 +4057,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Futian CBD area",
+    "areaCn": "福田中心区片区"
   },
   {
     "lat": 22.5585802,
@@ -3480,7 +4070,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.5832668,
@@ -3490,7 +4081,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6044178,
@@ -3500,7 +4092,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Buji area",
+    "areaCn": "布吉片区"
   },
   {
     "lat": 22.6311356,
@@ -3510,7 +4105,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.645337,
@@ -3520,7 +4116,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6513088,
@@ -3530,7 +4127,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6886005,
@@ -3540,7 +4138,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Universiade area",
+    "areaCn": "大运片区"
   },
   {
     "lat": 22.6947375,
@@ -3550,7 +4151,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6907639,
@@ -3560,7 +4162,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6911903,
@@ -3570,7 +4173,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6829134,
@@ -3580,7 +4184,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6939867,
@@ -3590,7 +4195,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7033433,
@@ -3600,7 +4206,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7114263,
@@ -3610,7 +4217,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.747963,
@@ -3620,7 +4228,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7587003,
@@ -3630,7 +4239,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 14",
     "lineColor": "#9E005D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Shatian area",
+    "areaCn": "沙田片区"
   },
   {
     "lat": 22.6188804,
@@ -3640,7 +4252,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6305497,
@@ -3650,7 +4263,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6385104,
@@ -3660,7 +4274,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6420133,
@@ -3670,7 +4285,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6483337,
@@ -3680,7 +4296,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6577327,
@@ -3690,7 +4307,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6632515,
@@ -3700,7 +4318,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6759777,
@@ -3710,7 +4329,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6886005,
@@ -3720,7 +4340,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Universiade area",
+    "areaCn": "大运片区"
   },
   {
     "lat": 22.6983619,
@@ -3730,7 +4353,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Universiade area",
+    "areaCn": "大运片区"
   },
   {
     "lat": 22.7072487,
@@ -3740,7 +4366,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7220594,
@@ -3750,7 +4377,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7311092,
@@ -3760,7 +4388,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7319875,
@@ -3770,7 +4399,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7321725,
@@ -3780,7 +4410,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Longcheng Square area",
+    "areaCn": "龙城广场片区"
   },
   {
     "lat": 22.7344012,
@@ -3790,7 +4423,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Longcheng Square area",
+    "areaCn": "龙城广场片区"
   },
   {
     "lat": 22.7338548,
@@ -3800,7 +4436,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7321167,
@@ -3810,7 +4447,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7284271,
@@ -3820,7 +4458,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7244754,
@@ -3830,7 +4469,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7120271,
@@ -3840,7 +4480,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7086738,
@@ -3850,7 +4491,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.706018,
@@ -3860,7 +4502,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6986338,
@@ -3870,7 +4513,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6939867,
@@ -3880,7 +4524,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6880888,
@@ -3890,7 +4535,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6887952,
@@ -3900,7 +4546,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.689146,
@@ -3910,7 +4557,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6910981,
@@ -3920,7 +4568,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6945466,
@@ -3930,7 +4579,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7010346,
@@ -3940,7 +4590,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6963691,
@@ -3950,7 +4601,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 16",
     "lineColor": "#C69C6D",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6541954,
@@ -3960,7 +4612,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 20",
     "lineColor": "#754C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6867052,
@@ -3970,7 +4623,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 20",
     "lineColor": "#754C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.6982687,
@@ -3980,7 +4634,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 20",
     "lineColor": "#754C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.708033,
@@ -3990,7 +4645,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 20",
     "lineColor": "#754C24",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7150388,
@@ -4000,8 +4656,9 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 20",
     "lineColor": "#754C24",
     "info": "",
-    "isTransfer": false
-  }, 
+    "isTransfer": false,
+    "isDetail": false
+  },
   {
     "lat": 22.7357419,
     "lng": 113.9486957,
@@ -4010,7 +4667,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6 Branch",
     "lineColor": "#00BFA5",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Fenghuang Town-Guangming Town area",
+    "areaCn": "凤凰城-光明城片区"
   },
   {
     "lat": 22.7531692,
@@ -4020,7 +4680,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6 Branch",
     "lineColor": "#00BFA5",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Fenghuang Town-Guangming Town area",
+    "areaCn": "凤凰城-光明城片区"
   },
   {
     "lat": 22.7616886,
@@ -4030,7 +4693,10 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6 Branch",
     "lineColor": "#00BFA5",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": true,
+    "area": "Biyan-Guangming Farm area",
+    "areaCn": "碧眼-光明农场片区"
   },
   {
     "lat": 22.7747902,
@@ -4040,7 +4706,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6 Branch",
     "lineColor": "#00BFA5",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7911953,
@@ -4050,7 +4717,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6 Branch",
     "lineColor": "#00BFA5",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.7993363,
@@ -4060,7 +4728,8 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6 Branch",
     "lineColor": "#00BFA5",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   },
   {
     "lat": 22.8097415,
@@ -4070,6 +4739,7 @@ export const STATIONS: MetroStation[] = [
     "line": "Line 6 Branch",
     "lineColor": "#00BFA5",
     "info": "",
-    "isTransfer": false
+    "isTransfer": false,
+    "isDetail": false
   }
-];
+]

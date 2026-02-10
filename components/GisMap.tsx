@@ -29,13 +29,16 @@ function GisMap(props: GisMapProps) {
         lineWidth = 4,
         showLegend = true,
         buttonPosition = "bottom-right",
-        buttonColor = "#2196F3",
+        buttonColor = "#3EB181",
         buttonSize = 60,
         mapSaturation = 1.2,
         mapBrightness = 1.05,
         mapContrast = 1.1,
-        mapHue = 0,
+        mapHue = -10,
         routesJson = "",
+        modernPlain = true,
+        plainTint = "linear-gradient(180deg, rgba(72,45,95,0.06), rgba(15,15,20,0.12))",
+        monochrome = true,
     } = props
 
     const mapRef = useRef<HTMLDivElement>(null)
@@ -65,6 +68,59 @@ function GisMap(props: GisMapProps) {
         props.defaultLanguage || "en"
     )
 
+    // Area menu state
+    const [showAreaMenu, setShowAreaMenu] = useState(false)
+    const [selectedArea, setSelectedArea] = useState<string | null>(null)
+    const [areaBounds, setAreaBounds] = useState<{
+        minLat: number
+        maxLat: number
+        minLng: number
+        maxLng: number
+    } | null>(null)
+
+    // Area menu auto-scroll state
+    const areaMenuRef = useRef<HTMLDivElement | null>(null)
+    const [isUserScrolling, setIsUserScrolling] = useState(false)
+    const resumeTimerRef = useRef<number | null>(null)
+    const rafRef = useRef<number | null>(null)
+    const AUTO_SCROLL_SPEED = 0.45 // px per frame
+    const AUTO_SCROLL_INACTIVITY = 2200 // ms to wait before resuming
+
+    const clearResumeTimer = useCallback(() => {
+        if (resumeTimerRef.current !== null) {
+            window.clearTimeout(resumeTimerRef.current)
+            resumeTimerRef.current = null
+        }
+    }, [])
+
+    const startResumeTimer = useCallback(() => {
+        clearResumeTimer()
+        resumeTimerRef.current = window.setTimeout(() => {
+            resumeTimerRef.current = null
+            setIsUserScrolling(false)
+        }, AUTO_SCROLL_INACTIVITY)
+    }, [clearResumeTimer])
+
+    // RAF loop for auto-scrolling the area menu
+    useEffect(() => {
+        const loop = () => {
+            const el = areaMenuRef.current
+            if (el && !isUserScrolling && !selectedArea) {
+                el.scrollLeft += AUTO_SCROLL_SPEED
+                if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 1) {
+                    el.scrollLeft = 0
+                }
+            }
+            rafRef.current = requestAnimationFrame(loop)
+        }
+
+        rafRef.current = requestAnimationFrame(loop)
+        return () => {
+            if (rafRef.current) cancelAnimationFrame(rafRef.current)
+            clearResumeTimer()
+        }
+    }, [isUserScrolling, selectedArea, clearResumeTimer])
+
     // Touch/pinch zoom state
     const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(
         null
@@ -73,6 +129,9 @@ function GisMap(props: GisMapProps) {
     // Search state
     const [searchQuery, setSearchQuery] = useState("")
     const [showSearchResults, setShowSearchResults] = useState(false)
+
+    // Scale factor for in-map UI when side panel is open (map shrinks to 2/3)
+    const mapScale = showDetailPanel && !isFullWidth ? 2 / 3 : 1
 
     // Animation state for station clicks
     const [animatingStationIndex, setAnimatingStationIndex] = useState<
@@ -240,7 +299,7 @@ function GisMap(props: GisMapProps) {
     )
 
     // Handle touch end
-    const handleTouchEnd = useCallback(() => {
+    const handleTouchEnd = useCallback((e: React.TouchEvent) => {
         if (isStatic) return
         setLastTouchDistance(null)
     }, [isStatic])
@@ -270,6 +329,28 @@ function GisMap(props: GisMapProps) {
             return () => window.removeEventListener("resize", updateDimensions)
         }
     }, [isStatic])
+
+    // When the detail panel opens/closes the map element width changes (CSS transition).
+    // Ensure containerDimensions reflect the updated inner map size so area framing
+    // calculations center the frame inside the visible (2/3) map. Run an immediate
+    // update and a delayed one to catch the end of the CSS transition.
+    useEffect(() => {
+        if (isStatic || !mapRef.current) return
+        const doUpdate = () => {
+            if (mapRef.current) {
+                startTransition(() => {
+                    setContainerDimensions({
+                        width: mapRef.current.offsetWidth || 800,
+                        height: mapRef.current.offsetHeight || 600,
+                    })
+                })
+            }
+        }
+
+        doUpdate()
+        const t = window.setTimeout(doUpdate, 360)
+        return () => window.clearTimeout(t)
+    }, [showDetailPanel, isFullWidth, isStatic])
 
     // ESC closes drawer
     useEffect(() => {
@@ -525,9 +606,24 @@ function GisMap(props: GisMapProps) {
         if (visibleLines.size === 0) return []
         return stations.filter((station) => {
             const stationLines = station.line.split("&").map((l) => l.trim())
-            return stationLines.some((line) => visibleLines.has(line))
+            const lineVisible = stationLines.some((line) => visibleLines.has(line))
+            if (!lineVisible) return false
+
+            // If an area is selected and bounds are set, only include stations inside those bounds
+            if (areaBounds) {
+                if (
+                    station.lat < areaBounds.minLat ||
+                    station.lat > areaBounds.maxLat ||
+                    station.lng < areaBounds.minLng ||
+                    station.lng > areaBounds.maxLng
+                ) {
+                    return false
+                }
+            }
+
+            return true
         })
-    }, [stations, visibleLines, isStatic])
+    }, [stations, visibleLines, isStatic, areaBounds])
 
     // Search results based on query
     const searchResults = useMemo(() => {
@@ -750,12 +846,167 @@ function GisMap(props: GisMapProps) {
         []
     )
 
+    // Fit map view to all stations in a given area (frames multiple stations)
+    const fitArea = useCallback(
+        (areaName: string) => {
+            if (isStatic) return
+            const normalize = (str: string) =>
+                str
+                    .toLowerCase()
+                    .trim()
+                    .replace(/\(.*?\)/g, "")
+                    // normalize various dash characters to space
+                    .replace(/[–—‒−‑]/g, " ")
+                    .replace(/[^\w\s\u4e00-\u9fff-]/g, " ")
+                    .replace(/\b(area|片区|区)\b/g, " ")
+                    .replace(/[-_]+/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim()
+
+            const target = normalize(areaName)
+
+            const matches = stations.filter((s) => {
+                const a = normalize(String(s.area || ""))
+                const aCn = normalize(String(s.areaCn || ""))
+                if (!a && !aCn) return false
+
+                if (a === target || a.includes(target) || target.includes(a)) return true
+                if (aCn === target || aCn.includes(target) || target.includes(aCn)) return true
+
+
+                const tTokens = Array.from(new Set(target.split(" ").filter(Boolean)))
+                const aTokens = Array.from(new Set(a.split(" ").filter(Boolean)))
+                const aCnTokens = Array.from(new Set(aCn.split(" ").filter(Boolean)))
+                const intersectCount = (arr1: string[], arr2: string[]) =>
+                    arr1.filter((tok) => arr2.includes(tok) && tok.length > 2).length
+
+                const matchedCountA = intersectCount(tTokens, aTokens)
+                const matchedCountACn = intersectCount(tTokens, aCnTokens)
+
+                // Require at least two matching tokens to avoid broad single-token matches
+                // unless the target itself is a single token (user clicked a short area label)
+                const tTokenCount = tTokens.length
+                if (
+                    matchedCountA >= 2 ||
+                    matchedCountACn >= 2 ||
+                    (tTokenCount === 1 && (matchedCountA === 1 || matchedCountACn === 1))
+                ) {
+                    return true
+                }
+
+                return false
+            })
+
+            if (!matches || matches.length === 0) {
+                // fallback: set search and show results
+                startTransition(() => {
+                    setSearchQuery(areaName)
+                    setShowSearchResults(true)
+                    setSelectedArea(areaName)
+                })
+                return
+            }
+
+            const lats = matches.map((m) => m.lat)
+            const lngs = matches.map((m) => m.lng)
+            const minLat = Math.min(...lats)
+            const maxLat = Math.max(...lats)
+            const minLng = Math.min(...lngs)
+            const maxLng = Math.max(...lngs)
+
+            const centerLatFit = (minLat + maxLat) / 2
+            const centerLngFit = (minLng + maxLng) / 2
+
+            // Choose maximum zoom that still fits all points into container with padding
+            const padding = 120
+            let chosenZoom = Math.max(12, Math.min(18, currentZoom))
+            for (let z = 18; z >= 12; z -= 0.5) {
+                const pixels = matches.map((pt) =>
+                    latLngToPixel(pt.lat, pt.lng, z)
+                )
+                const xs = pixels.map((p) => p.x)
+                const ys = pixels.map((p) => p.y)
+                const widthNeeded = Math.max(...xs) - Math.min(...xs)
+                const heightNeeded = Math.max(...ys) - Math.min(...ys)
+
+                if (
+                    widthNeeded <= containerWidth - padding * 2 &&
+                    heightNeeded <= containerHeight - padding * 2
+                ) {
+                    chosenZoom = z
+                    break
+                }
+            }
+            // Zoom in slightly so the area appears at a larger scale
+            chosenZoom = Math.min(14, chosenZoom + 1)
+
+            startTransition(() => {
+                setCenterLat(centerLatFit)
+                setCenterLng(centerLngFit)
+                setCurrentZoom(chosenZoom)
+                setSearchQuery(areaName)
+                setShowSearchResults(true)
+                setSelectedArea(areaName)
+                setAreaBounds({ minLat, maxLat, minLng, maxLng })
+            })
+        },
+        [isStatic, stations, latLngToPixel, containerWidth, containerHeight, currentZoom]
+    )
+
+    // Deduplicated list of service areas (derived from provided areas list)
+    const areaList = useMemo(() => {
+        const areas = [
+            "Bitou area",
+            "Chegongmiao area",
+            "Xiangmi Lake area",
+            "Buji area",
+            "Biyan-Guangming Farm area",
+            "Nanyou area",
+            "Shatian area",
+            "Shuibei–Tianbei area",
+            "University Town area",
+            "Huangbeiling area",
+            "Qianhaiwan area",
+            "Huaqiang North area",
+            "Baiwang (Baimang) area",
+            "Fanshen area",
+            "Shekou area",
+            "Tanglang–Changlingpi area",
+            "Shenzhen University–High-tech Park area",
+            "Houhai area",
+            "Futian CBD area",
+            "Xixiang area",
+            "Meilin Checkpoint area",
+            "Longcheng Square area",
+            "Fenghuang Town–Guangming Town area",
+            "Shatoujiao area",
+            "Universiade area",
+            "Tongle area",
+            "Hongshan area",
+        ]
+
+        // Normalize and dedupe while preserving order
+        const seen = new Set<string>()
+        const dedup: string[] = []
+        for (const a of areas) {
+            const key = a.trim().toLowerCase()
+            if (!seen.has(key)) {
+                seen.add(key)
+                dedup.push(a)
+            }
+        }
+        return dedup
+    }, [])
+
     // Navigate to CMS page for station
     const navigateToStation = useCallback(
         (station: MetroStation) => {
+            // Do not open detail page if station explicitly has no detail
+            if (station.isDetail === false) return
+
             // Updated to use real website if available, otherwise just use as ID
             const slug = createSlug(station.name)
-            const fullUrl = `https://metrosystemshenzhen.framer.website/stations/${slug}`
+            const fullUrl = `https://shenzhen-subway.framer.website/stations/${slug}`
 
             startTransition(() => {
                 setCmsUrl(fullUrl)
@@ -858,7 +1109,6 @@ function GisMap(props: GisMapProps) {
 
     return (
         <div
-            ref={mapRef}
             style={{
                 position: "fixed",
                 top: 0,
@@ -866,20 +1116,32 @@ function GisMap(props: GisMapProps) {
                 width: "100vw",
                 height: "100vh",
                 overflow: "hidden",
-                backgroundColor: "#F5F5F5",
-                cursor: isDragging ? "grabbing" : "grab",
-                userSelect: "none",
                 zIndex: 0,
             }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onWheel={e => { e.preventDefault(); e.stopPropagation(); handleWheel(e); }}
-            onTouchStart={e => { e.stopPropagation(); handleTouchStart(e); }}
-            onTouchMove={e => { e.stopPropagation(); handleTouchMove(e); }}
-            onTouchEnd={e => { e.stopPropagation(); handleTouchEnd(e); }}
         >
+            <div
+                ref={mapRef}
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: showDetailPanel && !isFullWidth ? "66.6666667%" : "100%",
+                    height: "100%",
+                    overflow: "hidden",
+                    backgroundColor: "#F5F5F5",
+                    cursor: isDragging ? "grabbing" : "grab",
+                    userSelect: "none",
+                    zIndex: 0,
+                }}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                onWheel={e => { e.preventDefault(); e.stopPropagation(); handleWheel(e); }}
+                onTouchStart={e => { e.stopPropagation(); handleTouchStart(e); }}
+                onTouchMove={e => { e.stopPropagation(); handleTouchMove(e); }}
+                onTouchEnd={e => { e.stopPropagation(); handleTouchEnd(e as React.TouchEvent); }}
+            >
             {/* ========== COMPONENT: System Background - Metro Map Style ========== */}
             <div
                 style={{
@@ -965,16 +1227,38 @@ function GisMap(props: GisMapProps) {
                             backgroundImage: `url(${tile.url})`,
                             backgroundSize: "cover",
                             pointerEvents: "none",
-                            filter:
-                                currentMapStyle === "streets"
-                                    ? `saturate(${mapSaturation}) contrast(${mapContrast}) brightness(${mapBrightness}) hue-rotate(${mapHue}deg)`
-                                    : "none",
-                            opacity: 1,
+                                    filter: (monochrome
+                                        ? "grayscale(1) contrast(1.05) brightness(0.95)"
+                                        : currentMapStyle === "streets"
+                                        ? `saturate(${mapSaturation}) contrast(${mapContrast}) brightness(${mapBrightness}) hue-rotate(${mapHue}deg)`
+                                        : "none"),
+                            opacity: 0.88,
+                            transition: "opacity 200ms ease",
                             zIndex: 1,
                         }}
                     />
                 )
             })}
+
+            {/* Modern plain color overlay for a muted, contemporary look */}
+            {modernPlain && (
+                <div
+                    style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        pointerEvents: "none",
+                        zIndex: 2,
+                        background: currentMapStyle === "satellite"
+                            ? "linear-gradient(180deg, rgba(20,22,28,0.06), rgba(10,12,16,0.12))"
+                            : plainTint,
+                        mixBlendMode: "overlay",
+                        filter: `grayscale(${Math.max(0, 0.05)}) saturate(${Math.max(0.6, 0.6)}) contrast(${Math.max(0.95, 0.95)})`,
+                    }}
+                />
+            )}
 
             {/* ========== COMPONENT: Metro lines ========== */}
             {showMetroStations && lineSegments.length > 0 && (
@@ -989,7 +1273,7 @@ function GisMap(props: GisMapProps) {
                         zIndex: 500,
                     }}
                 >
-                    {lineSegments.map((segment) => {
+                            {lineSegments.map((segment) => {
                         if (segment.points.length === 2) {
                             // Simple line segment
                             return (
@@ -999,7 +1283,8 @@ function GisMap(props: GisMapProps) {
                                     y1={segment.points[0].y}
                                     x2={segment.points[1].x}
                                     y2={segment.points[1].y}
-                                    stroke={segment.color}
+                                            stroke={segment.color}
+                                            strokeOpacity={0.78}
                                     strokeWidth={lineWidth}
                                     strokeLinecap="round"
                                 />
@@ -1012,11 +1297,12 @@ function GisMap(props: GisMapProps) {
                                         `${i === 0 ? "M" : "L"} ${point.x} ${point.y}`
                                 )
                                 .join(" ")
-                            return (
+                                return (
                                 <path
                                     key={segment.lineName}
                                     d={pathData}
                                     stroke={segment.color}
+                                    strokeOpacity={0.78}
                                     strokeWidth={lineWidth}
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -1064,7 +1350,7 @@ function GisMap(props: GisMapProps) {
                             const lineColor =
                                 fromStationData.lineColor || "#E91E63"
 
-                            return coordinates.map((coord, index) => {
+                                            return coordinates.map((coord, index) => {
                                 const pixel = latLngToPixel(
                                     coord.lat,
                                     coord.lng,
@@ -1077,21 +1363,148 @@ function GisMap(props: GisMapProps) {
                                     centerPixel.y +
                                     containerHeight / 2
 
-                                return (
+                                const isDotOutside = areaBounds
+                                    ? coord.lat < areaBounds.minLat ||
+                                      coord.lat > areaBounds.maxLat ||
+                                      coord.lng < areaBounds.minLng ||
+                                      coord.lng > areaBounds.maxLng
+                                    : false
+
+                                        return (
                                     <circle
                                         key={`${routeKey}-dot-${index}`}
                                         cx={x}
                                         cy={y}
                                         r={3}
-                                        fill={lineColor}
-                                        opacity={0.8}
+                                                fill={isDotOutside ? "#9CA3AF" : lineColor}
+                                                opacity={isDotOutside ? 0.38 : 0.72}
                                         stroke="#FFFFFF"
+                                        strokeOpacity={isDotOutside ? 0.7 : 1}
                                         strokeWidth={1}
                                     />
                                 )
                             })
                         }
                     )}
+                </svg>
+            )}
+
+            {/* Area bounding frame (highlights selected area containing stations) */}
+            {areaBounds && (
+                <svg
+                    style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        pointerEvents: "none",
+                        zIndex: 650,
+                    }}
+                >
+                    {(() => {
+                        try {
+                            const corners = [
+                                latLngToPixel(areaBounds.minLat, areaBounds.minLng, currentZoom),
+                                latLngToPixel(areaBounds.minLat, areaBounds.maxLng, currentZoom),
+                                latLngToPixel(areaBounds.maxLat, areaBounds.minLng, currentZoom),
+                                latLngToPixel(areaBounds.maxLat, areaBounds.maxLng, currentZoom),
+                            ]
+                            const xs = corners.map((c) => c.x)
+                            const ys = corners.map((c) => c.y)
+                            const minX = Math.min(...xs)
+                            const maxX = Math.max(...xs)
+                            const minY = Math.min(...ys)
+                            const maxY = Math.max(...ys)
+
+                            // World-space center of the bounds
+                            const centerWorldX = (minX + maxX) / 2
+                            const centerWorldY = (minY + maxY) / 2
+
+                            // Determine if this area contains effectively a single point
+                            const isPoint = (maxX - minX) < 2 && (maxY - minY) < 2
+
+                            let x, y, width, height
+                            if (isPoint) {
+                                // Expand to a reasonable square so the station sits centered
+                                const displaySize = Math.min(220, Math.max(80, Math.min(containerWidth, containerHeight) * 0.18))
+                                width = displaySize
+                                height = displaySize
+                                x = centerWorldX - width / 2 - centerPixel.x + containerWidth / 2
+                                y = centerWorldY - height / 2 - centerPixel.y + containerHeight / 2
+                            } else {
+                                x = minX - centerPixel.x + containerWidth / 2
+                                y = minY - centerPixel.y + containerHeight / 2
+                                width = Math.max(2, maxX - minX)
+                                height = Math.max(2, maxY - minY)
+                            }
+
+                            // Outside dimming rectangles (top, left, right, bottom)
+                            const topH = Math.max(0, y)
+                            const leftW = Math.max(0, x)
+                            const rightW = Math.max(0, containerWidth - (x + width))
+                            const bottomH = Math.max(0, containerHeight - (y + height))
+
+                            return (
+                                <g>
+                                    <rect x={0} y={0} width={containerWidth} height={topH} fill={selectedArea ? "rgba(0,0,0,0.56)" : "rgba(0,0,0,0.36)"} />
+                                    <rect x={0} y={y} width={leftW} height={height} fill={selectedArea ? "rgba(0,0,0,0.56)" : "rgba(0,0,0,0.36)"} />
+                                    <rect x={x + width} y={y} width={rightW} height={height} fill={selectedArea ? "rgba(0,0,0,0.56)" : "rgba(0,0,0,0.36)"} />
+                                    <rect x={0} y={y + height} width={containerWidth} height={bottomH} fill={selectedArea ? "rgba(0,0,0,0.56)" : "rgba(0,0,0,0.36)"} />
+
+                                    {/* inner clear frame stroke */}
+                                    <rect
+                                        x={x}
+                                        y={y}
+                                        width={width}
+                                        height={height}
+                                        rx={8}
+                                        ry={8}
+                                        fill="transparent"
+                                        stroke="#3EB181"
+                                        strokeWidth={2}
+                                    />
+
+                                    {/* Close (X) button */}
+                                    {(() => {
+                                        const btnSize = 18
+                                        const padding = 8
+                                        // place button just outside the top-right of the frame
+                                        let btnX = x + width + padding
+                                        // keep inside container if near edge
+                                        btnX = Math.min(btnX, containerWidth - btnSize - padding)
+                                        const btnY = y - btnSize / 2
+                                        const cx = btnX + btnSize / 2
+                                        const cy = btnY + btnSize / 2
+                                        return (
+                                            <g
+                                                pointerEvents="all"
+                                                style={{ cursor: 'pointer' }}
+                                                onClick={() => {
+                                                    setAreaBounds(null)
+                                                    setSelectedArea(null)
+                                                }}
+                                            >
+                                                <circle
+                                                    cx={cx}
+                                                    cy={cy}
+                                                    r={btnSize / 2}
+                                                    fill="transparent"
+                                                    stroke="rgba(255,255,255,0.08)"
+                                                />
+                                                <g transform={`translate(${cx}, ${cy})`}>
+                                                    <line x1={-4} y1={-4} x2={4} y2={4} stroke="#FFFFFF" strokeWidth={1.4} strokeLinecap="round" />
+                                                    <line x1={4} y1={-4} x2={-4} y2={4} stroke="#FFFFFF" strokeWidth={1.4} strokeLinecap="round" />
+                                                </g>
+                                            </g>
+                                        )
+                                    })()}
+                                </g>
+                            )
+                        } catch (err) {
+                            return null
+                        }
+                    })()}
                 </svg>
             )}
 
@@ -1107,11 +1520,27 @@ function GisMap(props: GisMapProps) {
                         stationPixel.x - centerPixel.x + containerWidth / 2
                     const offsetY =
                         stationPixel.y - centerPixel.y + containerHeight / 2
-                    const isHovered = hoveredStation === index
-                    const stationColor = station.lineColor || "#E91E63"
+                                        const isHovered = hoveredStation === index
+                                        const stationColor = station.lineColor || "#E91E63"
+                                        const isOutside = areaBounds
+                                                ? station.lat < areaBounds.minLat ||
+                                                    station.lat > areaBounds.maxLat ||
+                                                    station.lng < areaBounds.minLng ||
+                                                    station.lng > areaBounds.maxLng
+                                                : false
+                                        const effectiveBorderColor = isOutside ? "#9CA3AF" : stationColor
+                                        const effectiveBg = isOutside ? "#FFFFFF" : "#FFFFFF"
+                                        const effectiveLabelBg = isOutside ? "#F1F5F9" : stationColor
+                                        const effectiveLabelColor = isOutside ? "#6b7280" : "#FFFFFF"
+                                        const effectiveShadow = isOutside
+                                                ? "0 1px 4px rgba(0,0,0,0.06)"
+                                                : isHovered
+                                                ? `0 0 20px ${stationColor}80, 0 4px 12px rgba(0,0,0,0.2)`
+                                                : `0 0 8px ${stationColor}40, 0 2px 6px rgba(0,0,0,0.1)`
                     const stationKey = `${station.lat.toFixed(4)},${station.lng.toFixed(4)}`
                     const isTransferStation = transferStations.has(stationKey)
                     const isAnimating = animatingStationIndex === index
+                    const hasDetail = station.isDetail !== false
 
                     return (
                         <div
@@ -1146,10 +1575,10 @@ function GisMap(props: GisMapProps) {
                                         left: 0,
                                         top: 0,
                                         transform: "translate(-50%, -50%)",
-                                        width: 20 + circleAnimation * 60,
-                                        height: 20 + circleAnimation * 60,
+                                        width: (hasDetail ? 12 : 8) + circleAnimation * (hasDetail ? 40 : 28),
+                                        height: (hasDetail ? 12 : 8) + circleAnimation * (hasDetail ? 40 : 28),
                                         borderRadius: "50%",
-                                        border: `${4 - circleAnimation * 3}px solid ${stationColor}`,
+                                        border: `${Math.max(1, (hasDetail ? 3 : 2) - circleAnimation * (hasDetail ? 2 : 1.5))}px solid ${stationColor}`,
                                         opacity: 1 - circleAnimation,
                                         pointerEvents: "none",
                                         transition: "all 0.05s linear",
@@ -1169,19 +1598,18 @@ function GisMap(props: GisMapProps) {
                                 {isTransferStation ? (
                                     <div
                                         style={{
-                                            width: currentZoom < 12 ? 16 : 24,
-                                            height: currentZoom < 12 ? 16 : 24,
+                                            width: hasDetail ? (currentZoom < 12 ? 16 : 24) : (currentZoom < 12 ? 10 : 14),
+                                            height: hasDetail ? (currentZoom < 12 ? 16 : 24) : (currentZoom < 12 ? 10 : 14),
                                             borderRadius: "50%",
-                                            backgroundColor: "#9E9E9E",
+                                            backgroundColor: isOutside ? "#E9ECEF" : "#9E9E9E",
                                             display: "flex",
                                             alignItems: "center",
                                             justifyContent: "center",
-                                            boxShadow: isHovered
-                                                ? "0 0 20px rgba(158, 158, 158, 0.8), 0 4px 12px rgba(0,0,0,0.2)"
-                                                : "0 0 8px rgba(158, 158, 158, 0.4), 0 2px 6px rgba(0,0,0,0.1)",
+                                            boxShadow: effectiveShadow,
+                                            opacity: isOutside ? 0.7 : 1,
                                             transition: "all 0.3s ease",
                                             transform: isHovered
-                                                ? "scale(1.4)"
+                                                ? "scale(1.25)"
                                                 : "scale(1)",
                                             position: "relative",
                                         }}
@@ -1208,8 +1636,8 @@ function GisMap(props: GisMapProps) {
                                         </div>
                                         */}
                                         <svg
-                                            width={currentZoom < 12 ? "10" : "14"}
-                                            height={currentZoom < 12 ? "10" : "14"}
+                                            width={hasDetail ? (currentZoom < 12 ? "8" : "12") : (currentZoom < 12 ? "6" : "8")}
+                                            height={hasDetail ? (currentZoom < 12 ? "8" : "12") : (currentZoom < 12 ? "6" : "8")}
                                             viewBox="0 0 24 24"
                                             fill="none"
                                             stroke="#FFFFFF"
@@ -1226,46 +1654,46 @@ function GisMap(props: GisMapProps) {
                                 ) : (
                                     <div
                                         style={{
-                                            width: currentZoom < 12 ? 12 : 16,
-                                            height: currentZoom < 12 ? 16 : 16,
+                                            width: hasDetail ? (currentZoom < 12 ? 8 : 12) : (currentZoom < 12 ? 6 : 8),
+                                            height: hasDetail ? (currentZoom < 12 ? 10 : 12) : (currentZoom < 12 ? 6 : 8),
                                             borderRadius: "50%",
-                                            backgroundColor: "#FFFFFF",
-                                            border: `${currentZoom < 12 ? 2 : 3}px solid ${stationColor}`,
-                                            boxShadow: isHovered
-                                                ? `0 0 20px ${stationColor}80, 0 4px 12px rgba(0,0,0,0.2)`
-                                                : `0 0 8px ${stationColor}40, 0 2px 6px rgba(0,0,0,0.1)`,
+                                            backgroundColor: hasDetail ? effectiveBg : stationColor,
+                                            border: hasDetail ? `${currentZoom < 12 ? 1 : 2}px solid ${effectiveBorderColor}` : "none",
+                                            boxShadow: effectiveShadow,
+                                            opacity: isOutside ? 0.75 : 1,
                                             transition: "all 0.3s ease",
                                             transform: isHovered
-                                                ? "scale(1.4)"
+                                                ? "scale(1.15)"
                                                 : "scale(1)",
                                         }}
                                     />
                                 )}
 
-                                {currentZoom >= 12 && (
+                                {currentZoom >= 12 && !isOutside && (hasDetail || currentZoom >= 14) && (
                                     <div
                                         style={{
                                             position: "absolute",
-                                            top: 24,
+                                            top: 18,
                                             left: "50%",
                                             transform: "translateX(-50%)",
-                                            backgroundColor: stationColor,
-                                            color: "#FFFFFF",
+                                            backgroundColor: effectiveLabelBg,
+                                            color: effectiveLabelColor,
                                             padding: "4px 8px",
                                             borderRadius: 4,
                                             fontSize:
                                                 currentZoom >= 14
-                                                    ? 11
+                                                    ? 10
                                                     : currentZoom > 12
-                                                      ? 11 *
+                                                      ? 10 *
                                                         ((currentZoom - 12) / 2)
                                                       : 0,
                                             fontWeight: 600,
                                             whiteSpace: "nowrap",
                                             overflow: "hidden",
                                             textOverflow: "ellipsis",
-                                            boxShadow:
-                                                "0 2px 8px rgba(0,0,0,0.15)",
+                                            boxShadow: isOutside
+                                                ? "0 1px 4px rgba(0,0,0,0.06)"
+                                                : "0 2px 6px rgba(0,0,0,0.12)",
                                             opacity:
                                                 currentZoom >= 14
                                                     ? 1
@@ -1338,29 +1766,31 @@ function GisMap(props: GisMapProps) {
                                         >
                                             {station.line}
                                         </div>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                navigateToStation(station)
-                                            }}
-                                            style={{
-                                                width: "100%",
-                                                padding: "8px 12px",
-                                                backgroundColor: stationColor,
-                                                color: "#FFFFFF",
-                                                border: "none",
-                                                borderRadius: 6,
-                                                fontSize: 13,
-                                                fontWeight: 600,
-                                                cursor: "pointer",
-                                                transition: "all 0.2s ease",
-                                                boxShadow: `0 2px 8px ${stationColor}40`,
-                                            }}
-                                        >
-                                            {language === "en"
-                                                ? "View Details"
-                                                : "查看详情"}
-                                        </button>
+                                        {hasDetail && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    navigateToStation(station)
+                                                }}
+                                                style={{
+                                                    width: "100%",
+                                                    padding: "8px 12px",
+                                                    backgroundColor: stationColor,
+                                                    color: "#FFFFFF",
+                                                    border: "none",
+                                                    borderRadius: 6,
+                                                    fontSize: 13,
+                                                    fontWeight: 600,
+                                                    cursor: "pointer",
+                                                    transition: "all 0.2s ease",
+                                                    boxShadow: `0 2px 8px ${stationColor}40`,
+                                                }}
+                                            >
+                                                {language === "en"
+                                                    ? "View Details"
+                                                    : "查看详情"}
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -1384,7 +1814,7 @@ function GisMap(props: GisMapProps) {
                     style={{
                         padding: "8px 16px",
                         backgroundColor:
-                            language === "en" ? "#2196F3" : "#FFFFFF",
+                            language === "en" ? "#3EB181" : "#FFFFFF",
                         color: language === "en" ? "#FFFFFF" : "#333",
                         border:
                             language === "en" ? "none" : "1px solid #e0e0e0",
@@ -1403,7 +1833,7 @@ function GisMap(props: GisMapProps) {
                     style={{
                         padding: "8px 16px",
                         backgroundColor:
-                            language === "zh" ? "#2196F3" : "#FFFFFF",
+                            language === "zh" ? "#3EB181" : "#FFFFFF",
                         color: language === "zh" ? "#FFFFFF" : "#333",
                         border:
                             language === "zh" ? "none" : "1px solid #e0e0e0",
@@ -1449,6 +1879,55 @@ function GisMap(props: GisMapProps) {
                 </div>
             )}
 
+            {/* ========== COMPONENT: Map Style Selector (bottom-right, compact) ========== */}
+            <div
+                style={{
+                    position: "absolute",
+                    bottom: 60,
+                    right: 50,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                    zIndex: 1000,
+                    pointerEvents: "auto",
+                    alignItems: 'center'
+                }}
+            >
+                {['streets', 'satellite', 'terrain'].map((style) => (
+                    <button
+                        key={style}
+                        onClick={() => startTransition(() => setCurrentMapStyle(style as any))}
+                        onMouseEnter={() => startTransition(() => setHoveredMapStyle(style))}
+                        onMouseLeave={() => startTransition(() => setHoveredMapStyle(null))}
+                        aria-label={style}
+                        title={style}
+                        style={{
+                            width: hoveredMapStyle === style ? 40 : 36,
+                            height: hoveredMapStyle === style ? 40 : 36,
+                            borderRadius: 999,
+                            border: currentMapStyle === style ? "3px solid #3EB181" : "2px solid rgba(0,0,0,0.06)",
+                            background: 'rgba(255,255,255,0.95)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0,
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                borderRadius: 999,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                backgroundImage: `url(${tileUrls[style as keyof typeof tileUrls].replace("{z}", "12").replace("{x}", "3423").replace("{y}", "1790")})`
+                            }}
+                        />
+                    </button>
+                ))}
+            </div>
+
             {/* ========== COMPONENT: Component Container Frame ========== */}
             <div
                 style={{
@@ -1466,21 +1945,108 @@ function GisMap(props: GisMapProps) {
                 }}
             >
                 {/* ========== COMPONENT: Search Bar ========== */}
-                <div style={{ position: "relative", width: 400, pointerEvents: "auto" }}>
+                <div style={{ position: "relative", width: 860 * mapScale, maxWidth: showDetailPanel && !isFullWidth ? `calc((100vw - 160px) * ${mapScale})` : "calc(100vw - 160px)", pointerEvents: "auto" }}>
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={language === "en" ? "Search metro stations..." : "搜索地铁站..."}
-                        className="w-full pl-4 pr-10 py-3 rounded-full border-none shadow-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 bg-white/95 focus:bg-white transition-all outline-none"
+                        style={{
+                            width: "100%",
+                            padding: "12px 44px 12px 16px",
+                            borderRadius: 999,
+                            border: "1px solid rgba(42,56,62,0.06)",
+                            backgroundColor: "rgba(255,255,255,0.78)",
+                            color: "#2A383E",
+                            fontSize: 15,
+                            fontWeight: 600,
+                            outline: "none",
+                            backdropFilter: "blur(8px)",
+                            WebkitBackdropFilter: "blur(8px)",
+                        }}
                     />
-                    <svg
-                        style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-                        width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                    >
-                        <circle cx="11" cy="11" r="8" />
-                        <path d="M21 21-4.35-4.35" />
-                    </svg>
+
+                    {/* ========== COMPONENT: Areas Menu (centered below search) ========== */}
+                    <div style={{ marginTop: 12, display: "flex", justifyContent: "center", pointerEvents: "auto", width: "100%" }}>
+                            <div
+                            ref={areaMenuRef}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onMouseMove={(e) => e.stopPropagation()}
+                            onMouseUp={(e) => e.stopPropagation()}
+                            onTouchEnd={(e) => e.stopPropagation()}
+                            onTouchMove={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => {
+                                e.stopPropagation()
+                                setIsUserScrolling(true)
+                                clearResumeTimer()
+                            }}
+                            onWheel={(e) => {
+                                e.stopPropagation();
+                                // Scroll the area menu horizontally with wheel and treat as user interaction
+                                const el = e.currentTarget as HTMLDivElement;
+                                el.scrollLeft += e.deltaY;
+                                setIsUserScrolling(true)
+                                startResumeTimer()
+                            }}
+                            onScroll={() => {
+                                setIsUserScrolling(true)
+                                startResumeTimer()
+                            }}
+                            onPointerDown={() => {
+                                setIsUserScrolling(true)
+                                clearResumeTimer()
+                            }}
+                            style={{
+                                width: 980 * mapScale,
+                                maxWidth: showDetailPanel && !isFullWidth ? `calc((100vw - 80px) * ${mapScale})` : "calc(100vw - 80px)",
+                                overflowX: "auto",
+                                display: "flex",
+                                gap: 8,
+                                padding: "8px",
+                                backgroundColor: "transparent",
+                                backdropFilter: "none",
+                                WebkitBackdropFilter: "none",
+                                border: "none",
+                                borderRadius: 12,
+                                boxShadow: "none",
+                                touchAction: "pan-y",
+                                // Thin transparent scrollbar where supported
+                                scrollbarWidth: "thin",
+                                scrollbarColor: "transparent transparent",
+                            }}
+                        >
+                            {areaList.map((area) => (
+                                <button
+                                    key={area}
+                                    onClick={() => {
+                                        // Pause auto-scroll immediately when user activates a button
+                                        setIsUserScrolling(true)
+                                        clearResumeTimer()
+                                        // select area and fit
+                                        setSelectedArea(area)
+                                        fitArea(area)
+                                    }}
+                                    style={{
+                                        flex: "0 0 auto",
+                                        padding: "8px 12px",
+                                        // Active state when explicitly selected via the area button
+                                        backgroundColor: selectedArea === area ? "#3EB181" : (searchQuery === area ? "rgba(62,177,129,0.08)" : "rgba(255,255,255,0.72)"),
+                                        color: selectedArea === area ? "#FFFFFF" : "#2A383E",
+                                        border: selectedArea === area ? "1px solid rgba(255,255,255,0.08)" : (searchQuery === area ? "1px solid rgba(62,177,129,0.12)" : "1px solid rgba(42,56,62,0.06)"),
+                                        backdropFilter: "blur(8px)",
+                                        WebkitBackdropFilter: "blur(8px)",
+                                        borderRadius: 999,
+                                        fontSize: 13,
+                                        fontWeight: 600,
+                                        cursor: "pointer",
+                                        boxShadow: selectedArea === area ? "0 12px 36px rgba(62,177,129,0.16)" : (searchQuery === area ? "0 8px 24px rgba(62,177,129,0.08)" : "0 4px 12px rgba(0,0,0,0.06)"),
+                                    }}
+                                >
+                                    {area}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
                     {/* Search Results Dropdown */}
                     {showSearchResults && searchResults.length > 0 && (
@@ -1513,66 +2079,42 @@ function GisMap(props: GisMapProps) {
                     )}
                 </div>
 
-                {/* ========== COMPONENT: Map Style Selector ========== */}
-                <div style={{ display: "flex", gap: 8, pointerEvents: "auto" }}>
-                    {["streets", "satellite", "terrain"].map((style) => (
-                        <div key={style} className="flex flex-col items-center gap-1.5 relative group">
-                            <button
-                                onClick={() => startTransition(() => setCurrentMapStyle(style as any))}
-                                onMouseEnter={() => startTransition(() => setHoveredMapStyle(style))}
-                                onMouseLeave={() => startTransition(() => setHoveredMapStyle(null))}
-                                style={{
-                                    width: hoveredMapStyle === style ? 50 : 40,
-                                    height: hoveredMapStyle === style ? 50 : 40,
-                                    border: currentMapStyle === style ? "3px solid #2196F3" : "2px solid rgba(0,0,0,0.1)",
-                                }}
-                                className="rounded-full bg-white/60 flex items-center justify-center overflow-hidden p-0 transition-all duration-300 relative"
-                            >
-                                <div
-                                    className="w-full h-full bg-cover bg-center rounded-full"
-                                    style={{
-                                        backgroundImage: `url(${tileUrls[style as keyof typeof tileUrls].replace("{z}", "12").replace("{x}", "3423").replace("{y}", "1790")})`
-                                    }}
-                                />
-                            </button>
-                            <div className="text-[10px] font-semibold text-black bg-white/90 px-2 py-1 rounded-md shadow-sm capitalize">
-                                {style}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                {/* Map Style Selector moved near zoom controls */}
             </div>
 
             {/* ========== COMPONENT: METRO SYSTEM Title ========== */}
             <div
-                style={{
-                    position: "absolute",
-                    bottom: 150,
-                    left: 50,
-                    fontSize: 96,
-                    fontWeight: 900,
-                    fontFamily: language === "zh" ? "'Noto Sans SC', sans-serif" : "Inter",
-                    color: currentMapStyle === "satellite" ? "#FFFFFF" : "#1a1a1a",
-                    letterSpacing: "0.05em",
-                    pointerEvents: "none",
-                    zIndex: 1000,
-                    lineHeight: language === "zh" ? "1em" : "0.85em",
-                    textRendering: "optimizeLegibility",
-                }}
-            >
-                {language === "zh" ? (
-                    <div>地铁系统</div>
-                ) : (
-                    <>
-                        <div>METRO</div>
-                        <div>SYSTEM</div>
-                    </>
-                )}
-            </div>
+    style={{
+        position: "absolute",
+        bottom: 150,
+        left: 50,
+        fontSize: 96,
+        fontWeight: 900,
+        fontFamily: language === "zh" ? "'Noto Sans SC', sans-serif" : "Inter",
+        color: selectedArea ? "#FFFFFF" : "#2A383E",
+        letterSpacing: "0.05em",
+        pointerEvents: "none",
+        zIndex: 1000,
+        lineHeight: language === "zh" ? "1em" : "0.85em",
+        textRendering: "optimizeLegibility",
+        backdropFilter: "blur(0.5px)", // Optional: adds subtle blur effect
+        WebkitBackdropFilter: "blur(0.5px)", // For Safari
+        textShadow: selectedArea ? "0 6px 20px rgba(0,0,0,0.45)" : "0 1px 6px rgba(0,0,0,0.06)",
+    }}
+>
+    {language === "zh" ? (
+        <div>地铁系统</div>
+    ) : (
+        <>
+            <div>Shenzhen</div>
+            <div>Subway</div>
+        </>
+    )}
+</div>
 
             {/* ========== COMPONENT: Legend Window ========== */}
             {showLegend && showMetroStations && uniqueLines.length > 0 && showLegendWindow && (
-                <div className="absolute top-1/2 right-5 -translate-y-1/2 bg-white rounded-xl p-5 shadow-xl z-50 min-w-[200px] max-w-sm">
+                <div className="absolute top-1/2 -translate-y-1/2 bg-white rounded-xl p-5 shadow-xl z-50 min-w-[200px] max-w-sm" style={{ right: 50 }}>
                     <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
                         <div className="font-bold text-gray-900">{language === "en" ? "Metro Lines" : "地铁线路"}</div>
                         <button 
@@ -1606,53 +2148,170 @@ function GisMap(props: GisMapProps) {
                                 </div>
                             )
                         })}
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+    
+            {/* Duplicate horizontal area menu removed - use central menu only */}
 
             {/* ========== COMPONENT: Legend Toggle Button ========== */}
             {showLegend && showMetroStations && uniqueLines.length > 0 && !showLegendWindow && (
                 <button
                     onClick={() => startTransition(() => setShowLegendWindow(true))}
-                    className="absolute top-1/2 right-5 -translate-y-1/2 w-20 h-20 rounded-full bg-white/95 shadow-lg flex items-center justify-center text-xs font-semibold text-gray-800 hover:scale-110 transition-transform z-50 p-2 text-center"
+                    className="absolute top-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-white/95 shadow-lg flex items-center justify-center text-xs font-semibold text-gray-800 hover:scale-110 transition-transform z-50 p-2 text-center"
                     title="Show Metro Lines"
+                    style={{ right: 50 }}
                 >
                     {language === "en" ? "Lines" : "线路"}
                 </button>
             )}
 
+            </div>
+
             {/* ========== COMPONENT: Side Panel for CMS Content ========== */}
             {showDetailPanel && (
-                <div
-                    style={{ width: isFullWidth ? "100%" : "33.33%" }}
-                    className="absolute top-0 right-0 h-full bg-white shadow-2xl z-[5000] flex flex-col transition-[width] duration-300 ease-in-out"
-                >
-                    <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
-                        <div className="flex gap-2">
+                // External controls: when details are full-width, place the two-button
+                // stack inside a left-centered white frame with asymmetric curvy corners.
+                (isFullWidth) ? (
+                    <div
+                        style={{
+                            position: 'fixed',
+                            left: 0,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            zIndex: 7000,
+                            pointerEvents: 'auto',
+                        }}
+                    >
+                        <div
+                            style={{
+                                background: 'rgba(255,255,255,0.64)',
+                                backdropFilter: 'blur(6px)',
+                                WebkitBackdropFilter: 'blur(6px)',
+                                padding: '6px 8px',
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                                borderRadius: '0 18px 18px 0',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 8,
+                                alignItems: 'center',
+                            }}
+                        >
                             <button
-                                onClick={() => startTransition(() => setIsFullWidth(!isFullWidth))}
-                                className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+                                onClick={() => startTransition(() => setIsFullWidth((s) => !s))}
+                                aria-label={language === 'en' ? (isFullWidth ? 'Collapse details' : 'Expand details') : (isFullWidth ? '收起详情' : '展开详情')}
+                                title={language === 'en' ? (isFullWidth ? 'Collapse' : 'Expand') : (isFullWidth ? '收起' : '展开')}
+                                style={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: 999,
+                                    background: 'transparent',
+                                    border: 'none',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: '#111111'
+                                }}
                             >
-                                {isFullWidth ? (
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 21 3 21 3 15" /><polyline points="15 3 21 3 21 9" /><line x1="3" y1="21" x2="10" y2="14" /><line x1="21" y1="3" x2="14" y2="10" /></svg>
-                                ) : (
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" /><line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" /></svg>
-                                )}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" /><line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" /></svg>
+                            </button>
+
+                            <button
+                                onClick={() => startTransition(() => { setShowDetailPanel(false); setIsFullWidth(false); setCmsUrl('') })}
+                                aria-label={language === 'en' ? 'Close details' : '关闭详情'}
+                                title={language === 'en' ? 'Close' : '关闭'}
+                                style={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: 999,
+                                    background: 'transparent',
+                                    border: 'none',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: '#111111'
+                                }}
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
                             </button>
                         </div>
+                    </div>
+                ) : (
+                    // original right-side stack when not full-width
+                    <div
+                        style={{
+                            position: 'absolute',
+                            right: 'calc(33.3333333% + 10px)',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 8,
+                            alignItems: 'center',
+                            zIndex: 7000,
+                            pointerEvents: 'auto',
+                        }}
+                    >
                         <button
-                            onClick={() => startTransition(() => { setShowDetailPanel(false); setIsFullWidth(false); setCmsUrl("") })}
-                            className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+                            onClick={() => startTransition(() => setIsFullWidth((s) => !s))}
+                            aria-label={language === 'en' ? (isFullWidth ? 'Collapse details' : 'Expand details') : (isFullWidth ? '收起详情' : '展开详情')}
+                            title={language === 'en' ? (isFullWidth ? 'Collapse' : 'Expand') : (isFullWidth ? '收起' : '展开')}
+                            style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 999,
+                                background: isFullWidth ? '#FFFFFF' : '#111111',
+                                border: isFullWidth ? '1px solid rgba(0,0,0,0.06)' : 'none',
+                                boxShadow: isFullWidth ? '0 6px 18px rgba(0,0,0,0.12)' : '0 6px 18px rgba(0,0,0,0.24)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: isFullWidth ? '#111111' : '#FFFFFF'
+                            }}
                         >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={isFullWidth ? '#111111' : '#FFFFFF'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" /><line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" /></svg>
+                        </button>
+
+                        <button
+                            onClick={() => startTransition(() => { setShowDetailPanel(false); setIsFullWidth(false); setCmsUrl('') })}
+                            aria-label={language === 'en' ? 'Close details' : '关闭详情'}
+                            title={language === 'en' ? 'Close' : '关闭'}
+                            style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 999,
+                                background: isFullWidth ? '#FFFFFF' : '#111111',
+                                border: isFullWidth ? '1px solid rgba(0,0,0,0.06)' : 'none',
+                                boxShadow: isFullWidth ? '0 6px 18px rgba(0,0,0,0.12)' : '0 6px 18px rgba(0,0,0,0.24)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: isFullWidth ? '#111111' : '#FFFFFF'
+                            }}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={isFullWidth ? '#111111' : '#FFFFFF'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
                         </button>
                     </div>
+                )
+            )}
+
+            {showDetailPanel && (
+                <div
+                    style={{ width: isFullWidth ? "100%" : "33.3333333%" }}
+                    className="absolute top-0 right-0 h-full bg-white shadow-2xl z-[5000] flex flex-col transition-[width] duration-300 ease-in-out"
+                >
+                    {/* topbar removed per UX request */}
 
                     <div className="flex-1 relative w-full h-full">
                          <iframe
                             src={cmsUrl}
                             className="w-full h-full border-0"
                             title="Station Details"
+                            style={{ zIndex: 6000, position: "relative" }}
                         />
                     </div>
                 </div>

@@ -16,6 +16,9 @@ export interface MetroStation {
     info: string
     lineColor?: string
     isTransfer?: boolean
+    isDetail?: boolean
+    area?: string
+    areaCn?: string
     routes?: Array<{
         toStation: string
         coordinates: Array<{ lat: number; lng: number }>
@@ -54,4 +57,7 @@ export interface GisMapProps {
     mapHue?: number
     defaultLanguage?: "en" | "zh"
     routesJson?: string
+    modernPlain?: boolean
+    plainTint?: string
+    monochrome?: boolean
 }
