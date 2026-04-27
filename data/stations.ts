@@ -1,6 +1,17 @@
 import { MetroStation } from '../types';
 
-export const STATIONS: MetroStation[] = [
+/*
+  data/stations.ts
+  - Static station list used by the map and list pages.
+  - Edit station objects here. Important fields:
+    * `lat`, `lng` — geographic coordinates
+    * `name`, `nameCn` — English and Chinese labels
+    * `isDetail` — set to true to enable a station detail page
+    * `area` / `areaPageKey` — link stations to area pages
+  - This file exports `RAW_STATIONS` which is consumed by the map component.
+*/
+
+const RAW_STATIONS: MetroStation[] = [
   {
     "lat": 22.5333117,
     "lng": 114.1131787,
@@ -252,7 +263,8 @@ export const STATIONS: MetroStation[] = [
     "isTransfer": false,
     "isDetail": true,
     "area": "Qianhaiwan area",
-    "areaCn": "前海湾片区"
+    "areaCn": "前海湾片区",
+    "areaPageKey": "qianhaiwan-area"
   },
   {
     "lat": 22.5403059,
@@ -265,7 +277,8 @@ export const STATIONS: MetroStation[] = [
     "isTransfer": false,
     "isDetail": true,
     "area": "Qianhaiwan area",
-    "areaCn": "前海湾片区"
+    "areaCn": "前海湾片区",
+    "areaPageKey": "qianhaiwan-area"
   },
   {
     "lat": 22.550747,
@@ -913,7 +926,8 @@ export const STATIONS: MetroStation[] = [
     "isTransfer": false,
     "isDetail": true,
     "area": "Shuibei-Tianbei area",
-    "areaCn": "水贝-田贝片区"
+    "areaCn": "水贝-田贝片区",
+    "areaPageKey": "shuibei-area"
   },
   {
     "lat": 22.5768941,
@@ -926,7 +940,8 @@ export const STATIONS: MetroStation[] = [
     "isTransfer": false,
     "isDetail": true,
     "area": "Shuibei-Tianbei area",
-    "areaCn": "水贝-田贝片区"
+    "areaCn": "水贝-田贝片区",
+    "areaPageKey": "shuibei-area"
   },
   {
     "lat": 22.5870347,
@@ -1502,7 +1517,8 @@ export const STATIONS: MetroStation[] = [
     "isTransfer": false,
     "isDetail": true,
     "area": "Qianhaiwan area",
-    "areaCn": "前海湾片区"
+    "areaCn": "前海湾片区",
+    "areaPageKey": "qianhaiwan-area"
   },
   {
     "lat": 22.5197971,
@@ -1515,7 +1531,8 @@ export const STATIONS: MetroStation[] = [
     "isTransfer": false,
     "isDetail": true,
     "area": "Qianhaiwan area",
-    "areaCn": "前海湾片区"
+    "areaCn": "前海湾片区",
+    "areaPageKey": "qianhaiwan-area"
   },
   {
     "lat": 22.5248447,
@@ -1528,7 +1545,8 @@ export const STATIONS: MetroStation[] = [
     "isTransfer": false,
     "isDetail": true,
     "area": "Qianhaiwan area",
-    "areaCn": "前海湾片区"
+    "areaCn": "前海湾片区",
+    "areaPageKey": "qianhaiwan-area"
   },
   {
     "lat": 22.5344306,
@@ -1541,7 +1559,8 @@ export const STATIONS: MetroStation[] = [
     "isTransfer": false,
     "isDetail": true,
     "area": "Qianhaiwan area",
-    "areaCn": "前海湾片区"
+    "areaCn": "前海湾片区",
+    "areaPageKey": "qianhaiwan-area"
   },
   {
     "lat": 22.5403059,
@@ -1554,7 +1573,8 @@ export const STATIONS: MetroStation[] = [
     "isTransfer": false,
     "isDetail": true,
     "area": "Qianhaiwan area",
-    "areaCn": "前海湾片区"
+    "areaCn": "前海湾片区",
+    "areaPageKey": "qianhaiwan-area"
   },
   {
     "lat": 22.5472917,
@@ -2482,7 +2502,8 @@ export const STATIONS: MetroStation[] = [
     "isTransfer": false,
     "isDetail": true,
     "area": "Shuibei-Tianbei area",
-    "areaCn": "水贝-田贝片区"
+    "areaCn": "水贝-田贝片区",
+    "areaPageKey": "shuibei-area"
   },
   {
     "lat": 22.5699902,
@@ -2495,7 +2516,8 @@ export const STATIONS: MetroStation[] = [
     "isTransfer": false,
     "isDetail": true,
     "area": "Shuibei-Tianbei area",
-    "areaCn": "水贝-田贝片区"
+    "areaCn": "水贝-田贝片区",
+    "areaPageKey": "shuibei-area"
   },
   {
     "lat": 22.576969,
@@ -2635,7 +2657,8 @@ export const STATIONS: MetroStation[] = [
     "isTransfer": false,
     "isDetail": true,
     "area": "Qianhaiwan area",
-    "areaCn": "前海湾片区"
+    "areaCn": "前海湾片区",
+    "areaPageKey": "qianhaiwan-area"
   },
   {
     "lat": 22.5221008,
@@ -3377,7 +3400,8 @@ export const STATIONS: MetroStation[] = [
     "isTransfer": false,
     "isDetail": true,
     "area": "Qianhaiwan area",
-    "areaCn": "前海湾片区"
+    "areaCn": "前海湾片区",
+    "areaPageKey": "qianhaiwan-area"
   },
   {
     "lat": 22.5577281,
@@ -4742,4 +4766,24 @@ export const STATIONS: MetroStation[] = [
     "isTransfer": false,
     "isDetail": false
   }
-]
+];
+
+function createAreaPageKey(areaName: string) {
+  return areaName
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+export const STATIONS: MetroStation[] = RAW_STATIONS.map((station) => {
+  if (!station.isDetail || station.areaPageKey || !station.area) {
+    return station;
+  }
+
+  return {
+    ...station,
+    areaPageKey: createAreaPageKey(station.area),
+  };
+});

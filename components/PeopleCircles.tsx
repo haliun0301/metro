@@ -2,6 +2,8 @@ import { useMemo, useState, startTransition, useEffect, useRef, useCallback, typ
 import { motion } from "framer-motion"
 import { PeopleData } from "../data/people"
 
+const CURRENT_YEAR = 2026
+
 interface ResponsiveImage {
     src: string
     srcSet?: string
@@ -9,7 +11,10 @@ interface ResponsiveImage {
 }
 
 export interface Person {
+    id?: string
     name: string
+    nickname: string
+    nicknameCn: string
     profileUrl: string
     image?: ResponsiveImage
     gender?: "male" | "female"
@@ -19,6 +24,8 @@ export interface Person {
     shenzhenBorn?: boolean
     yearOfResidence?: number
     imageFile?: string
+    occupationCn?: string
+    occupation?: string
 }
 
 export const defaultPeople: Person[] = PeopleData as Person[]
@@ -78,9 +85,27 @@ export interface PeopleCirclesProps {
     selectedGender?: "any" | "male" | "female"
     selectedShenzhenBorn?: "any" | "yes" | "no"
     density?: number
+    sizeMode?: "uniform" | "age" | "residence"
 }
 
-const MAX_CIRCLES = 96
+const MAX_CIRCLES = 111
+
+function clamp(value: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, value))
+}
+
+function getResidenceYears(person: Person): number | null {
+    if (typeof person.yearOfBirth !== "number") return null
+    if (typeof person.yearOfResidence === "number") {
+        return Math.max(0, CURRENT_YEAR - person.yearOfResidence)
+    }
+    if (person.yearOfResidence === null || typeof person.yearOfResidence === "undefined") {
+        if (person.shenzhenBorn === true) {
+            return Math.max(0, CURRENT_YEAR - person.yearOfBirth)
+        }
+    }
+    return null
+}
 
 export default function PeopleCircles({
     people = defaultPeople,
@@ -100,6 +125,7 @@ export default function PeopleCircles({
     selectedGender = "any",
     selectedShenzhenBorn = "any",
     density = 100,
+    sizeMode = "uniform",
 }: PeopleCirclesProps) {
     const parsedFromJson: Person[] | null = useMemo(() => {
         if (!jsonData) return null
@@ -144,6 +170,54 @@ export default function PeopleCircles({
     const circleCount = Math.min(effectivePeople.length, MAX_CIRCLES)
     const spreadRadius = 0.10 + (density / 100) * 0.35
     const adjustedCircleSize = Math.round(circleSize * (0.4 + (density / 100) * 0.6))
+
+    const sizeStats = useMemo(() => {
+        const ages = effectivePeople
+            .map((person) => (typeof person.yearOfBirth === "number" ? CURRENT_YEAR - person.yearOfBirth : null))
+            .filter((value): value is number => typeof value === "number" && Number.isFinite(value))
+
+        const residenceYears = effectivePeople
+            .map((person) => getResidenceYears(person))
+            .filter((value): value is number => typeof value === "number" && Number.isFinite(value))
+
+        return {
+            ageMin: ages.length > 0 ? Math.min(...ages) : 18,
+            ageMax: ages.length > 0 ? Math.max(...ages) : 80,
+            residenceMin: residenceYears.length > 0 ? Math.min(...residenceYears) : 0,
+            residenceMax: residenceYears.length > 0 ? Math.max(...residenceYears) : 50,
+        }
+    }, [effectivePeople])
+
+    const getCircleSize = useCallback((person?: Person) => {
+        const minSize = Math.max(16, adjustedCircleSize * 0.7)
+        const maxSize = Math.max(minSize + 8, adjustedCircleSize * 1.9)
+
+        if (!person || sizeMode === "uniform") {
+            return adjustedCircleSize
+        }
+
+        let metric: number | null = null
+        let minMetric = 0
+        let maxMetric = 1
+
+        if (sizeMode === "age") {
+            metric = typeof person.yearOfBirth === "number" ? CURRENT_YEAR - person.yearOfBirth : null
+            minMetric = sizeStats.ageMin
+            maxMetric = sizeStats.ageMax
+        } else if (sizeMode === "residence") {
+            metric = getResidenceYears(person)
+            minMetric = sizeStats.residenceMin
+            maxMetric = sizeStats.residenceMax
+        }
+
+        if (metric === null || !Number.isFinite(metric)) {
+            return adjustedCircleSize
+        }
+
+        const range = Math.max(1, maxMetric - minMetric)
+        const normalized = clamp((metric - minMetric) / range, 0, 1)
+        return Math.round(minSize + normalized * (maxSize - minSize))
+    }, [adjustedCircleSize, sizeMode, sizeStats])
 
     const circlesData = useMemo(() => {
         const items: { index: number; xPercent: number; yPercent: number }[] = []
@@ -254,16 +328,17 @@ export default function PeopleCircles({
         
         // Directly update DOM position for smooth dragging (no state update)
         const element = draggingElementRef.current
-        const size = adjustedCircleSize
+        const person = effectivePeople[draggingIndex]
+        const size = getCircleSize(person)
         element.style.left = `${xPercent}%`
         element.style.top = `${yPercent}%`
         element.style.marginLeft = `${-size / 2}px`
-        element.style.marginTop = `${-(size * 1.2) / 2}px`
+        element.style.marginTop = `${-size / 2}px`
         
         // Store the position in a ref for final state update
         dragOffsetRef.current.finalX = xPercent
         dragOffsetRef.current.finalY = yPercent
-    }, [draggingIndex, adjustedCircleSize])
+    }, [draggingIndex, effectivePeople, getCircleSize])
 
     const handleDragEnd = useCallback(() => {
         if (draggingIndex !== null && draggingElementRef.current) {
@@ -379,6 +454,19 @@ export default function PeopleCircles({
         })
     }, [])
 
+    const handlePersonNavigate = useCallback((
+        index: number,
+        personUrl: string | null,
+        e: React.MouseEvent
+    ) => {
+        handleClick(index, e)
+        if (hasDragged.current || !personUrl) {
+            return
+        }
+        e.preventDefault()
+        window.location.assign(personUrl)
+    }, [handleClick])
+
     const hoveredPerson =
         hoveredIndex !== null && hoveredIndex < effectivePeople.length
             ? effectivePeople[hoveredIndex]
@@ -414,7 +502,7 @@ export default function PeopleCircles({
                 const isHovered = hoveredIndex === circle.index && draggingIndex === null
                 const isDragging = draggingIndex === circle.index
                 const isVisited = visitedIndices.has(circle.index)
-                const size = adjustedCircleSize
+                const size = getCircleSize(person)
                 const halfSize = size / 2
 
                 const pos = getCirclePosition(circle)
@@ -443,61 +531,158 @@ export default function PeopleCircles({
                 // Determine opacity based on hover state
                 const targetOpacity = isGreyedOut ? 0.4 : 1
 
+                const personUrl = person?.id
+                    ? `https://shenzhen-subway.framer.website/individual/${person.id}`
+                    : null
+
                 return (
-                    <motion.div
-                        key={`person-${circle.index}`}
-                        ref={(el) => {
-                            if (isDragging && el) {
-                                draggingElementRef.current = el
-                            }
-                        }}
-                        layout={false}
-                        style={{
-                            position: "absolute",
-                            left: `${pos.xPercent}%`,
-                            top: `${pos.yPercent}%`,
-                            width: size,
-                            height: size * 1.2,
-                            marginLeft: -halfSize,
-                            marginTop: -(size * 1.2) / 2,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: isDragging ? "grabbing" : "grab",
-                            filter: isHovered 
-                                ? "drop-shadow(0 4px 8px rgba(0,0,0,0.2))" 
-                                : isGreyedOut 
-                                    ? "none"
-                                    : "drop-shadow(0 1px 2px rgba(0,0,0,0.1))",
-                            zIndex: isDragging ? 100 : isHovered ? 50 : 1,
-                            userSelect: "none",
-                            touchAction: "none",
-                        }}
-                        initial={initialAnimationComplete ? false : { scale: 0, opacity: 0 }}
-                        animate={{ 
-                            scale: targetScale, 
-                            opacity: targetOpacity
-                        }}
-                        transition={
-                            initialAnimationComplete
-                                ? { type: "spring", stiffness: 400, damping: 30, duration: 0.15 }
-                                : {
-                                    type: "spring",
-                                    stiffness: 260,
-                                    damping: 20,
-                                    delay: circle.index * 0.015,
+                    personUrl ? (
+                        <a
+                            href={personUrl}
+                            onClick={(e) => handlePersonNavigate(circle.index, personUrl, e)}
+                            style={{
+                                textDecoration: "none",
+                                position: "absolute",
+                                left: `${pos.xPercent}%`,
+                                top: `${pos.yPercent}%`,
+                                width: size,
+                                height: size,
+                                marginLeft: -halfSize,
+                                marginTop: -halfSize,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                zIndex: isDragging ? 100 : isHovered ? 50 : 1,
+                            }}
+                        >
+                            <motion.div
+                                ref={(el) => {
+                                    if (isDragging && el) {
+                                        draggingElementRef.current = el
+                                    }
+                                }}
+                                layout={false}
+                                style={{
+                                    width: size,
+                                    height: size,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    cursor: isDragging ? "grabbing" : "grab",
+                                    filter: isHovered 
+                                        ? "drop-shadow(0 4px 8px rgba(0,0,0,0.2))" 
+                                        : isGreyedOut 
+                                            ? "none"
+                                            : "drop-shadow(0 1px 2px rgba(0,0,0,0.1))",
+                                    userSelect: "none",
+                                    touchAction: "none",
+                                }}
+                                initial={initialAnimationComplete ? false : { scale: 0, opacity: 0 }}
+                                animate={{ 
+                                    scale: targetScale, 
+                                    opacity: targetOpacity
+                                }}
+                                transition={
+                                    initialAnimationComplete
+                                        ? { type: "spring", stiffness: 400, damping: 30, duration: 0.15 }
+                                        : {
+                                            type: "spring",
+                                            stiffness: 260,
+                                            damping: 20,
+                                            delay: circle.index * 0.015,
+                                        }
                                 }
-                        }
-                        onMouseEnter={() => handleMouseEnter(circle.index)}
-                        onMouseLeave={handleMouseLeave}
-                        onMouseDown={(e) => handleMouseDown(circle.index, e, e.currentTarget)}
-                        onTouchStart={(e) => handleTouchStart(circle.index, e, e.currentTarget)}
-                        onClick={(e) => handleClick(circle.index, e)}
-                        aria-label={person ? `Person: ${person.name}` : "Empty person"}
-                        role={hasPerson ? "button" : "img"}
-                    >
-                        <PersonIcon color={genderColor} size={size} />
-                    </motion.div>
+                                onMouseEnter={() => handleMouseEnter(circle.index)}
+                                onMouseLeave={handleMouseLeave}
+                                onMouseDown={(e) => handleMouseDown(circle.index, e, e.currentTarget)}
+                                onTouchStart={(e) => handleTouchStart(circle.index, e, e.currentTarget)}
+                                onClick={(e) => handleClick(circle.index, e)}
+                                aria-label={person ? `Person: ${person.name}` : "Empty person"}
+                                role={hasPerson ? "button" : "img"}
+                            >
+                                <div
+                                    style={{
+                                        width: size,
+                                        height: size,
+                                        borderRadius: "50%",
+                                        backgroundColor: genderColor,
+                                        border: isHovered ? "3px solid rgba(17, 24, 39, 0.16)" : "2px solid rgba(255,255,255,0.95)",
+                                        boxShadow: isHovered
+                                            ? "0 8px 18px rgba(0,0,0,0.16)"
+                                            : "0 2px 8px rgba(0,0,0,0.10)",
+                                        transition: "all 0.2s ease",
+                                    }}
+                                />
+                            </motion.div>
+                        </a>
+                    ) : (
+                        <motion.div
+                            key={`person-${circle.index}`}
+                            ref={(el) => {
+                                if (isDragging && el) {
+                                    draggingElementRef.current = el
+                                }
+                            }}
+                            layout={false}
+                            style={{
+                                position: "absolute",
+                                left: `${pos.xPercent}%`,
+                                top: `${pos.yPercent}%`,
+                                width: size,
+                                height: size,
+                                marginLeft: -halfSize,
+                                marginTop: -halfSize,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: isDragging ? "grabbing" : "grab",
+                                filter: isHovered 
+                                    ? "drop-shadow(0 4px 8px rgba(0,0,0,0.2))" 
+                                    : isGreyedOut 
+                                        ? "none"
+                                        : "drop-shadow(0 1px 2px rgba(0,0,0,0.1))",
+                                zIndex: isDragging ? 100 : isHovered ? 50 : 1,
+                                userSelect: "none",
+                                touchAction: "none",
+                            }}
+                            initial={initialAnimationComplete ? false : { scale: 0, opacity: 0 }}
+                            animate={{ 
+                                scale: targetScale, 
+                                opacity: targetOpacity
+                            }}
+                            transition={
+                                initialAnimationComplete
+                                    ? { type: "spring", stiffness: 400, damping: 30, duration: 0.15 }
+                                    : {
+                                        type: "spring",
+                                        stiffness: 260,
+                                        damping: 20,
+                                        delay: circle.index * 0.015,
+                                    }
+                            }
+                            onMouseEnter={() => handleMouseEnter(circle.index)}
+                            onMouseLeave={handleMouseLeave}
+                            onMouseDown={(e) => handleMouseDown(circle.index, e, e.currentTarget)}
+                            onTouchStart={(e) => handleTouchStart(circle.index, e, e.currentTarget)}
+                            onClick={(e) => handleClick(circle.index, e)}
+                            aria-label={person ? `Person: ${person.name}` : "Empty person"}
+                            role={hasPerson ? "button" : "img"}
+                        >
+                            <div
+                                style={{
+                                    width: size,
+                                    height: size,
+                                    borderRadius: "50%",
+                                    backgroundColor: genderColor,
+                                    border: isHovered ? "3px solid rgba(17, 24, 39, 0.16)" : "2px solid rgba(255,255,255,0.95)",
+                                    boxShadow: isHovered
+                                        ? "0 8px 18px rgba(0,0,0,0.16)"
+                                        : "0 2px 8px rgba(0,0,0,0.10)",
+                                    transition: "all 0.2s ease",
+                                }}
+                            />
+                        </motion.div>
+                    )
                 )
             })}
 

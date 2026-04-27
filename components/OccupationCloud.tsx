@@ -1,5 +1,7 @@
 import { useMemo, useState, type CSSProperties } from "react"
 
+type Language = "en" | "zh"
+
 export interface OccupationItem {
     label: string
     value: number
@@ -11,8 +13,16 @@ export interface OccupationCloudProps {
     backgroundColor?: string
     highlightedLabel?: string | null
     onHoverOccupation?: (label: string | null) => void
+    language?: Language
     style?: CSSProperties
 }
+
+const uiCopy = {
+    totalPeople: { en: "Total People", zh: "总人数" },
+    occupations: { en: "Occupations", zh: "职业数" },
+    categories: { en: "Categories", zh: "类别数" },
+    ofTotal: { en: "of total", zh: "占总数" },
+} as const
 
 // Category colors
 const categoryColors: Record<string, string> = {
@@ -98,6 +108,7 @@ export default function OccupationCloud({
     backgroundColor = "transparent",
     highlightedLabel,
     onHoverOccupation,
+    language = "en",
     style,
 }: OccupationCloudProps) {
     const [hoveredItem, setHoveredItem] = useState<string | null>(null)
@@ -320,7 +331,7 @@ export default function OccupationCloud({
                                         }}>
                                             {item.category}
                                         </span>
-                                        {percentage}% of total
+                                        {percentage}% {uiCopy.ofTotal[language]}
                                     </div>
                                 </div>
                                 {/* Mini bar */}
@@ -361,15 +372,15 @@ export default function OccupationCloud({
             >
                 <div style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 28, fontWeight: 700, color: "#333" }}>{total}</div>
-                    <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase" }}>Total People</div>
+                    <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase" }}>{uiCopy.totalPeople[language]}</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 28, fontWeight: 700, color: "#2196F3" }}>{data.length}</div>
-                    <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase" }}>Occupations</div>
+                    <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase" }}>{uiCopy.occupations[language]}</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 28, fontWeight: 700, color: "#4CAF50" }}>{categories.length}</div>
-                    <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase" }}>Categories</div>
+                    <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase" }}>{uiCopy.categories[language]}</div>
                 </div>
             </div>
         </div>

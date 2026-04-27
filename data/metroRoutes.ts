@@ -1,5 +1,12 @@
 import { MetroLineRoute } from '../types';
 
+/*
+  data/metroRoutes.ts
+  - Contains polyline coordinate arrays for metro lines displayed on the map.
+  - Each `MetroLineRoute` has a `lineId`, `color`, and `coordinates` array.
+  - Use this file to tweak line geometry or colors.
+*/
+
 export const METRO_ROUTES: MetroLineRoute[] = [
   {
   lineId: '1',

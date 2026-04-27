@@ -1,8 +1,11 @@
 import { useMemo, useState, type CSSProperties } from "react"
 
+type Language = "en" | "zh"
+
 export interface SubCategory {
     label: string
     value: number
+    labelCn?: string
 }
 
 export interface OccupationData {
@@ -18,7 +21,30 @@ export interface OccupationDiagramProps {
     backgroundColor?: string
     highlightedLabel?: string | null
     onHoverOccupation?: (label: string | null) => void
+    language?: Language
     style?: CSSProperties
+}
+
+const uiCopy = {
+    person: { en: "person", zh: "人" },
+    people: { en: "people", zh: "人" },
+    hoverHint: { en: "Hover for details • Size = frequency", zh: "悬停查看详情 • 大小代表频率" },
+    wordCloud: { en: "Occupation Word Cloud", zh: "职业词云" },
+    totalPeople: { en: "Total People", zh: "总人数" },
+    categories: { en: "Categories", zh: "类别数" },
+    occupations: { en: "Occupations", zh: "职业数" },
+} as const
+
+const categoryTranslations: Record<string, string> = {
+    "Business & Enterprise": "企业与经营",
+    "Non-Working / Other Status": "非在职 / 其他状态",
+    "Finance & Commerce": "金融与商业",
+    "STEM": "理工领域",
+    "Education & Academia": "教育与学术",
+    "Public Sector & State-Owned": "公共部门与国企",
+    "Operations & Logistics": "运营与物流",
+    "Professional Services": "专业服务",
+    "Personal & Retail Services": "个人与零售服务",
 }
 
 const defaultOccupationData: OccupationData[] = [
@@ -134,7 +160,7 @@ const categoryColorMap: Record<string, string> = {
 }
 
 // All individual occupations for word cloud with category and English labels
-const allOccupations = [
+const defaultAllOccupations = [
     { label: "Student", value: 19, labelCN: "学生", category: "Non-Working / Other Status" },
     { label: "Self-employed", value: 10, labelCN: "自营业者", category: "Business & Enterprise" },
     { label: "Enterprise manager", value: 9, labelCN: "企业高管", category: "Business & Enterprise" },
@@ -188,13 +214,17 @@ function darkenColor(hex: string, percent: number): string {
 
 // Word Cloud Component - now showing English occupation names
 function WordCloud({ 
+    occupations,
     hoveredOccupation, 
-    onHover 
+    onHover,
+    language,
 }: { 
+    occupations: Array<{ label: string; value: number; labelCN: string; category: string }>
     hoveredOccupation: string | null
     onHover: (label: string | null) => void 
+    language: Language
 }) {
-    const maxValue = Math.max(...allOccupations.map(o => o.value))
+    const maxValue = Math.max(...occupations.map(o => o.value), 1)
     
     // Generate stable positions for word cloud effect using seeded randomness
     const wordPositions = useMemo(() => {
@@ -206,7 +236,7 @@ function WordCloud({
             return x - Math.floor(x)
         }
         
-        for (let i = 0; i < allOccupations.length; i++) {
+        for (let i = 0; i < occupations.length; i++) {
             const angle = (i * 137.508) * (Math.PI / 180) // Golden angle
             const radius = 15 + (i % 6) * 12
             const randomX = seededRandom(i * 7 + 1)
@@ -222,7 +252,7 @@ function WordCloud({
             })
         }
         return positions
-    }, [])
+    }, [occupations.length])
 
     const isAnyHovered = hoveredOccupation !== null
 
@@ -238,7 +268,7 @@ function WordCloud({
                 marginTop: 16,
             }}
         >
-            {allOccupations.map((occupation, index) => {
+            {occupations.map((occupation, index) => {
                 const pos = wordPositions[index]
                 const isHighlighted = hoveredOccupation === occupation.label
                 const isGreyedOut = isAnyHovered && !isHighlighted
@@ -273,16 +303,16 @@ function WordCloud({
                         }}
                         onMouseEnter={() => onHover(occupation.label)}
                         onMouseLeave={() => onHover(null)}
-                        title={`${occupation.label} (${occupation.labelCN}): ${occupation.value} people`}
+                        title={`${language === "zh" ? occupation.labelCN : occupation.label}: ${occupation.value} ${occupation.value === 1 ? uiCopy.person[language] : uiCopy.people[language]}`}
                     >
-                        {occupation.label}
+                        {language === "zh" ? occupation.labelCN : occupation.label}
                     </div>
                 )
             })}
             
             {/* Hover tooltip */}
             {hoveredOccupation && (() => {
-                const occ = allOccupations.find(o => o.label === hoveredOccupation)
+                const occ = occupations.find(o => o.label === hoveredOccupation)
                 if (!occ) return null
                 const color = categoryColorMap[occ.category] || "#666"
                 return (
@@ -312,10 +342,10 @@ function WordCloud({
                         />
                         <div>
                             <div style={{ fontSize: 13, fontWeight: 600, color: "#333" }}>
-                                {occ.label} ({occ.labelCN})
+                                {language === "zh" ? occ.labelCN : occ.label}
                             </div>
                             <div style={{ fontSize: 11, color: "#666" }}>
-                                {occ.category} • {occ.value} {occ.value === 1 ? "person" : "people"}
+                                {(language === "zh" ? categoryTranslations[occ.category] : occ.category) || occ.category} • {occ.value} {occ.value === 1 ? uiCopy.person[language] : uiCopy.people[language]}
                             </div>
                         </div>
                     </div>
@@ -332,7 +362,7 @@ function WordCloud({
                     color: "#999",
                     fontStyle: "italic",
                 }}>
-                    Hover for details • Size = frequency
+                    {uiCopy.hoverHint[language]}
                 </div>
             )}
         </div>
@@ -344,13 +374,27 @@ export default function OccupationDiagram({
     backgroundColor = "transparent",
     highlightedLabel,
     onHoverOccupation,
+    language = "en",
     style,
 }: OccupationDiagramProps) {
     const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
     const [wordCloudHover, setWordCloudHover] = useState<string | null>(null)
     
     const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data])
-    const maxValue = useMemo(() => Math.max(...data.map((d) => d.value)), [data])
+    const maxValue = useMemo(() => Math.max(...data.map((d) => d.value), 1), [data])
+
+    const allOccupations = useMemo(() => {
+        const derived = data.flatMap((category) =>
+            (category.subCategories || []).map((subCategory) => ({
+                label: subCategory.label,
+                value: subCategory.value,
+                labelCN: subCategory.labelCn || subCategory.label,
+                category: category.label,
+            }))
+        )
+
+        return derived.length > 0 ? derived : defaultAllOccupations
+    }, [data])
 
     const effectiveHighlight = highlightedLabel || wordCloudHover
     const isAnyHighlighted = effectiveHighlight !== null
@@ -434,9 +478,9 @@ export default function OccupationDiagram({
                                         flexShrink: 0,
                                         lineHeight: 1.3,
                                     }}
-                                    title={item.label}
+                                    title={language === "zh" ? (categoryTranslations[item.label] || item.label) : item.label}
                                 >
-                                    {item.label}
+                                    {language === "zh" ? (categoryTranslations[item.label] || item.label) : item.label}
                                 </div>
 
                                 {/* Bar container */}
@@ -487,7 +531,7 @@ export default function OccupationDiagram({
                                                             transform: isSubHighlighted ? "scaleY(1.1)" : "scaleY(1)",
                                                             transition: "all 0.2s ease",
                                                         }}
-                                                        title={`${sub.label}: ${sub.value}`}
+                                                        title={`${language === "zh" ? (sub.labelCn || sub.label) : sub.label}: ${sub.value}`}
                                                     >
                                                         {sub.value >= 3 && (
                                                             <span style={{ 
@@ -593,7 +637,7 @@ export default function OccupationDiagram({
                                                     }}
                                                 />
                                                 <span style={{ fontSize: 11, color: "#444", fontWeight: 500 }}>
-                                                    {sub.label}
+                                                    {language === "zh" ? (sub.labelCn || sub.label) : sub.label}
                                                 </span>
                                                 <span style={{ 
                                                     fontSize: 11, 
@@ -622,11 +666,13 @@ export default function OccupationDiagram({
                     textTransform: "uppercase",
                     letterSpacing: "0.5px"
                 }}>
-                    Occupation Word Cloud
+                    {uiCopy.wordCloud[language]}
                 </h4>
                 <WordCloud 
+                    occupations={allOccupations}
                     hoveredOccupation={wordCloudHover} 
                     onHover={handleWordCloudHover}
+                    language={language}
                 />
             </div>
 
@@ -644,19 +690,19 @@ export default function OccupationDiagram({
                 <div style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 28, fontWeight: 700, color: "#333" }}>{total}</div>
                     <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                        Total People
+                        {uiCopy.totalPeople[language]}
                     </div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 28, fontWeight: 700, color: "#E91E63" }}>{data.length}</div>
                     <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                        Categories
+                        {uiCopy.categories[language]}
                     </div>
                 </div>
                 <div style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 28, fontWeight: 700, color: "#9C27B0" }}>{allOccupations.length}</div>
                     <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                        Occupations
+                        {uiCopy.occupations[language]}
                     </div>
                 </div>
             </div>

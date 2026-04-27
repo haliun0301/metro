@@ -1,22 +1,36 @@
+/*
+    GisMap.tsx
+    - Main interactive map component used across the site.
+    - Responsibilities:
+        * Render map tiles (streets/satellite/terrain)
+        * Render station markers and line polylines
+        * Provide user interactions: pan, zoom, search, touch gestures
+        * Expose a lot of customization via `GisMapProps` in /types.ts
+    - To change default behavior update props in `MetroMapPage.tsx` or the component defaults below.
+*/
 import React, {
-    useEffect,
-    useRef,
-    useState,
-    startTransition,
-    useMemo,
-    useCallback,
-    type CSSProperties,
+        useEffect,
+        useRef,
+        useState,
+        startTransition,
+        useMemo,
+        useCallback,
+        type CSSProperties,
 } from "react"
 import type { GisMapProps, MetroStation } from "../types";
+import { createStationSlug } from "../data/stationDetails";
 
+// UI spacing constants used for popups and pointer arrows
 const GAP_PX = 14 // space between popup and dot
 const ARROW_PX = 8 // little triangle height
 
-// Mock useIsStaticRenderer for standard React
+// Running on the server or in static renderers may require different behavior.
+// This project includes a stub; replace with actual renderer-detection if needed.
 const useIsStaticRenderer = () => false;
 
+// Main component. Most of the map state (center, zoom, hover, open panels) lives here.
 function GisMap(props: GisMapProps) {
-    const {
+        const {
         initialLat = 22.5431,
         initialLng = 114.0579,
         zoom = 12,
@@ -39,6 +53,7 @@ function GisMap(props: GisMapProps) {
         modernPlain = true,
         plainTint = "linear-gradient(180deg, rgba(72,45,95,0.06), rgba(15,15,20,0.12))",
         monochrome = true,
+        language: propLanguage,
     } = props
 
     const mapRef = useRef<HTMLDivElement>(null)
@@ -64,9 +79,7 @@ function GisMap(props: GisMapProps) {
     const [currentMapStyle, setCurrentMapStyle] = useState<
         "streets" | "satellite" | "terrain"
     >(mapStyle)
-    const [language, setLanguage] = useState<"en" | "zh">(
-        props.defaultLanguage || "en"
-    )
+    const language = propLanguage || props.defaultLanguage || "en"
 
     // Area menu state
     const [showAreaMenu, setShowAreaMenu] = useState(false)
@@ -157,7 +170,9 @@ function GisMap(props: GisMapProps) {
 
     const tileUrls = useMemo(
         () => ({
-            streets: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            // Previous map style:
+            // streets: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            streets: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
             satellite:
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
             terrain:
@@ -402,6 +417,8 @@ function GisMap(props: GisMapProps) {
                 .replace("{z}", currentZ.toString())
                 .replace("{x}", centerTileX.toString())
                 .replace("{y}", centerTileY.toString())
+                        .replace("{r}", "")
+                        .replace("{s}", "a")
             tiles.push({ x: centerTileX * 256, y: centerTileY * 256, url })
         } else {
             const tilesX = Math.min(Math.ceil(containerWidth / 256) + 2, 10)
@@ -417,6 +434,8 @@ function GisMap(props: GisMapProps) {
                         .replace("{z}", currentZ.toString())
                         .replace("{x}", tileX.toString())
                         .replace("{y}", tileY.toString())
+                        .replace("{r}", "")
+                        .replace("{s}", ["a", "b", "c", "d"][(Math.abs(tileX + tileY) % 4)])
                     tiles.push({
                         x: (centerTileX + dx) * 256,
                         y: tileY * 256,
@@ -820,17 +839,6 @@ function GisMap(props: GisMapProps) {
         stations,
     ])
 
-    // Helper function to create URL slug from station name
-    const createSlug = useCallback((name: string): string => {
-        const slug = name
-            .toLowerCase()
-            .trim()
-            .replace(/[^\w\s-]/g, "")
-            .replace(/\s+/g, "-")
-            .replace(/-+/g, "-")
-        return slug
-    }, [])
-
     // Helper function to translate line names to Chinese
     const translateLineName = useCallback(
         (lineName: string, lang: "en" | "zh"): string => {
@@ -848,7 +856,7 @@ function GisMap(props: GisMapProps) {
 
     // Fit map view to all stations in a given area (frames multiple stations)
     const fitArea = useCallback(
-        (areaName: string) => {
+        (areaName: string, displayLabel?: string) => {
             if (isStatic) return
             const normalize = (str: string) =>
                 str
@@ -900,7 +908,7 @@ function GisMap(props: GisMapProps) {
             if (!matches || matches.length === 0) {
                 // fallback: set search and show results
                 startTransition(() => {
-                    setSearchQuery(areaName)
+                    setSearchQuery(displayLabel || areaName)
                     setShowSearchResults(true)
                     setSelectedArea(areaName)
                 })
@@ -944,7 +952,7 @@ function GisMap(props: GisMapProps) {
                 setCenterLat(centerLatFit)
                 setCenterLng(centerLngFit)
                 setCurrentZoom(chosenZoom)
-                setSearchQuery(areaName)
+                setSearchQuery(displayLabel || areaName)
                 setShowSearchResults(true)
                 setSelectedArea(areaName)
                 setAreaBounds({ minLat, maxLat, minLng, maxLng })
@@ -956,40 +964,40 @@ function GisMap(props: GisMapProps) {
     // Deduplicated list of service areas (derived from provided areas list)
     const areaList = useMemo(() => {
         const areas = [
-            "Bitou area",
-            "Chegongmiao area",
-            "Xiangmi Lake area",
-            "Buji area",
-            "Biyan-Guangming Farm area",
-            "Nanyou area",
-            "Shatian area",
-            "Shuibei–Tianbei area",
-            "University Town area",
-            "Huangbeiling area",
-            "Qianhaiwan area",
-            "Huaqiang North area",
-            "Baiwang (Baimang) area",
-            "Fanshen area",
-            "Shekou area",
-            "Tanglang–Changlingpi area",
-            "Shenzhen University–High-tech Park area",
-            "Houhai area",
-            "Futian CBD area",
-            "Xixiang area",
-            "Meilin Checkpoint area",
-            "Longcheng Square area",
-            "Fenghuang Town–Guangming Town area",
-            "Shatoujiao area",
-            "Universiade area",
-            "Tongle area",
-            "Hongshan area",
+            { en: "Bitou area", zh: "碧头片区" },
+            { en: "Chegongmiao area", zh: "车公庙片区" },
+            { en: "Xiangmi Lake area", zh: "香蜜湖片区" },
+            { en: "Buji area", zh: "布吉片区" },
+            { en: "Biyan-Guangming Farm area", zh: "碧眼－光明农场片区" },
+            { en: "Nanyou area", zh: "南油片区" },
+            { en: "Shatian area", zh: "沙田片区" },
+            { en: "Shuibei–Tianbei area", zh: "水贝－田贝片区" },
+            { en: "University Town area", zh: "大学城片区" },
+            { en: "Huangbeiling area", zh: "黄贝岭片区" },
+            { en: "Qianhaiwan area", zh: "前海湾片区" },
+            { en: "Huaqiang North area", zh: "华强北片区" },
+            { en: "Baiwang (Baimang) area", zh: "白芒片区" },
+            { en: "Fanshen area", zh: "翻身片区" },
+            { en: "Shekou area", zh: "蛇口片区" },
+            { en: "Tanglang–Changlingpi area", zh: "塘朗－长岭陂片区" },
+            { en: "Shenzhen University–High-tech Park area", zh: "深大－高新园片区" },
+            { en: "Houhai area", zh: "后海片区" },
+            { en: "Futian CBD area", zh: "福田CBD片区" },
+            { en: "Xixiang area", zh: "西乡片区" },
+            { en: "Meilin Checkpoint area", zh: "梅林关片区" },
+            { en: "Longcheng Square area", zh: "龙城广场片区" },
+            { en: "Fenghuang Town–Guangming Town area", zh: "凤凰城－光明城片区" },
+            { en: "Shatoujiao area", zh: "沙头角片区" },
+            { en: "Universiade area", zh: "大运片区" },
+            { en: "Tongle area", zh: "同乐片区" },
+            { en: "Hongshan area", zh: "红山片区" },
         ]
 
         // Normalize and dedupe while preserving order
         const seen = new Set<string>()
-        const dedup: string[] = []
+        const dedup: Array<{ en: string; zh: string }> = []
         for (const a of areas) {
-            const key = a.trim().toLowerCase()
+            const key = a.en.trim().toLowerCase()
             if (!seen.has(key)) {
                 seen.add(key)
                 dedup.push(a)
@@ -1004,9 +1012,8 @@ function GisMap(props: GisMapProps) {
             // Do not open detail page if station explicitly has no detail
             if (station.isDetail === false) return
 
-            // Updated to use real website if available, otherwise just use as ID
-            const slug = createSlug(station.name)
-            const fullUrl = `https://shenzhen-subway.framer.website/stations/${slug}`
+            const slug = createStationSlug(station.name)
+            const fullUrl = `/stations/${slug}`
 
             startTransition(() => {
                 setCmsUrl(fullUrl)
@@ -1014,7 +1021,7 @@ function GisMap(props: GisMapProps) {
                 setIsFullWidth(false)
             })
         },
-        [createSlug]
+        []
     )
 
     // Helper function to position the floating button
@@ -1798,63 +1805,12 @@ function GisMap(props: GisMapProps) {
                     )
                 })}
 
-            {/* ========== COMPONENT: Language Toggle Buttons ========== */}
-            <div
-                style={{
-                    position: "absolute",
-                    top: 50,
-                    right: 50,
-                    display: "flex",
-                    gap: 8,
-                    zIndex: 1000,
-                }}
-            >
-                <button
-                    onClick={() => startTransition(() => setLanguage("en"))}
-                    style={{
-                        padding: "8px 16px",
-                        backgroundColor:
-                            language === "en" ? "#3EB181" : "#FFFFFF",
-                        color: language === "en" ? "#FFFFFF" : "#333",
-                        border:
-                            language === "en" ? "none" : "1px solid #e0e0e0",
-                        borderRadius: 6,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                        transition: "all 0.2s ease",
-                    }}
-                >
-                    EN
-                </button>
-                <button
-                    onClick={() => startTransition(() => setLanguage("zh"))}
-                    style={{
-                        padding: "8px 16px",
-                        backgroundColor:
-                            language === "zh" ? "#3EB181" : "#FFFFFF",
-                        color: language === "zh" ? "#FFFFFF" : "#333",
-                        border:
-                            language === "zh" ? "none" : "1px solid #e0e0e0",
-                        borderRadius: 6,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                        transition: "all 0.2s ease",
-                    }}
-                >
-                    中文
-                </button>
-            </div>
-
             {/* ========== COMPONENT: Zoom controls ========== */}
             {showControls && (
                 <div
                     style={{
                         position: "absolute",
-                        top: 120,
+                        top: 50,
                         right: 50,
                         display: "flex",
                         flexDirection: "column",
@@ -2017,32 +1973,32 @@ function GisMap(props: GisMapProps) {
                         >
                             {areaList.map((area) => (
                                 <button
-                                    key={area}
+                                    key={area.en}
                                     onClick={() => {
                                         // Pause auto-scroll immediately when user activates a button
                                         setIsUserScrolling(true)
                                         clearResumeTimer()
                                         // select area and fit
-                                        setSelectedArea(area)
-                                        fitArea(area)
+                                        setSelectedArea(area.en)
+                                        fitArea(area.en, area[language])
                                     }}
                                     style={{
                                         flex: "0 0 auto",
                                         padding: "8px 12px",
                                         // Active state when explicitly selected via the area button
-                                        backgroundColor: selectedArea === area ? "#3EB181" : (searchQuery === area ? "rgba(62,177,129,0.08)" : "rgba(255,255,255,0.72)"),
-                                        color: selectedArea === area ? "#FFFFFF" : "#2A383E",
-                                        border: selectedArea === area ? "1px solid rgba(255,255,255,0.08)" : (searchQuery === area ? "1px solid rgba(62,177,129,0.12)" : "1px solid rgba(42,56,62,0.06)"),
+                                        backgroundColor: selectedArea === area.en ? "#3EB181" : (searchQuery === area[language] ? "rgba(62,177,129,0.08)" : "rgba(255,255,255,0.72)"),
+                                        color: selectedArea === area.en ? "#FFFFFF" : "#2A383E",
+                                        border: selectedArea === area.en ? "1px solid rgba(255,255,255,0.08)" : (searchQuery === area[language] ? "1px solid rgba(62,177,129,0.12)" : "1px solid rgba(42,56,62,0.06)"),
                                         backdropFilter: "blur(8px)",
                                         WebkitBackdropFilter: "blur(8px)",
                                         borderRadius: 999,
                                         fontSize: 13,
                                         fontWeight: 600,
                                         cursor: "pointer",
-                                        boxShadow: selectedArea === area ? "0 12px 36px rgba(62,177,129,0.16)" : (searchQuery === area ? "0 8px 24px rgba(62,177,129,0.08)" : "0 4px 12px rgba(0,0,0,0.06)"),
+                                        boxShadow: selectedArea === area.en ? "0 12px 36px rgba(62,177,129,0.16)" : (searchQuery === area[language] ? "0 8px 24px rgba(62,177,129,0.08)" : "0 4px 12px rgba(0,0,0,0.06)"),
                                     }}
                                 >
-                                    {area}
+                                    {area[language]}
                                 </button>
                             ))}
                         </div>
@@ -2302,16 +2258,32 @@ function GisMap(props: GisMapProps) {
             {showDetailPanel && (
                 <div
                     style={{ width: isFullWidth ? "100%" : "33.3333333%" }}
-                    className="absolute top-0 right-0 h-full bg-white shadow-2xl z-[5000] flex flex-col transition-[width] duration-300 ease-in-out"
+                    className="absolute top-0 right-0 h-full overflow-hidden bg-white shadow-2xl z-[5000] flex flex-col transition-[width] duration-300 ease-in-out"
+                    onWheelCapture={(e) => e.stopPropagation()}
+                    onTouchStartCapture={(e) => e.stopPropagation()}
+                    onTouchMoveCapture={(e) => e.stopPropagation()}
+                    onPointerDownCapture={(e) => e.stopPropagation()}
                 >
                     {/* topbar removed per UX request */}
 
-                    <div className="flex-1 relative w-full h-full">
+                    <div
+                        className="relative h-full w-full flex-1 overflow-y-auto"
+                        style={{
+                            overscrollBehavior: "contain",
+                            WebkitOverflowScrolling: "touch",
+                        }}
+                    >
                          <iframe
                             src={cmsUrl}
                             className="w-full h-full border-0"
                             title="Station Details"
-                            style={{ zIndex: 6000, position: "relative" }}
+                            scrolling="auto"
+                            style={{
+                                zIndex: 6000,
+                                position: "relative",
+                                overflow: "auto",
+                                overscrollBehavior: "contain",
+                            }}
                         />
                     </div>
                 </div>

@@ -1,5 +1,11 @@
+/*
+  types.ts
+  - Central TypeScript interfaces used across the app.
+  - Edit here to adjust data shapes (stations, routes, map props).
+*/
 import { CSSProperties } from 'react';
 
+// Simple pin/marker shape used by the in-map UI
 export interface Marker {
     lat: number
     lng: number
@@ -7,6 +13,7 @@ export interface Marker {
     color: string
 }
 
+// Core station data used by the map and detail pages
 export interface MetroStation {
     lat: number
     lng: number
@@ -19,18 +26,21 @@ export interface MetroStation {
     isDetail?: boolean
     area?: string
     areaCn?: string
+    areaPageKey?: string
     routes?: Array<{
         toStation: string
         coordinates: Array<{ lat: number; lng: number }>
     }>
 }
 
+// Polyline for a metro line
 export interface MetroLineRoute {
     lineId: string;
     color: string;
     coordinates: Array<{ lat: number; lng: number }>;
 }
 
+// Props that drive the GisMap component (many options for customization)
 export interface GisMapProps {
     initialLat: number
     initialLng: number
@@ -55,6 +65,7 @@ export interface GisMapProps {
     mapBrightness?: number
     mapContrast?: number
     mapHue?: number
+    language?: "en" | "zh"
     defaultLanguage?: "en" | "zh"
     routesJson?: string
     modernPlain?: boolean
