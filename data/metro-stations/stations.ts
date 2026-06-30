@@ -1,4 +1,4 @@
-import { MetroStation } from '../types';
+import { MetroStation } from '../../types';
 
 /*
   data/stations.ts

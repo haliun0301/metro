@@ -11,6 +11,8 @@ export const AREA_PAGE_CONTENT: Record<string, AreaPageContentOverride> = {
   'shuibei-tianbei': shuibeiAreaPage,
   shuibei: shuibeiAreaPage,
   tianbei: shuibeiAreaPage,
+  honghu: shuibeiAreaPage,
+  
   // Add more area files here.
   // Example:
   // 'houhai-area': houhaiAreaPage,

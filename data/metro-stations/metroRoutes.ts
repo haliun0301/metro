@@ -1,4 +1,4 @@
-import { MetroLineRoute } from '../types';
+import { MetroLineRoute } from '../../types';
 
 /*
   data/metroRoutes.ts

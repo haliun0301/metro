@@ -5,10 +5,10 @@
 */
 import React from 'react';
 import GisMap from './GisMap';
-import LanguageToggle from './LanguageToggle';
-import { useAppLanguage } from '../hooks/useAppLanguage';
-import { METRO_ROUTES } from '../data/metroRoutes';
-import { STATIONS } from '../data/stations';
+import LanguageToggle from '../LanguageToggle';
+import { useAppLanguage } from '../../hooks/useAppLanguage';
+import { METRO_ROUTES } from '../../data/metro-stations/metroRoutes';
+import { STATIONS } from '../../data/metro-stations/stations';
 
 const pageCopy = {
   title: {

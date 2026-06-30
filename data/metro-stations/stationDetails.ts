@@ -1,4 +1,4 @@
-import type { MetroStation } from '../types';
+import type { MetroStation } from '../../types';
 import { STATIONS } from './stations';
 import { stationDetailMedia } from './stationDetailMedia';
 import { AREA_PAGE_CONTENT } from './areaPages/index';
@@ -37,6 +37,7 @@ export interface ContentImage {
   src: string;
   alt?: LocalizedText;
   caption?: LocalizedText;
+  figureName?: LocalizedText;
 }
 
 export interface StationTimelineCard {
@@ -55,9 +56,11 @@ export interface StationHistoryStageMedia {
   src: string;
   alt?: LocalizedText;
   caption?: LocalizedText;
+  figureName?: LocalizedText;
 }
 
 export interface StationHistoryRemoteSensing {
+  figureName?: LocalizedText;
   title?: LocalizedText;
   description?: LocalizedText;
   before: ContentImage;
@@ -103,6 +106,7 @@ export interface ThematicRelationMediaItem {
   id: string;
   src: string;
   caption?: LocalizedText;
+  figureName?: LocalizedText;
 }
 
 export interface ThematicRelationGalleryCollection {
@@ -272,8 +276,8 @@ const AREA_TEMPLATE_RULES: AreaTemplateRule[] = [
         zh: '这一片区多为成熟城区，地铁站承担着连接居住、商业与跨线换乘的作用。共享页面应同时体现通行效率与片区个性。',
       },
       mobility: {
-        en: 'Passenger volumes are usually distributed across multiple trip purposes, making entrance management, transfer legibility, and local street integration especially important.',
-        zh: '客流通常分布于多种出行目的，因此出入口组织、换乘识别性与周边街道衔接尤为重要。',
+        en: '',
+        zh: '',
       },
       development: {
         en: 'A strong next step for this template is to add transfer diagrams, station-area walking routes, and notes on neighbourhood upgrading or public-space improvement.',
@@ -535,6 +539,7 @@ function normalizeContentImage(
     src: image.src,
     alt: image.alt,
     caption: image.caption,
+    figureName: image.figureName,
   };
 }
 
@@ -584,6 +589,7 @@ function normalizeRemoteSensing(
   );
 
   return {
+    figureName: remoteSensing.figureName,
     title: remoteSensing.title,
     description: remoteSensing.description,
     before,
@@ -791,6 +797,94 @@ function createDefaultOverviewNotes(
   }));
 }
 
+function createDefaultSectionTitles(
+  areaLabel: string,
+  areaLabelCn: string
+): StationDetailSectionTitles {
+  return {
+    research: {
+      en: areaLabel,
+      zh: areaLabelCn,
+    },
+  };
+}
+
+function createDefaultOverviewImage(
+  areaLabel: string,
+  areaLabelCn: string
+): ContentImage {
+  return {
+    src: stationDetailMedia.researchMap,
+    alt: {
+      en: `${areaLabel} research area map`,
+      zh: `${areaLabelCn}研究片区地图`,
+    },
+  };
+}
+
+function createDefaultRemoteSensingIntro(template: AreaTemplate): LocalizedText | undefined {
+  return hasLocalizedText(template.mobility) ? template.mobility : undefined;
+}
+
+function createDefaultRemoteSensingOptions(): {
+  before: RemoteSensingOption[];
+  after: RemoteSensingOption[];
+} {
+  return {
+    before: [
+      {
+        id: 'default-before-urban-fabric',
+        label: { en: 'Earlier urban fabric', zh: '早期城市肌理' },
+        src: stationDetailMedia.beforeUrbanFabric,
+      },
+      {
+        id: 'default-before-transit-edge',
+        label: { en: 'Earlier station edge', zh: '早期站点边界' },
+        src: stationDetailMedia.beforeTransitEdge,
+      },
+    ],
+    after: [
+      {
+        id: 'default-after-urban-fabric',
+        label: { en: 'Later urban fabric', zh: '后期城市肌理' },
+        src: stationDetailMedia.afterUrbanFabric,
+      },
+      {
+        id: 'default-after-transit-edge',
+        label: { en: 'Later station edge', zh: '后期站点边界' },
+        src: stationDetailMedia.afterTransitEdge,
+      },
+    ],
+  };
+}
+
+function createDefaultThematicRelations(
+  template: AreaTemplate,
+  areaLabel: string,
+  areaLabelCn: string
+): ThematicRelationCard[] {
+  const summary = hasLocalizedText(template.mobility) ? template.mobility : template.summary;
+  const paragraphs = [
+    template.summary,
+    template.mobility,
+    template.development,
+  ].filter(hasLocalizedText);
+
+  return [
+    {
+      id: 'default-area-template-relationship',
+      title: {
+        en: `${areaLabel} thematic relationship`,
+        zh: `${areaLabelCn}专题关系`,
+      },
+      summary,
+      imageSrc: stationDetailMedia.thematicConnection,
+      tags: template.focusTags,
+      paragraphs,
+    },
+  ];
+}
+
 function createAreaHistoryCards(
   overrides: StationTimelineCardOverride[] | undefined,
   sharedStations: MetroStation[],
@@ -846,36 +940,41 @@ function getSectionContent(
   areaOverride?: AreaPageContentOverride
 ): StationDetailSections {
   const overviewImage = normalizeContentImage(areaOverride?.overviewImage)
-    ?? (areaOverride?.overviewImageSrc ? { src: areaOverride.overviewImageSrc } : undefined);
+    ?? (areaOverride?.overviewImageSrc ? { src: areaOverride.overviewImageSrc } : undefined)
+    ?? createDefaultOverviewImage(areaLabel, areaLabelCn);
+  const defaultRemoteSensing = createDefaultRemoteSensingOptions();
+  const defaultRemoteSensingIntro = createDefaultRemoteSensingIntro(template);
 
   return {
-    ...(areaOverride?.sectionTitles ? { sectionTitles: areaOverride.sectionTitles } : {}),
-    ...(areaOverride?.historyScrollMode ? { historyScrollMode: areaOverride.historyScrollMode } : {}),
-    ...(overviewImage ? { overviewImage } : {}),
+    sectionTitles: areaOverride?.sectionTitles ?? createDefaultSectionTitles(areaLabel, areaLabelCn),
+    historyScrollMode: areaOverride?.historyScrollMode ?? 'vertical',
+    overviewImage,
     ...(areaOverride?.overviewImageSrc ? { overviewImageSrc: areaOverride.overviewImageSrc } : {}),
     ...(areaOverride?.useInteractiveMap ? { useInteractiveMap: true } : {}),
-    ...(hasItems(areaOverride?.overviewNotes) ? { overviewNotes: areaOverride.overviewNotes } : {}),
+    overviewNotes: hasItems(areaOverride?.overviewNotes)
+      ? areaOverride.overviewNotes
+      : createDefaultOverviewNotes(sharedStations, areaLabel, areaLabelCn),
     ...(hasItems(areaOverride?.overviewPoints) ? { overviewPoints: areaOverride.overviewPoints } : {}),
-    ...(areaOverride?.remoteSensingIntro ? { remoteSensingIntro: areaOverride.remoteSensingIntro } : {}),
-    ...(hasItems(areaOverride?.remoteSensingBeforeOptions)
-      ? { remoteSensingBeforeOptions: areaOverride.remoteSensingBeforeOptions }
-      : {}),
-    ...(hasItems(areaOverride?.remoteSensingAfterOptions)
-      ? { remoteSensingAfterOptions: areaOverride.remoteSensingAfterOptions }
-      : {}),
-    ...(hasItems(areaOverride?.historyCards)
-      ? {
-          historyCards: createAreaHistoryCards(
-            areaOverride.historyCards,
-            sharedStations,
-            areaLabel,
-            areaLabelCn
-          ),
-        }
-      : {}),
-    ...(hasItems(areaOverride?.thematicRelations)
-      ? { thematicRelations: areaOverride.thematicRelations }
-      : {}),
+    ...(areaOverride?.remoteSensingIntro
+      ? { remoteSensingIntro: areaOverride.remoteSensingIntro }
+      : defaultRemoteSensingIntro
+        ? { remoteSensingIntro: defaultRemoteSensingIntro }
+        : {}),
+    remoteSensingBeforeOptions: hasItems(areaOverride?.remoteSensingBeforeOptions)
+      ? areaOverride.remoteSensingBeforeOptions
+      : defaultRemoteSensing.before,
+    remoteSensingAfterOptions: hasItems(areaOverride?.remoteSensingAfterOptions)
+      ? areaOverride.remoteSensingAfterOptions
+      : defaultRemoteSensing.after,
+    historyCards: createAreaHistoryCards(
+      areaOverride?.historyCards,
+      sharedStations,
+      areaLabel,
+      areaLabelCn
+    ),
+    thematicRelations: hasItems(areaOverride?.thematicRelations)
+      ? areaOverride.thematicRelations
+      : createDefaultThematicRelations(template, areaLabel, areaLabelCn),
     ...(hasItems(areaOverride?.references) ? { references: areaOverride.references } : {}),
   };
 }

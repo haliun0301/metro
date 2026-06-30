@@ -6,9 +6,9 @@
 */
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LandingPage from './components/LandingPage';
-import MetroMapPage from './components/MetroMapPage';
-import MetroPeople from "./components/MetroPeople";
-import ThematicMap from './components/ThematicMap';
+import MetroMapPage from './components/metro-stations/MetroMapPage';
+import MetroPeople from "./components/metro-people/MetroPeople";
+import ThematicMap from './components/metro-city/ThematicMap';
 import StationDetailPage from './pages/StationDetailPage';
 
 function App() {

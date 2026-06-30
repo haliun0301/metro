@@ -27,6 +27,7 @@ export interface StationHistoryStageMediaOverride {
   src: string;
   alt?: LocalizedText;
   caption?: LocalizedText;
+  figureName?: LocalizedText;
   options?: RemoteSensingOption[];
 }
 
@@ -43,6 +44,7 @@ export interface StationHistoryStageOverride {
 }
 
 export interface StationHistoryRemoteSensingOverride {
+  figureName?: LocalizedText;
   title?: LocalizedText;
   description?: LocalizedText;
   before: StationHistoryStageMediaOverride;

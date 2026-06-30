@@ -1,6 +1,6 @@
 import { useMemo, useState, startTransition, useEffect, useRef, useCallback, type CSSProperties } from "react"
 import { motion } from "framer-motion"
-import { PeopleData } from "../data/people"
+import { PeopleData } from "../../data/metro-people/people"
 
 const CURRENT_YEAR = 2026
 

@@ -7,8 +7,8 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
   //Titles
   sectionTitles: {
     research: {
-      en: 'Research area map',
-      zh: '研究片区地图',
+      en: 'Shuibei-Tianbei area',
+      zh: '水贝-田贝片区',
     },
     history: {
       en: 'History of the area',
@@ -24,6 +24,10 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
     },
   },
   overviewImageSrc: '/assets/station-details/shuibeiArea/Overview/overview.png',
+  overviewImage: {
+    src: '/assets/station-details/shuibeiArea/Overview/overview.png',
+    figureName: { en: 'Figure 11', zh: '图11' },
+  },
   useInteractiveMap: true,
 
   //Section 1: Research area map
@@ -149,6 +153,10 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
       },
    
       imageSrc: '/assets/station-details/shuibeiArea/Remote sensing/1.png',
+      image: {
+        src: '/assets/station-details/shuibeiArea/Remote sensing/1.png',
+        figureName: { en: 'Figure 12', zh: '图12' },
+      },
       stages: [
         {
           id: 'shuibei-stage-1',
@@ -183,6 +191,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Sample remote sensing image for Stage 1 (2002 baseline).',
                 zh: '第一阶段遥感示例图（2002 年基线）。',
               },
+              figureName: { en: 'Figure 13', zh: '图13' },
             },
           ],
         },
@@ -209,6 +218,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Image source: Editorial Committee of Shenzhen Special Economic Zone Yearbook. Shenzhen Special Economic Zone Yearbook [M]. Guangzhou: Guangdong People\'s Publishing House, [1992].',
                 zh: '图像来源：深圳经济特区年鉴编辑委员会. 深圳经济特区年鉴[M]. 广州: 广东人民出版社, [1992].',
               },
+                figureName: { en: 'Figure 2', zh: '图2' },
             },
             {
               id: 'shuibei-stage-2-media-2',
@@ -217,6 +227,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Industrial map of the Shuibei area in 1999 (within the red dotted line), showing machinery and petrochemical enterprises.',
                 zh: '1999年 水贝片区的工业地图（红色虚线内），其中可见机械与石化类企业',
               },
+                figureName: { en: 'Figure 3', zh: '图3' },
             },
             {
               id: 'shuibei-stage-2-media-2',
@@ -225,6 +236,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Industrial map of the Shuibei area in 2002 (within the red dotted line), showing machinery and petrochemical enterprises.',
                 zh: '2002年 水贝片区的工业地图（红色虚线内），其中可见机械与石化类企业',
               },
+                figureName: { en: 'Figure 4', zh: '图4' },
             },
           ],
         },
@@ -267,9 +279,11 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Schematic diagram of the renovation project area (A: IBC Global Business Center, B: Dushu Village, C: Shuibei Village, D: Yuhongtian Plastics Factory, E: Jinli Jewelry Trading Center, F: Tefu Bonded Gold and Jewelry Industrial Center City)',
                 zh: '改造项目区域示意图（A：IBC 环球商务中心，B：独树村，C：水贝村，D：宇宏天塑胶厂，E：金丽珠宝交易中心，F：特发保税黄金珠宝产业中心城市）',
               },
+                figureName: { en: 'Figure 5', zh: '图5' },
             },
           ],
           remoteSensing: {
+            figureName: { en: 'Figure 1', zh: '图1' },
             title: {
               en: 'Remote sensing pair for Stage 4',
               zh: '第四阶段遥感对照',
@@ -306,8 +320,8 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                   src: '/assets/station-details/shuibeiArea/Remote sensing/4.png',
                 },
                 {
-                  id: 'shuibei-stage-4-before-5',
-                  label: { en: 'Before 2019', zh: '2019年前' },
+                    id: 'shuibei-stage-4-before-5',
+                    label: { en: 'Before 2019', zh: '2019年前' },
                   src: '/assets/station-details/shuibeiArea/Remote sensing/5.png',
                 },
                 {
@@ -378,6 +392,10 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
       },
     
       imageSrc: '/assets/station-details/shuibeiArea/Tianbei/Section 2/1_2.png',
+      image: {
+        src: '/assets/station-details/shuibeiArea/Tianbei/Section 2/1_2.png',
+        figureName: { en: 'Figure 14', zh: '图14' },
+      },
       stages: [
         {
           id: 'shuibei-stage-1',
@@ -412,6 +430,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Sample remote sensing image for Stage 1 (2002 baseline).',
                 zh: '第一阶段遥感示例图（2002 年基线）。',
               },
+              figureName: { en: 'Figure 15', zh: '图15' },
             },
           ],
         },
@@ -438,6 +457,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Image source: Editorial Committee of Shenzhen Special Economic Zone Yearbook. Shenzhen Special Economic Zone Yearbook [M]. Guangzhou: Guangdong People\'s Publishing House, [1992].',
                 zh: '图像来源：深圳经济特区年鉴编辑委员会. 深圳经济特区年鉴[M]. 广州: 广东人民出版社, [1992].',
               },
+                figureName: { en: 'Figure 2', zh: '图2' },
             },
             {
               id: 'shuibei-stage-2-media-2',
@@ -446,6 +466,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Industrial map of the Shuibei area in 1999 (within the red dotted line), showing machinery and petrochemical enterprises.',
                 zh: '1999年 水贝片区的工业地图（红色虚线内），其中可见机械与石化类企业',
               },
+                figureName: { en: 'Figure 3', zh: '图3' },
             },
             {
               id: 'shuibei-stage-2-media-2',
@@ -454,6 +475,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Industrial map of the Shuibei area in 2002 (within the red dotted line), showing machinery and petrochemical enterprises.',
                 zh: '2002年 水贝片区的工业地图（红色虚线内），其中可见机械与石化类企业',
               },
+                figureName: { en: 'Figure 4', zh: '图4' },
             },
           ],
         },
@@ -496,9 +518,11 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Schematic diagram of the renovation project area (A: IBC Global Business Center, B: Dushu Village, C: Shuibei Village, D: Yuhongtian Plastics Factory, E: Jinli Jewelry Trading Center, F: Tefu Bonded Gold and Jewelry Industrial Center City)',
                 zh: '改造项目区域示意图（A：IBC 环球商务中心，B：独树村，C：水贝村，D：宇宏天塑胶厂，E：金丽珠宝交易中心，F：特发保税黄金珠宝产业中心城市）',
               },
+                figureName: { en: 'Figure 5', zh: '图5' },
             },
           ],
           remoteSensing: {
+            figureName: { en: 'Figure 1', zh: '图1' },
             title: {
               en: 'Remote sensing pair for Stage 4',
               zh: '第四阶段遥感对照',
@@ -542,6 +566,10 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
         zh: '水贝片区的发展可以大致分为五个阶段，分别是：村落时期；改革开放后的三来一补时期；珠宝产业发展时期；城市改造与功能景观升级时期；产业数字化转型与旧改全面兑现时期。',
       },
       imageSrc: '/assets/station-details/shuibeiArea/Honghu/Section 3/1.png',
+      image: {
+        src: '/assets/station-details/shuibeiArea/Honghu/Section 3/1.png',
+        figureName: { en: 'Figure 16', zh: '图16' },
+      },
       stages: [
         {
           id: 'shuibei-stage-1',
@@ -576,6 +604,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Sample remote sensing image for Stage 1 (2002 baseline).',
                 zh: '第一阶段遥感示例图（2002 年基线）。',
               },
+              figureName: { en: 'Figure 17', zh: '图17' },
             },
           ],
         },
@@ -602,6 +631,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Image source: Editorial Committee of Shenzhen Special Economic Zone Yearbook. Shenzhen Special Economic Zone Yearbook [M]. Guangzhou: Guangdong People\'s Publishing House, [1992].',
                 zh: '图像来源：深圳经济特区年鉴编辑委员会. 深圳经济特区年鉴[M]. 广州: 广东人民出版社, [1992].',
               },
+                figureName: { en: 'Figure 2', zh: '图2' },
             },
             {
               id: 'shuibei-stage-2-media-2',
@@ -610,6 +640,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Industrial map of the Shuibei area in 1999 (within the red dotted line), showing machinery and petrochemical enterprises.',
                 zh: '1999年 水贝片区的工业地图（红色虚线内），其中可见机械与石化类企业',
               },
+                figureName: { en: 'Figure 3', zh: '图3' },
             },
             {
               id: 'shuibei-stage-2-media-2',
@@ -618,6 +649,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Industrial map of the Shuibei area in 2002 (within the red dotted line), showing machinery and petrochemical enterprises.',
                 zh: '2002年 水贝片区的工业地图（红色虚线内），其中可见机械与石化类企业',
               },
+                figureName: { en: 'Figure 4', zh: '图4' },
             },
           ],
         },
@@ -669,9 +701,11 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Schematic diagram of the renovation project area (A: IBC Global Business Center, B: Dushu Village, C: Shuibei Village, D: Yuhongtian Plastics Factory, E: Jinli Jewelry Trading Center, F: Tefu Bonded Gold and Jewelry Industrial Center City)',
                 zh: '改造项目区域示意图（A：IBC 环球商务中心，B：独树村，C：水贝村，D：宇宏天塑胶厂，E：金丽珠宝交易中心，F：特发保税黄金珠宝产业中心城市）',
               },
+                figureName: { en: 'Figure 5', zh: '图5' },
             },
           ],
           remoteSensing: {
+            figureName: { en: 'Figure 1', zh: '图1' },
             title: {
               en: 'Remote sensing pair for Stage 4',
               zh: '第四阶段遥感对照',
@@ -790,6 +824,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Densified urban blocks near station corridor',
                 zh: '站点走廊周边增密后的城市街区',
               },
+                figureName: { en: 'Figure 6', zh: '图6' },
             },
             {
               id: 'shuibeiArea-change-gallery-2',
@@ -798,6 +833,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Earlier land structure before densification',
                 zh: '增密前的早期土地结构',
               },
+                figureName: { en: 'Figure 7', zh: '图7' },
             },
           ],
         },
@@ -811,6 +847,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Densified urban blocks near station corridor',
                 zh: '站点走廊周边增密后的城市街区',
               },
+                figureName: { en: 'Figure 8', zh: '图8' },
             },
             {
               id: 'shuibeiArea-change-gallery-4',
@@ -819,6 +856,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Earlier land structure before densification',
                 zh: '增密前的早期土地结构',
               },
+                figureName: { en: 'Figure 9', zh: '图9' },
             },
           ],
         },
@@ -832,6 +870,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
                 en: 'Densified urban blocks near station corridor',
                 zh: '站点走廊周边增密后的城市街区',
               },
+                figureName: { en: 'Figure 10', zh: '图10' },
             },
           ],
         },

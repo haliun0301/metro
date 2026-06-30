@@ -1,14 +1,14 @@
 // MetroPeople Page: Unites PeopleCircles, CircularDiagram, and ColumnDiagram components
 
 import { useState, type CSSProperties } from "react"
-import { PeopleData } from "../data/people"
-import LanguageToggle from "./LanguageToggle"
+import { PeopleData } from "../../data/metro-people/people"
+import LanguageToggle from "../LanguageToggle"
 import PeopleCircles, { type Person } from "./PeopleCircles"
 import CircularDiagram, { type Segment } from "./CircularDiagram"
 import ColumnDiagram, { type DataPoint } from "./ColumnDiagram"
 import OccupationDiagram from "./OccupationDiagram"
 import OccupationCloud from "./OccupationCloud"
-import { useAppLanguage } from "../hooks/useAppLanguage"
+import { useAppLanguage } from "../../hooks/useAppLanguage"
 
 type OccupationCategoryName =
     | "Business & Enterprise"

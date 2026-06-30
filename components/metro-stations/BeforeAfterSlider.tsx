@@ -390,7 +390,7 @@ function BeforeAfterSlider({
         <button
           type="button"
           onClick={() => setIsFullscreen((prev) => !prev)}
-          className="absolute right-4 bottom-14 z-20 rounded-full border border-white/22 bg-black/45 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white transition hover:bg-black/60"
+          className="absolute right-4 bottom-14 z-20 rounded-full border border-white/45 bg-white/95 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#2A383E] shadow-lg backdrop-blur-sm transition-colors hover:border-transparent hover:bg-[#3EB181] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3EB181]"
         >
           {isFullscreen ? copy.exit : copy.expand}
         </button>

@@ -1,10 +1,11 @@
 import { type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import BeforeAfterSlider from '../components/BeforeAfterSlider';
-import OverviewToSliderMorph from '../components/OverviewToSliderMorph';
-import ShuibeiOverviewMap from '../components/ShuibeiOverviewMap';
+import BeforeAfterSlider from '../components/metro-stations/BeforeAfterSlider';
+import OverviewToSliderMorph from '../components/metro-stations/OverviewToSliderMorph';
+import ShuibeiOverviewMap from '../components/metro-stations/ShuibeiOverviewMap';
 import LanguageToggle from '../components/LanguageToggle';
-import { stationDetailMedia } from '../data/stationDetailMedia';
+import TextToDiagram from '../components/metro-stations/TextToDiagram';
+import { stationDetailMedia } from '../data/metro-stations/stationDetailMedia';
 import { useAppLanguage } from '../hooks/useAppLanguage';
 import {
   createStationSlug,
@@ -12,9 +13,10 @@ import {
   getStationHeadline,
   getStationQuickFacts,
   type StationHistoryStage,
+  type StationHistoryStageContentKey,
   getStationSectionLabel,
   type StationTimelineCard,
-} from '../data/stationDetails';
+} from '../data/metro-stations/stationDetails';
 
 /*
   StationDetailPage.tsx
@@ -81,9 +83,9 @@ const pageCopy = {
     highlightsBlock: 'Key points',
     mediaBlock: 'Visual references',
     remoteSensingBlock: 'Before and after',
-    showRunnerGallery: 'Show runner gallery',
-    hideRunnerGallery: 'Hide runner gallery',
-    sectionNav: 'Page sections',
+    showRunnerGallery: 'Show header image',
+    hideRunnerGallery: 'Hide header image',
+    sectionNav: 'Page content',
     researchMapCaption: 'Research area overview',
     researchMapText:
       'Use this section for a scrollable, code-based research map layout with area-level notes and station grouping logic.',
@@ -134,9 +136,9 @@ const pageCopy = {
     highlightsBlock: '要点',
     mediaBlock: '图像资料',
     remoteSensingBlock: '前后对比',
-    showRunnerGallery: '显示流动画廊',
-    hideRunnerGallery: '隐藏流动画廊',
-    sectionNav: '页面章节',
+    showRunnerGallery: '显示页首图片',
+    hideRunnerGallery: '隐藏页首图片',
+    sectionNav: '页面内容',
     researchMapCaption: '研究片区总览',
     researchMapText: '此部分可用于放置可滚动的代码化研究地图布局、片区级说明，以及站点分组逻辑。',
     historyHint: '每张卡片代表共享片区中的一个站点，并以横向滚动方式呈现。',
@@ -168,6 +170,27 @@ function getHistoryPhaseNavId(stationName: string, phaseId: string, phaseIndex: 
 
 function getHistoryPhaseNavLabel(phaseIndex: number, language: 'en' | 'zh') {
   return language === 'zh' ? `第 ${phaseIndex + 1} 阶段` : `Phase ${phaseIndex + 1}`;
+}
+
+// Generate a placeholder thumbnail SVG data URI for overview cards that lack an image
+function cardPlaceholderImage(cardId: string) {
+  let hash = 0
+  for (let i = 0; i < cardId.length; i++) hash = cardId.charCodeAt(i) + ((hash << 5) - hash)
+  const h = Math.abs(hash % 360)
+  const color = `hsl(${h}, 42%, 56%)`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240">
+    <rect width="400" height="240" fill="${color}" opacity="0.10" rx="14"/>
+    <rect width="400" height="240" fill="none" stroke="${color}" stroke-width="1.5" opacity="0.28" rx="14"/>
+    <circle cx="120" cy="100" r="30" fill="${color}" opacity="0.18"/>
+    <circle cx="220" cy="80" r="18" fill="${color}" opacity="0.14"/>
+    <circle cx="280" cy="140" r="12" fill="${color}" opacity="0.11"/>
+  </svg>`
+  return {
+    src: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    alt: undefined as { en: string; zh: string } | undefined,
+    caption: undefined as { en: string; zh: string } | undefined,
+    figureName: undefined as { en: string; zh: string } | undefined,
+  }
 }
 
 // Format a line string for the active language. Example: "Line 1" -> "1号线" in Chinese
@@ -320,6 +343,7 @@ function HistoryJourneySection({
   copy,
   scrollContainerRef,
   theme,
+  renderTextWithCitations,
 }: {
   language: 'en' | 'zh';
   cards: StationTimelineCard[];
@@ -346,6 +370,7 @@ function HistoryJourneySection({
   };
   scrollContainerRef: RefObject<HTMLDivElement | null>;
   theme: 'dark' | 'light';
+  renderTextWithCitations: (text: string, keyPrefix: string, className?: string) => ReactNode;
 }) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const stationRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -801,20 +826,40 @@ function HistoryJourneySection({
           <p className={`text-[10px] font-semibold uppercase tracking-[0.28em] ${subtleTextClass}`}>{stage.period[language]}</p>
           <h4 className={`mt-2 text-xl font-semibold ${titleTextClass}`}>{stage.title[language]}</h4>
 
-          <div className="mt-4 space-y-4">
-            {summaryParagraphs.map((paragraph, paragraphIndex) => (
-              <p key={`${stage.id}-vertical-summary-${paragraphIndex}`} className={`text-sm leading-7 md:text-base ${bodyTextClass}`}>
-                {paragraph}
-              </p>
-            ))}
+          <div className="mt-4">
+            <TextToDiagram
+              text={stage.summary[language]}
+              language={language}
+              theme={theme}
+              renderText={(fullText) => (
+                <div className="space-y-4">
+                  {fullText
+                    .split(/\n+/)
+                    .filter((p) => p.trim().length > 0)
+                    .map((paragraph, paragraphIndex) => (
+                      <div key={`${stage.id}-vertical-summary-${paragraphIndex}`} className="mb-4">
+                        {renderTextWithCitations(
+                          paragraph,
+                          `${stage.id}-vertical-summary-${paragraphIndex}`,
+                          `text-justify text-sm leading-7 md:text-base md:leading-8 ${bodyTextClass}`
+                        )}
+                      </div>
+                    ))}
+                </div>
+              )}
+            />
           </div>
 
           {notes.length > 0 && (
             <div className="mt-5 space-y-3">
               {notes.map((note, noteIndex) => (
-                <p key={`${stage.id}-vertical-note-${noteIndex}`} className={`text-sm leading-7 md:text-base ${bodyTextClass}`}>
-                  {note}
-                </p>
+                <div key={`${stage.id}-vertical-note-${noteIndex}`} className="mb-2">
+                  {renderTextWithCitations(
+                    note,
+                    `${stage.id}-vertical-note-${noteIndex}`,
+                    `text-justify text-sm leading-7 md:text-base md:leading-8 ${bodyTextClass}`
+                  )}
+                </div>
               ))}
             </div>
           )}
@@ -823,7 +868,11 @@ function HistoryJourneySection({
             <div className="mt-5 grid gap-2 md:grid-cols-2">
               {stage.highlights.map((item, highlightIndex) => (
                 <div key={`${stage.id}-vertical-highlight-${highlightIndex}`} className={`rounded-xl px-3 py-2 text-sm ${surfaceClass}`}>
-                  {item[language]}
+                  {renderTextWithCitations(
+                    item[language],
+                    `${stage.id}-vertical-highlight-${highlightIndex}`,
+                    `text-sm ${bodyTextClass}`
+                  )}
                 </div>
               ))}
             </div>
@@ -838,9 +887,11 @@ function HistoryJourneySection({
                     alt={mediaItem.alt?.[language] ?? stage.title[language]}
                     className="h-44 w-full object-cover"
                   />
-                  {mediaItem.caption && (
+                  {(mediaItem.figureName || mediaItem.caption) && (
                     <figcaption className={`px-3 py-2 text-xs leading-6 ${bodyTextClass}`}>
-                      {mediaItem.caption[language]}
+                      {mediaItem.figureName && <span className="font-semibold">{mediaItem.figureName[language]}</span>}
+                      {mediaItem.figureName && mediaItem.caption && <span>: </span>}
+                      {mediaItem.caption?.[language]}
                     </figcaption>
                   )}
                 </figure>
@@ -850,15 +901,24 @@ function HistoryJourneySection({
 
           {stage.remoteSensing && historyBeforeOptions.length > 0 && historyAfterOptions.length > 0 && (
             <div className="mt-5 rounded-2xl p-4">
+              {stage.remoteSensing.figureName && (
+                <p className={`text-[10px] font-semibold uppercase tracking-[0.24em] ${subtleTextClass}`}>
+                  {stage.remoteSensing.figureName[language]}
+                </p>
+              )}
               {stage.remoteSensing.title && (
-                <h5 className={`text-sm font-semibold md:text-base ${titleTextClass}`}>
+                <h5 className={`${stage.remoteSensing.figureName ? 'mt-2 ' : ''}text-sm font-semibold md:text-base ${titleTextClass}`}>
                   {stage.remoteSensing.title[language]}
                 </h5>
               )}
               {stage.remoteSensing.description && (
-                <p className={`mt-2 text-sm leading-7 ${bodyTextClass}`}>
-                  {stage.remoteSensing.description[language]}
-                </p>
+                <div className="mt-2">
+                  {renderTextWithCitations(
+                    stage.remoteSensing.description[language],
+                    `${stage.id}-vertical-remote-description`,
+                    `text-sm leading-7 ${bodyTextClass}`
+                  )}
+                </div>
               )}
               <div className="mt-4">
                 <BeforeAfterSlider
@@ -952,7 +1012,6 @@ function HistoryJourneySection({
     const contentOrder = stage.contentOrder?.length
       ? stage.contentOrder
       : ['summary', 'notes', 'highlights', 'media', 'remoteSensing'];
-    const visibleContentOrder = contentOrder.filter((key) => key !== 'notes' && key !== 'highlights');
     const contentLabelMap = {
       summary: copy.summaryBlock,
       notes: copy.notesBlock,
@@ -960,6 +1019,10 @@ function HistoryJourneySection({
       media: copy.mediaBlock,
       remoteSensing: copy.remoteSensingBlock,
     } as const;
+    const visibleContentOrder = contentOrder.filter(
+      (key): key is Exclude<StationHistoryStageContentKey, 'notes' | 'highlights'> =>
+        key !== 'notes' && key !== 'highlights'
+    );
     const summaryParagraphs = stage.summary[language]
       .split(/\n+/)
       .filter((paragraph) => paragraph.trim().length > 0);
@@ -1023,22 +1086,36 @@ function HistoryJourneySection({
               columnGap: '1.25rem',
             }}
           >
-            {summaryParagraphs.map((paragraph, paragraphIndex) => (
-              <p
-                key={`${stage.id}-summary-${paragraphIndex}`}
-                className={`mb-4 break-inside-avoid text-justify text-sm leading-7 md:text-base md:leading-8 ${bodyTextClass}`}
-              >
-                {paragraph}
-              </p>
-            ))}
+            <TextToDiagram
+              text={stage.summary[language]}
+              language={language}
+              theme={theme}
+              renderText={(fullText) => (
+                <div>
+                  {fullText
+                    .split(/\n+/)
+                    .filter((p) => p.trim().length > 0)
+                    .map((paragraph, paragraphIndex) => (
+                      <div key={`${stage.id}-summary-${paragraphIndex}`} className="mb-4 break-inside-avoid">
+                        {renderTextWithCitations(
+                          paragraph,
+                          `${stage.id}-summary-${paragraphIndex}`,
+                          `text-justify text-sm leading-7 md:text-base md:leading-8 ${bodyTextClass}`
+                        )}
+                      </div>
+                    ))}
+                </div>
+              )}
+            />
 
             {notes.map((note, noteIndex) => (
-              <p
-                key={`${stage.id}-note-${noteIndex}`}
-                className={`mb-4 break-inside-avoid text-justify text-sm leading-7 md:text-base md:leading-8 ${bodyTextClass}`}
-              >
-                {note}
-              </p>
+              <div key={`${stage.id}-note-${noteIndex}`} className="mb-4 break-inside-avoid">
+                {renderTextWithCitations(
+                  note,
+                  `${stage.id}-note-${noteIndex}`,
+                  `text-justify text-sm leading-7 md:text-base md:leading-8 ${bodyTextClass}`
+                )}
+              </div>
             ))}
 
             {stage.highlights.map((item) => (
@@ -1059,9 +1136,11 @@ function HistoryJourneySection({
                   alt={stage.media[0].alt?.[language] ?? stage.title[language]}
                   className="h-52 w-full object-cover md:h-64"
                 />
-                {stage.media[0].caption && (
+                {(stage.media[0].figureName || stage.media[0].caption) && (
                   <figcaption className={`px-3 py-2 text-xs leading-6 ${bodyTextClass}`}>
-                    {stage.media[0].caption[language]}
+                    {stage.media[0].figureName && <span className="font-semibold">{stage.media[0].figureName[language]}</span>}
+                    {stage.media[0].figureName && stage.media[0].caption && <span>: </span>}
+                    {stage.media[0].caption?.[language]}
                   </figcaption>
                 )}
               </figure>
@@ -1075,9 +1154,11 @@ function HistoryJourneySection({
                         alt={mediaItem.alt?.[language] ?? stage.title[language]}
                         className="h-28 w-full object-cover"
                       />
-                      {mediaItem.caption && (
+                      {(mediaItem.figureName || mediaItem.caption) && (
                         <figcaption className={`px-2 py-1.5 text-[11px] leading-5 ${bodyTextClass}`}>
-                          {mediaItem.caption[language]}
+                          {mediaItem.figureName && <span className="font-semibold">{mediaItem.figureName[language]}</span>}
+                          {mediaItem.figureName && mediaItem.caption && <span>: </span>}
+                          {mediaItem.caption?.[language]}
                         </figcaption>
                       )}
                     </figure>
@@ -1115,7 +1196,13 @@ function HistoryJourneySection({
             <p className={`text-[10px] font-semibold uppercase tracking-[0.24em] ${subtleTextClass}`}>{copy.summaryBlock}</p>
             <article className={`mt-3 rounded-xl border p-4 ${minorSurfaceClass}`}>
               <p className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${subtleTextClass}`}>{copy.summaryBlock}</p>
-              <p className={`mt-2 whitespace-pre-line text-sm leading-7 md:text-[15px] ${bodyTextClass}`}>{summaryText}</p>
+              <div className="mt-3">
+                {renderTextWithCitations(
+                  summaryText,
+                  `${stage.id}-visual-summary`,
+                  `text-justify text-sm leading-7 md:text-base md:leading-8 ${bodyTextClass}`
+                )}
+              </div>
             </article>
           </section>
         );
@@ -1128,7 +1215,11 @@ function HistoryJourneySection({
             <div className="mt-3 grid grid-cols-2 gap-3">
               {[notesLeftText, notesRightText].map((columnText, columnIndex) => (
                 <div key={`${stage.id}-visual-note-column-${columnIndex}`} className={`rounded-xl border px-4 py-3 ${minorSurfaceClass}`}>
-                  <p className={`whitespace-pre-line text-sm leading-7 md:text-[15px] ${bodyTextClass}`}>{columnText}</p>
+                  {renderTextWithCitations(
+                    columnText,
+                    `${stage.id}-visual-note-column-${columnIndex}`,
+                    `whitespace-pre-line text-sm leading-7 md:text-[15px] ${bodyTextClass}`
+                  )}
                 </div>
               ))}
             </div>
@@ -1146,7 +1237,13 @@ function HistoryJourneySection({
                   <p className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${subtleTextClass}`}>
                     {String(highlightIndex + 1).padStart(2, '0')}
                   </p>
-                  <p className={`mt-2 text-sm leading-7 ${bodyTextClass}`}>{item[language]}</p>
+                  <div className="mt-2">
+                    {renderTextWithCitations(
+                      item[language],
+                      `${stage.id}-visual-highlight-${highlightIndex}`,
+                      `text-sm leading-7 ${bodyTextClass}`
+                    )}
+                  </div>
                 </article>
               ))}
             </div>
@@ -1166,9 +1263,11 @@ function HistoryJourneySection({
                     alt={mediaItem.alt?.[language] ?? stage.title[language]}
                     className="h-40 w-full object-cover"
                   />
-                  {mediaItem.caption && (
+                  {(mediaItem.figureName || mediaItem.caption) && (
                     <figcaption className={`px-3 py-2 text-[11px] leading-5 ${bodyTextClass}`}>
-                      {mediaItem.caption[language]}
+                      {mediaItem.figureName && <span className="font-semibold">{mediaItem.figureName[language]}</span>}
+                      {mediaItem.figureName && mediaItem.caption && <span>: </span>}
+                      {mediaItem.caption?.[language]}
                     </figcaption>
                   )}
                 </figure>
@@ -1203,12 +1302,23 @@ function HistoryJourneySection({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className={`text-[10px] font-semibold uppercase tracking-[0.24em] ${subtleTextClass}`}>{copy.remoteSensingBlock}</p>
+                {stage.remoteSensing.figureName && (
+                  <p className={`mt-2 text-[10px] font-semibold uppercase tracking-[0.24em] ${subtleTextClass}`}>
+                    {stage.remoteSensing.figureName[language]}
+                  </p>
+                )}
                 {stage.remoteSensing.title && (
                   <h5 className={`mt-2 text-sm font-semibold md:text-base ${titleTextClass}`}>{stage.remoteSensing.title[language]}</h5>
                 )}
               </div>
               {stage.remoteSensing.description && (
-                <p className={`max-w-2xl text-sm leading-7 ${bodyTextClass}`}>{stage.remoteSensing.description[language]}</p>
+                <div className="max-w-2xl">
+                  {renderTextWithCitations(
+                    stage.remoteSensing.description[language],
+                    `${stage.id}-visual-remote-description`,
+                    `text-sm leading-7 ${bodyTextClass}`
+                  )}
+                </div>
               )}
             </div>
             <div className="mt-4">
@@ -1255,9 +1365,11 @@ function HistoryJourneySection({
                             alt={mediaItem.alt?.[language] ?? stage.title[language]}
                             className="h-36 w-full object-cover"
                           />
-                          {mediaItem.caption && (
+                          {(mediaItem.figureName || mediaItem.caption) && (
                             <figcaption className={`px-3 py-2 text-[11px] leading-5 ${bodyTextClass}`}>
-                              {mediaItem.caption[language]}
+                              {mediaItem.figureName && <span className="font-semibold">{mediaItem.figureName[language]}</span>}
+                              {mediaItem.figureName && mediaItem.caption && <span>: </span>}
+                              {mediaItem.caption?.[language]}
                             </figcaption>
                           )}
                         </figure>
@@ -1278,9 +1390,11 @@ function HistoryJourneySection({
                       alt={mediaItem.alt?.[language] ?? stage.title[language]}
                       className="h-32 w-full object-cover"
                     />
-                    {mediaItem.caption && (
+                    {(mediaItem.figureName || mediaItem.caption) && (
                       <figcaption className={`px-2.5 py-2 text-[11px] leading-5 ${bodyTextClass}`}>
-                        {mediaItem.caption[language]}
+                        {mediaItem.figureName && <span className="font-semibold">{mediaItem.figureName[language]}</span>}
+                        {mediaItem.figureName && mediaItem.caption && <span>: </span>}
+                        {mediaItem.caption?.[language]}
                       </figcaption>
                     )}
                   </figure>
@@ -1363,9 +1477,13 @@ function HistoryJourneySection({
                       <h3 className={`mt-3 text-3xl font-semibold leading-tight md:text-4xl ${titleTextClass}`}>
                         {card.title[language]}
                       </h3>
-                      <p className={`mt-4 text-sm leading-7 md:text-base ${bodyTextClass}`}>
-                        {card.summary[language]}
-                      </p>
+                      <div className="mt-4">
+                        {renderTextWithCitations(
+                          card.summary[language],
+                          `${card.station.name}-vertical-card-summary`,
+                          `text-sm leading-7 md:text-base ${bodyTextClass}`
+                        )}
+                      </div>
                     </div>
 
                     <figure className={`overflow-hidden rounded-2xl ${surfaceClass}`}>
@@ -1555,9 +1673,13 @@ function HistoryJourneySection({
                             <h3 className={`mt-4 text-4xl font-semibold leading-tight md:text-6xl xl:text-7xl ${titleTextClass}`}>
                               {card.title[language]}
                             </h3>
-                            <p className={`mt-6 max-w-3xl text-base leading-8 md:text-xl md:leading-9 ${bodyTextClass}`}>
-                              {card.summary[language]}
-                            </p>
+                            <div className="mt-6 max-w-3xl">
+                              {renderTextWithCitations(
+                                card.summary[language],
+                                `${card.station.name}-horizontal-card-summary`,
+                                `text-base leading-8 md:text-xl md:leading-9 ${bodyTextClass}`
+                              )}
+                            </div>
                           </div>
 
                           <div
@@ -1772,7 +1894,7 @@ function StationDetailPage() {
     id: note.id,
     title: note.title[language],
     description: note.description[language],
-    image: note.image,
+    image: note.image ?? cardPlaceholderImage(note.id),
   }));
   const overviewPoints = sections.overviewPoints ?? [];
   const remoteSensingBeforeOptions = sections.remoteSensingBeforeOptions ?? [];
@@ -1796,10 +1918,6 @@ function StationDetailPage() {
     const unique = Array.from(new Set(collected));
     return unique.slice(0, Math.max(5, Math.min(8, unique.length)));
   }, [overviewImage?.src, remoteSensingBeforeOptions, remoteSensingAfterOptions]);
-  const headerGalleryLoop = useMemo(
-    () => [...headerGalleryImages, ...headerGalleryImages],
-    [headerGalleryImages]
-  );
   const historyCards = sections.historyCards ?? [];
   const historyScrollMode = sections.historyScrollMode ?? 'horizontal';
   const thematicRelations = sections.thematicRelations ?? [];
@@ -1829,6 +1947,163 @@ function StationDetailPage() {
 
     return [normalizedText];
   };
+  const normalizeReferenceText = (text: string) =>
+    text
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/[\[\]{}()"'“”‘’，。、《》！？：；,.!?;:]/g, '')
+      .trim();
+  let runningReferenceNumber = 1;
+  const flattenedReferenceEntries = references.flatMap((reference) =>
+    getReferenceEntries(reference.detail[language]).map((entry) => {
+      const globalNumber = runningReferenceNumber;
+      runningReferenceNumber += 1;
+
+      return {
+        referenceId: reference.id,
+        entry,
+        globalNumber,
+      };
+    })
+  );
+  const referenceEntryByNumber = new Map<number, { referenceId: string; entry: string }>();
+  const referenceNumberByNormalized = new Map<string, number>();
+
+  flattenedReferenceEntries.forEach((item) => {
+    referenceEntryByNumber.set(item.globalNumber, { referenceId: item.referenceId, entry: item.entry });
+    const normalized = normalizeReferenceText(item.entry);
+    if (normalized && !referenceNumberByNormalized.has(normalized)) {
+      referenceNumberByNormalized.set(normalized, item.globalNumber);
+    }
+  });
+
+  const resolveReferenceNumber = (citation: string) => {
+    const normalizedCitation = normalizeReferenceText(citation);
+    if (!normalizedCitation) return undefined;
+
+    const exact = referenceNumberByNormalized.get(normalizedCitation);
+    if (typeof exact === 'number') return exact;
+
+    for (const [normalizedEntry, number] of referenceNumberByNormalized.entries()) {
+      if (
+        normalizedEntry.includes(normalizedCitation) ||
+        normalizedCitation.includes(normalizedEntry)
+      ) {
+        return number;
+      }
+    }
+
+    // Word-overlap fallback: find the entry with highest shared word ratio
+    const citationWords = new Set(normalizedCitation.split(' ').filter(Boolean));
+    if (citationWords.size === 0) return undefined;
+
+    let bestNumber: number | undefined;
+    let bestScore = 0;
+
+    for (const [normalizedEntry, number] of referenceNumberByNormalized.entries()) {
+      const entryWords = normalizedEntry.split(' ').filter(Boolean);
+      if (entryWords.length === 0) continue;
+      const shared = entryWords.filter((w) => citationWords.has(w)).length;
+      const score = shared / Math.max(citationWords.size, entryWords.length);
+      if (score > bestScore) {
+        bestScore = score;
+        bestNumber = number;
+      }
+    }
+
+    // Only return a match if more than 40% of words overlap
+    return bestScore >= 0.4 ? bestNumber : undefined;
+  };
+
+  const renderTextWithCitations = (text: string, keyPrefix: string, className = '') => {
+    const source = text ?? '';
+    const citationPattern = /(?:\[\[\[?\]?\s*([\s\S]*?)\s*\]\]|\[\s*([\s\S]*?)\s*\]\])/g;
+    const pieces: ReactNode[] = [];
+    let cursor = 0;
+    let matchIndex = 0;
+
+    for (const match of source.matchAll(citationPattern)) {
+      const fullMatch = match[0] ?? '';
+      const citationBody = (match[1] ?? match[2] ?? '')
+        .replace(/^\[+\s*/, '')
+        .replace(/\s*\]+$/, '')
+        .trim();
+      const start = match.index ?? 0;
+      const end = start + fullMatch.length;
+
+      if (start > cursor) {
+        pieces.push(source.slice(cursor, start));
+      }
+
+      const number = resolveReferenceNumber(citationBody);
+      const referenceEntry = typeof number === 'number' ? referenceEntryByNumber.get(number) : undefined;
+
+      if (typeof number === 'number') {
+        pieces.push(
+          <button
+            key={`${keyPrefix}-citation-${matchIndex}`}
+            type="button"
+            title={referenceEntry?.entry ?? citationBody}
+            onClick={() => {
+              const container = pageScrollRef.current;
+              if (!container) return;
+
+              // Ensure the reference card is expanded so the anchor is visible
+              if (referenceEntry?.referenceId) {
+                setExpandedReferenceCards((current) => ({
+                  ...current,
+                  [referenceEntry.referenceId]: true,
+                }));
+              }
+
+              // Wait one frame so expand renders before we measure
+              requestAnimationFrame(() => {
+                const target = container.querySelector(`#reference-entry-${number}`) as HTMLElement | null;
+                if (!target) return;
+                const containerRect = container.getBoundingClientRect();
+                const targetRect = target.getBoundingClientRect();
+                const scrollOffset = targetRect.top - containerRect.top + container.scrollTop - 96;
+                container.scrollTo({ top: scrollOffset, behavior: 'smooth' });
+              });
+            }}
+            className="ml-0.5 cursor-pointer align-super text-[0.75em] font-semibold text-cyan-700 underline decoration-cyan-700/40 underline-offset-2 transition hover:text-cyan-900"
+          >
+            [{number}]
+          </button>
+        );
+      } else {
+        pieces.push(
+          <span
+            key={`${keyPrefix}-citation-missing-${matchIndex}`}
+            title={citationBody}
+            className="ml-1 align-super text-[0.75em] font-semibold text-zinc-500"
+          >
+            [?]
+          </span>
+        );
+      }
+
+      cursor = end;
+      matchIndex += 1;
+    }
+
+    if (cursor < source.length) {
+      pieces.push(source.slice(cursor));
+    }
+
+    if (pieces.length === 0) {
+      return <p className={className}>{source}</p>;
+    }
+
+    return <p className={className}>{pieces}</p>;
+  };
+
+  const referenceEntriesByReferenceId = new Map<string, Array<{ entry: string; number: number }>>();
+  flattenedReferenceEntries.forEach((item) => {
+    const current = referenceEntriesByReferenceId.get(item.referenceId) ?? [];
+    current.push({ entry: item.entry, number: item.globalNumber });
+    referenceEntriesByReferenceId.set(item.referenceId, current);
+  });
   const developmentText = template.development[language].trim();
   const hasOverviewImage = Boolean(overviewImage?.src);
   const hasOverviewCards = overviewCards.length > 0;
@@ -1843,6 +2118,7 @@ function StationDetailPage() {
   const hasReferencesGrid = references.length > 0;
   const hasDevelopmentPanel = Boolean(developmentText) || siblings.length > 0;
   const hasReferencesSection = hasReferencesGrid || hasDevelopmentPanel;
+  const researchSectionLabel = sectionTitles?.research?.[language] ?? copy.sections[0];
   const researchSectionTitle = sectionTitles?.research?.[language] ?? copy.overviewDiagramTitle;
   const historySectionTitle = sectionTitles?.history?.[language] ?? copy.sections[2];
   const historySectionDescription =
@@ -1875,7 +2151,7 @@ function StationDetailPage() {
   }, [overviewImage?.src]);
 
   if (hasResearchSection) {
-    sectionNavItems.push({ id: 'research-map', label: copy.sections[0], level: 0, order: sectionOrder });
+    sectionNavItems.push({ id: 'research-map', label: researchSectionLabel, level: 0, order: sectionOrder });
     sectionOrder += 1;
   }
 
@@ -1925,7 +2201,9 @@ function StationDetailPage() {
   } | null>(null);
   const [expandedThematicCards, setExpandedThematicCards] = useState<Record<string, boolean>>({});
   const [expandedReferenceCards, setExpandedReferenceCards] = useState<Record<string, boolean>>({});
+  const [isSectionNavOpen, setIsSectionNavOpen] = useState(false);
   const [showRunnerGallery, setShowRunnerGallery] = useState(true);
+  const [headerImageIndex, setHeaderImageIndex] = useState(0);
   const [pageBackground, setPageBackground] = useState(PAGE_DARK);
   const pageTone = getColorBrightness(pageBackground) > 170 ? 'light' : 'dark';
   const isLightPage = pageTone === 'light';
@@ -1938,6 +2216,7 @@ function StationDetailPage() {
   const adaptivePrimaryCardClass = isLightPage
     ? ''
     : '';
+  const activeHeaderImage = headerGalleryImages[headerImageIndex] ?? headerGalleryImages[0];
   const navChildrenByParent = useMemo(() => {
     const children = new Map<string, SectionNavItem[]>();
 
@@ -1999,6 +2278,22 @@ function StationDetailPage() {
   };
 
   const visibleSectionNavItems = sectionNavItems.filter(isNavItemVisible);
+
+  useEffect(() => {
+    setHeaderImageIndex(0);
+  }, [headerGalleryImages]);
+
+  useEffect(() => {
+    if (!showRunnerGallery || headerGalleryImages.length <= 1) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setHeaderImageIndex((current) => (current + 1) % headerGalleryImages.length);
+    }, 4800);
+
+    return () => window.clearInterval(intervalId);
+  }, [showRunnerGallery, headerGalleryImages]);
 
   const isNavItemActive = (item: SectionNavItem) => {
     if (!activeNavItemId) return false;
@@ -2201,9 +2496,9 @@ function StationDetailPage() {
       <LanguageToggle language={language} onChange={setLanguage} />
       <style>
         {`
-          @keyframes stationHeaderGalleryDrift {
-            from { transform: translate3d(0, 0, 0); }
-            to { transform: translate3d(-50%, 0, 0); }
+          @keyframes stationHeaderImageReveal {
+            from { opacity: 0.4; transform: scale(1.04); }
+            to { opacity: 1; transform: scale(1); }
           }
         `}
       </style>
@@ -2216,20 +2511,30 @@ function StationDetailPage() {
            ─────────────────────────────────────────────────────────────────── */}
       {sectionNavItems.length > 0 && (
         <nav
-          className="fixed right-6 top-1/2 z-50 hidden -translate-y-1/2 flex-col md:flex"
+          className="fixed right-6 top-[88px] z-50 hidden flex-col items-end md:flex"
           aria-label={copy.sectionNav}
         >
-          <div className={`flex max-h-[72vh] flex-col gap-0.5 overflow-y-auto rounded-2xl border p-3 backdrop-blur-xl ${
+          <div className={`flex max-h-[72vh] min-w-[180px] flex-col rounded-2xl border p-2 backdrop-blur-xl ${
             isLightPage
               ? 'border-black/10 bg-white/82 shadow-[0_12px_40px_rgba(0,0,0,0.12)]'
               : 'border-white/10 bg-[#07121d]/72 shadow-[0_12px_40px_rgba(0,0,0,0.28)]'
           }`}>
-            <p className={`mb-2 px-1 text-[9px] font-semibold uppercase tracking-[0.28em] ${
-              isLightPage ? 'text-zinc-400' : 'text-white/35'
-            }`}>
+            <button
+              type="button"
+              onClick={() => setIsSectionNavOpen((isOpen) => !isOpen)}
+              aria-expanded={isSectionNavOpen}
+              className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.24em] transition ${
+                isLightPage
+                  ? 'text-zinc-600 hover:bg-black/5 hover:text-zinc-950'
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
+              }`}
+            >
               {copy.sectionNav}
-            </p>
-            {visibleSectionNavItems.map((item) => {
+              <span className={`text-xs transition-transform duration-150 ${isSectionNavOpen ? 'rotate-90' : ''}`}>›</span>
+            </button>
+            {isSectionNavOpen && (
+              <div className="mt-1 flex max-h-[62vh] flex-col gap-0.5 overflow-y-auto pr-1">
+                {visibleSectionNavItems.map((item) => {
               const hasChildren = navChildrenByParent.has(item.id);
               const isExpanded = expandedNavIds[item.id];
               const isActive = isNavItemActive(item);
@@ -2283,48 +2588,28 @@ function StationDetailPage() {
                 )}
               </button>
               );
-            })}
+                })}
+              </div>
+            )}
           </div>
         </nav>
       )}
 
       <div className="w-full pt-24 md:pt-28">
-        <Link
-          to="/map"
-          className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium backdrop-blur-md transition ${isLightPage ? 'border border-black/10 bg-white/72 text-zinc-700 hover:border-black/20 hover:bg-white/90 hover:text-zinc-950' : 'border border-white/12 bg-white/8 text-white/75 hover:border-white/30 hover:bg-white/12 hover:text-white'}`}
-        >
-          ← {copy.back}
-        </Link>
-
-        <section ref={introSectionRef} className={`${lightBandClass} mt-6 flex min-h-screen items-center`}>
+        <section ref={introSectionRef} className={`${lightBandClass} flex min-h-screen items-center`}>
           <div className={`${bandInnerClass} relative`}>
-          {showRunnerGallery && headerGalleryImages.length > 0 && (
-            <div className="pointer-events-none absolute left-0 right-0 top-0 h-36 overflow-hidden rounded-[34px] md:h-44">
-              <div className="absolute inset-0 flex items-start">
-                <div
-                  className="flex w-max items-center gap-4 pr-4"
-                  style={{ animation: 'stationHeaderGalleryDrift 56s linear infinite', willChange: 'transform' }}
-                >
-                  {headerGalleryLoop.map((src, index) => (
-                    <figure
-                      key={`header-gallery-${src}-${index}`}
-                      className="h-24 w-40 overflow-hidden rounded-2xl md:h-28 md:w-48"
-                    >
-                      <img
-                        src={src}
-                        alt=""
-                        aria-hidden="true"
-                        className="h-full w-full object-cover"
-                        style={{
-                          filter: 'none',
-                          opacity: 1,
-                          mixBlendMode: 'normal',
-                        }}
-                      />
-                    </figure>
-                  ))}
-                </div>
-              </div>
+          {showRunnerGallery && activeHeaderImage && (
+            <div className="pointer-events-none absolute left-6 right-6 top-0 h-[46vh] min-h-[22rem] overflow-hidden rounded-[34px] md:left-10 md:right-10 md:h-[50vh]">
+              <figure key={activeHeaderImage} className="relative h-full w-full overflow-hidden rounded-[34px]">
+                <img
+                  src={activeHeaderImage}
+                  alt=""
+                  aria-hidden="true"
+                  className="h-full w-full object-cover"
+                  style={{ animation: 'stationHeaderImageReveal 900ms ease' }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/12 via-black/22 to-black/58" />
+              </figure>
             </div>
           )}
           {headerGalleryImages.length > 0 && (
@@ -2339,7 +2624,7 @@ function StationDetailPage() {
             </div>
           )}
           <div className={`overflow-hidden rounded-[34px] ${adaptivePrimaryCardClass}`}>
-          <div className={`relative z-10 px-6 pb-8 md:px-10 md:pb-10 ${showRunnerGallery ? 'pt-44 md:pt-52' : 'pt-12 md:pt-14'}`}>
+          <div className={`relative z-10 px-6 pb-8 md:px-10 md:pb-10 ${showRunnerGallery ? 'pt-[calc(46vh+2rem)] md:pt-[calc(50vh+2rem)]' : 'pt-12 md:pt-14'}`}>
             <div>
               <p className="inline-flex rounded-full border border-white/35 bg-white/14 px-4 py-1 text-xs font-semibold uppercase tracking-[0.34em] text-white/95">
                 {copy.sharedTemplate}
@@ -2347,10 +2632,14 @@ function StationDetailPage() {
               <h1 className="mt-5 text-4xl font-semibold leading-tight text-white md:text-5xl">
                 {stationDisplayName}
               </h1>
-              
-              <p className="mt-6 max-w-3xl text-base leading-8 text-white/88 md:text-lg">
-                {getStationHeadline(detail, language)}
-              </p>
+
+              <div className="mt-6 max-w-3xl">
+                {renderTextWithCitations(
+                  getStationHeadline(detail, language),
+                  'intro-headline',
+                  'text-base leading-8 text-white/88 md:text-lg'
+                )}
+              </div>
 
             </div>
 
@@ -2381,14 +2670,14 @@ function StationDetailPage() {
             id="research-map"
             sectionRef={researchSectionRef}
             theme="light"
-            eyebrow={copy.sections[0]}
+            eyebrow={researchSectionLabel}
             title={researchSectionTitle}
             description={copy.overviewDiagramText}
             fullWidth
           >
             <div className={lightSectionClass}>
             <div className="mb-4 rounded-2xl p-5 md:p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-800/80">{copy.sections[0]}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-800/80">{researchSectionLabel}</p>
               <h2 className="mt-3 text-2xl font-semibold text-[#3EB181] md:text-3xl">{researchSectionTitle}</h2>
               <p className="max-w-4xl text-sm leading-7 text-zinc-700 md:text-base">{copy.overviewDiagramText}</p>
             </div>
@@ -2397,8 +2686,7 @@ function StationDetailPage() {
                 <article className="flex min-h-screen flex-col justify-start rounded-[28px] p-5 md:p-6">
                   <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-zinc-500">{copy.sharedTemplate}</p>
-                      <h3 className="mt-2 text-xl font-semibold text-zinc-950">{language === 'zh' ? areaLabelCn : areaLabel}</h3>
+                      <h3 className="text-xl font-semibold text-zinc-950">{language === 'zh' ? areaLabelCn : areaLabel}</h3>
                     </div>
                     <div className="rounded-2xl px-4 py-3 text-right">
                       <p className="text-[10px] uppercase tracking-[0.24em] text-zinc-500">{copy.related}</p>
@@ -2409,7 +2697,7 @@ function StationDetailPage() {
                   <div
                     ref={overviewBoardRef}
                     className={useSideBySideOverviewBoard
-                      ? 'grid gap-6 lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] lg:items-start'
+                      ? 'grid gap-6 lg:grid-cols-2 lg:items-stretch'
                       : useInteractiveOverviewBoard
                         ? 'relative grid gap-4 lg:min-h-[54rem] lg:grid-cols-1'
                         : 'grid gap-4'}
@@ -2432,12 +2720,12 @@ function StationDetailPage() {
                     )}
 
                     {hasOverviewImage && !useMorphTransition && (
-                      <div className={`w-full rounded-[32px] p-5 ${
+                      <div className={`w-full rounded-[32px] ${
                         useSideBySideOverviewBoard
-                          ? 'lg:max-w-[32rem]'
+                          ? 'min-h-[58vh] p-3 lg:min-h-[calc(100vh-16rem)]'
                           : useInteractiveOverviewBoard
-                          ? 'lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2'
-                          : ''
+                            ? 'p-5 lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2'
+                            : 'p-5'
                       }`}>
                         {sections.useInteractiveMap && overviewImage?.src ? (
                           <ShuibeiOverviewMap
@@ -2445,25 +2733,32 @@ function StationDetailPage() {
                             language={language}
                             activeNoteId={highlightedNoteId}
                             onHighlight={setHighlightedNoteId}
+                            fillContainer={useSideBySideOverviewBoard}
                           />
                         ) : (
-                          <div className="overflow-hidden rounded-[22px] border border-black/10 bg-white">
+                          <div className={`overflow-hidden rounded-[22px] border border-black/10 bg-white ${
+                            useSideBySideOverviewBoard ? 'h-full' : ''
+                          }`}>
                             <img
                               src={overviewImage?.src}
                               alt={overviewImage?.alt?.[language] ?? copy.researchMapCaption}
-                              className="block h-auto w-full object-contain"
+                              className={useSideBySideOverviewBoard ? 'h-full w-full object-contain' : 'block h-auto w-full object-contain'}
                             />
                           </div>
                         )}
-                        {overviewImage?.caption && (
-                          <p className="mt-3 text-xs leading-6 text-zinc-600">{overviewImage.caption[language]}</p>
+                        {(overviewImage?.figureName || overviewImage?.caption) && (
+                          <p className="mt-3 text-xs leading-6 text-zinc-600">
+                            {overviewImage?.figureName && <span className="font-semibold">{overviewImage.figureName[language]}</span>}
+                            {overviewImage?.figureName && overviewImage?.caption && <span>: </span>}
+                            {overviewImage?.caption?.[language]}
+                          </p>
                         )}
                       </div>
                     )}
 
                     {hasOverviewCards && (
                       <div className={useSideBySideOverviewBoard
-                        ? 'grid gap-4'
+                        ? 'grid content-start gap-4 sm:grid-cols-2'
                         : useInteractiveOverviewBoard
                           ? 'grid gap-4 lg:block'
                           : 'grid gap-4 md:grid-cols-2 xl:grid-cols-3'}>
@@ -2528,15 +2823,21 @@ function StationDetailPage() {
                                     alt={card.image.alt?.[language] ?? card.title}
                                     className="h-40 w-full object-cover"
                                   />
-                                  {card.image.caption && (
+                                  {(card.image.figureName || card.image.caption) && (
                                     <figcaption className="px-3 py-2 text-[11px] leading-5 text-zinc-600">
-                                      {card.image.caption[language]}
+                                      {card.image.figureName && <span className="font-semibold">{card.image.figureName[language]}</span>}
+                                      {card.image.figureName && card.image.caption && <span>: </span>}
+                                      {card.image.caption?.[language]}
                                     </figcaption>
                                   )}
                                 </figure>
                               )}
                               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-800/70">{card.title}</p>
-                              <p className="mt-3 text-sm leading-7 text-zinc-700">{card.description}</p>
+                              {renderTextWithCitations(
+                                card.description,
+                                `${card.id}-overview-note`,
+                                'mt-2 text-sm leading-7 text-zinc-700'
+                              )}
                             </article>
                           </div>
                         ))}
@@ -2552,7 +2853,7 @@ function StationDetailPage() {
                   <div className="mt-4 grid gap-3">
                     {overviewPoints.map((point) => (
                       <div key={point.en} className="rounded-2xl px-4 py-4 text-sm leading-7 text-zinc-700">
-                        {point[language]}
+                        {renderTextWithCitations(point[language], `${point.en}-overview-point`, 'text-sm leading-7 text-zinc-700')}
                       </div>
                     ))}
                   </div>
@@ -2593,9 +2894,13 @@ function StationDetailPage() {
                 <article className="flex min-h-screen flex-col justify-center rounded-[24px] p-5">
                   <div className="mb-5 flex justify-center">
                     {sections.remoteSensingIntro && (
-                      <p className="max-w-3xl text-center text-sm leading-7 text-zinc-800">
-                        {sections.remoteSensingIntro[language]}
-                      </p>
+                      <div className="max-w-3xl text-center">
+                        {renderTextWithCitations(
+                          sections.remoteSensingIntro[language],
+                          'research-remote-intro',
+                          'text-sm leading-7 text-zinc-800'
+                        )}
+                      </div>
                     )}
                   </div>
                   <BeforeAfterSlider
@@ -2646,6 +2951,7 @@ function StationDetailPage() {
             }}
             scrollContainerRef={pageScrollRef}
             theme="light"
+            renderTextWithCitations={renderTextWithCitations}
           />
         )}
 
@@ -2690,7 +2996,13 @@ function StationDetailPage() {
                     <div className="w-full">
                       <article className="overflow-hidden rounded-[28px] p-5 md:p-6">
                         <h3 className="text-2xl font-semibold text-zinc-950">{item.title[language]}</h3>
-                        <p className="mt-4 text-sm leading-7 text-zinc-700">{item.summary[language]}</p>
+                        <div className="mt-4">
+                          {renderTextWithCitations(
+                            item.summary[language],
+                            `${item.id}-thematic-summary`,
+                            'text-justify text-sm leading-7 text-zinc-700 md:text-base md:leading-8'
+                          )}
+                        </div>
 
                         <div className="mt-5 flex flex-wrap gap-2">
                             {item.tags.map((tag) => (
@@ -2703,9 +3015,11 @@ function StationDetailPage() {
                         <div className={`mt-6 grid gap-6 ${isThematicCardExpanded ? '' : 'max-h-[52vh] overflow-hidden'}`}>
                           <div className={`grid gap-5 ${hasThematicGallery ? 'md:grid-cols-[minmax(0,1fr)_20rem]' : ''}`}>
                             <div className="space-y-5">
-                              <div className="px-4 py-3 text-sm leading-7 text-zinc-700">
-                                <p className="whitespace-pre-line text-justify">{thematicText}</p>
-                              </div>
+                              {renderTextWithCitations(
+                                thematicText,
+                                `${item.id}-thematic-body`,
+                                'text-justify text-sm leading-7 text-zinc-700 md:text-base md:leading-8'
+                              )}
 
                               {hasThematicGallery && (
                                 <div className="space-y-4 md:hidden">
@@ -2719,9 +3033,11 @@ function StationDetailPage() {
                                               alt={item.title[language]}
                                               className="max-h-[42vh] w-full object-contain"
                                             />
-                                            {mediaItem.caption && (
+                                            {(mediaItem.figureName || mediaItem.caption) && (
                                               <figcaption className="px-3 py-2 text-xs leading-6 text-zinc-600">
-                                                {mediaItem.caption[language]}
+                                                {mediaItem.figureName && <span className="font-semibold">{mediaItem.figureName[language]}</span>}
+                                                {mediaItem.figureName && mediaItem.caption && <span>: </span>}
+                                                {mediaItem.caption?.[language]}
                                               </figcaption>
                                             )}
                                           </figure>
@@ -2745,9 +3061,11 @@ function StationDetailPage() {
                                             alt={item.title[language]}
                                             className="max-h-56 w-full object-contain"
                                           />
-                                          {mediaItem.caption && (
+                                          {(mediaItem.figureName || mediaItem.caption) && (
                                             <figcaption className="px-3 py-2 text-xs leading-6 text-zinc-600">
-                                              {mediaItem.caption[language]}
+                                              {mediaItem.figureName && <span className="font-semibold">{mediaItem.figureName[language]}</span>}
+                                              {mediaItem.figureName && mediaItem.caption && <span>: </span>}
+                                              {mediaItem.caption?.[language]}
                                             </figcaption>
                                           )}
                                         </figure>
@@ -2803,6 +3121,7 @@ function StationDetailPage() {
               <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4">
                 {references.map((reference) => {
                   const isReferenceCardExpanded = Boolean(expandedReferenceCards[reference.id]);
+                  const referenceEntries = referenceEntriesByReferenceId.get(reference.id) ?? [];
                   const referenceToggleLabel = language === 'zh'
                     ? (isReferenceCardExpanded ? '收起' : '展开')
                     : (isReferenceCardExpanded ? 'Collapse' : 'Expand');
@@ -2817,21 +3136,34 @@ function StationDetailPage() {
                             alt={reference.image.alt?.[language] ?? reference.title[language]}
                             className="h-36 w-full object-cover"
                           />
-                          {reference.image.caption && (
+                          {(reference.image.figureName || reference.image.caption) && (
                             <figcaption className="px-3 py-2 text-[11px] leading-5 text-zinc-600">
-                              {reference.image.caption[language]}
+                              {reference.image.figureName && <span className="font-semibold">{reference.image.figureName[language]}</span>}
+                              {reference.image.figureName && reference.image.caption && <span>: </span>}
+                              {reference.image.caption?.[language]}
                             </figcaption>
                           )}
                         </figure>
                       )}
                       <h3 className="text-lg font-semibold text-zinc-950">{reference.title[language]}</h3>
                       <div className="mt-3 space-y-3">
-                        {getReferenceEntries(reference.detail[language]).map((entry, entryIndex) => (
-                          <div key={`${reference.id}-entry-${entryIndex}`} className="flex items-start gap-3 rounded-xl px-3 py-2">
+                        {referenceEntries.map((item, entryIndex) => (
+                          <div
+                            key={`${reference.id}-entry-${entryIndex}`}
+                            id={`reference-entry-${item.number}`}
+                            className="flex scroll-mt-28 items-start gap-3 rounded-xl px-3 py-2"
+                          >
                             <span className="mt-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-black/12 bg-white text-[11px] font-semibold text-zinc-700">
-                              {entryIndex + 1}
+                              {item.number}
                             </span>
-                            <p className="text-sm leading-7 text-zinc-700">{entry}</p>
+                            <div className="flex-1 min-w-0">
+                              <TextToDiagram
+                                text={item.entry}
+                                language={language}
+                                theme="light"
+                                className="text-zinc-700"
+                              />
+                            </div>
                           </div>
                         ))}
                       </div>
