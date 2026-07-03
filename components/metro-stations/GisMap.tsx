@@ -20,10 +20,12 @@ import React, {
 import type { GisMapProps, MetroStation } from "../../types";
 import { createStationSlug } from "../../data/metro-stations/stationDetails";
 import { AREA_PAGE_CONTENT } from "../../data/metro-stations/areaPages/index";
+import { METRO_AREAS, normalizeMetroAreaName } from "../../data/metro-stations/metroAreas";
 
 // UI spacing constants used for popups and pointer arrows
 const GAP_PX = 14 // space between popup and dot
 const ARROW_PX = 8 // little triangle height
+const MIN_MAP_ZOOM = 11
 
 // Generate a small placeholder thumbnail SVG data URI for an area
 function areaThumbnail(color: string): string {
@@ -51,6 +53,26 @@ function resolveAreaImage(areaEn: string): string {
   if (content?.overviewImageSrc) return content.overviewImageSrc
   if (content?.overviewImage?.src) return content.overviewImage.src
   return areaThumbnail(stringHashColor(areaEn))
+}
+
+function estimateAreaTitleChip(label: string, centerX: number, topY: number, maxWidth: number) {
+    const textUnits = Array.from(label).reduce((total, char) => {
+        return total + (/[^\u0000-\u00ff]/.test(char) ? 1.7 : char === ' ' ? 0.55 : 0.95)
+    }, 0)
+
+    const width = Math.max(108, Math.min(maxWidth - 16, Math.ceil(textUnits * 7.4 + 30)))
+    const height = 24
+    const halfWidth = width / 2
+    const x = Math.max(8, Math.min(centerX - halfWidth, maxWidth - width - 8))
+
+    return {
+        x,
+        y: topY,
+        width,
+        height,
+        textX: x + width / 2,
+        textY: topY + 16,
+    }
 }
 
 // Running on the server or in static renderers may require different behavior.
@@ -114,6 +136,7 @@ function GisMap(props: GisMapProps) {
     // Area menu state
     const [showAreaMenu, setShowAreaMenu] = useState(false)
     const [selectedArea, setSelectedArea] = useState<string | null>(null)
+    const [hoveredAreaFrame, setHoveredAreaFrame] = useState<string | null>(null)
     const [areaBounds, setAreaBounds] = useState<{
         minLat: number
         maxLat: number
@@ -213,7 +236,7 @@ function GisMap(props: GisMapProps) {
             // Clamp longitude to valid range
             const clampedLng = Math.max(-180, Math.min(180, lng));
             // Smooth zoom at very low levels to avoid extreme compression
-            const effectiveZoom = Math.max(12, Math.min(zoom, 20));
+            const effectiveZoom = Math.max(MIN_MAP_ZOOM, Math.min(zoom, 20));
             const scale = Math.pow(2, effectiveZoom);
             // Web Mercator projection
             const worldCoordX = ((clampedLng + 180) / 360) * 256 * scale;
@@ -235,7 +258,7 @@ function GisMap(props: GisMapProps) {
         []
     )
     const handleZoomOut = useCallback(
-        () => startTransition(() => setCurrentZoom((p) => Math.max(p - 1, 12))),
+        () => startTransition(() => setCurrentZoom((p) => Math.max(p - 1, MIN_MAP_ZOOM))),
         []
     )
 
@@ -286,7 +309,7 @@ function GisMap(props: GisMapProps) {
 
             startTransition(() => {
                 setCurrentZoom((prevZoom) =>
-                    Math.max(12, Math.min(18, prevZoom + zoomChange))
+                    Math.max(MIN_MAP_ZOOM, Math.min(18, prevZoom + zoomChange))
                 )
             })
         },
@@ -900,56 +923,197 @@ function GisMap(props: GisMapProps) {
         []
     )
 
+    const getStationsForArea = useCallback(
+        (areaName: string) => {
+            const target = normalizeMetroAreaName(areaName)
+
+            return stations.filter((station) => {
+                if (!station.isDetail) return false
+
+                const area = normalizeMetroAreaName(String(station.area || ""))
+                const areaCn = normalizeMetroAreaName(String(station.areaCn || ""))
+                if (!area && !areaCn) return false
+
+                if (area === target || area.includes(target) || target.includes(area)) return true
+                if (areaCn === target || areaCn.includes(target) || target.includes(areaCn)) return true
+
+                const targetTokens = Array.from(new Set(target.split(" ").filter(Boolean)))
+                const areaTokens = Array.from(new Set(area.split(" ").filter(Boolean)))
+                const areaCnTokens = Array.from(new Set(areaCn.split(" ").filter(Boolean)))
+                const intersectCount = (arr1: string[], arr2: string[]) =>
+                    arr1.filter((token) => arr2.includes(token) && token.length > 2).length
+
+                const matchedAreaTokens = intersectCount(targetTokens, areaTokens)
+                const matchedAreaCnTokens = intersectCount(targetTokens, areaCnTokens)
+
+                return (
+                    matchedAreaTokens >= 2 ||
+                    matchedAreaCnTokens >= 2 ||
+                    (targetTokens.length === 1 && (matchedAreaTokens === 1 || matchedAreaCnTokens === 1))
+                )
+            })
+        },
+        [stations]
+    )
+
+    const allAreaFrames = useMemo(() => {
+        return METRO_AREAS.map((area) => {
+            const matches = getStationsForArea(area.en)
+            if (matches.length === 0) return null
+
+            const lats = matches.map((station) => station.lat)
+            const lngs = matches.map((station) => station.lng)
+
+            return {
+                key: area.en,
+                label: area[language],
+                bounds: {
+                    minLat: Math.min(...lats),
+                    maxLat: Math.max(...lats),
+                    minLng: Math.min(...lngs),
+                    maxLng: Math.max(...lngs),
+                },
+            }
+        }).filter((frame): frame is { key: string; label: string; bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number } } => frame !== null)
+    }, [getStationsForArea, language])
+
+    const allAreasMode = showAreaMenu && !selectedArea && allAreaFrames.length > 0
+
+    useEffect(() => {
+        if (!allAreasMode) {
+            setHoveredAreaFrame(null)
+        }
+    }, [allAreasMode])
+
+    const isCoordinateInsideActiveArea = useCallback(
+        (lat: number, lng: number) => {
+            if (areaBounds) {
+                return !(
+                    lat < areaBounds.minLat ||
+                    lat > areaBounds.maxLat ||
+                    lng < areaBounds.minLng ||
+                    lng > areaBounds.maxLng
+                )
+            }
+
+            if (allAreasMode) {
+                return allAreaFrames.some((frame) => !(
+                    lat < frame.bounds.minLat ||
+                    lat > frame.bounds.maxLat ||
+                    lng < frame.bounds.minLng ||
+                    lng > frame.bounds.maxLng
+                ))
+            }
+
+            return true
+        },
+        [areaBounds, allAreasMode, allAreaFrames]
+    )
+
+    const allAreaFrameRects = useMemo(() => {
+        if (!allAreasMode) return []
+
+        return allAreaFrames.map((frame) => {
+            try {
+                const corners = [
+                    latLngToPixel(frame.bounds.minLat, frame.bounds.minLng, currentZoom),
+                    latLngToPixel(frame.bounds.minLat, frame.bounds.maxLng, currentZoom),
+                    latLngToPixel(frame.bounds.maxLat, frame.bounds.minLng, currentZoom),
+                    latLngToPixel(frame.bounds.maxLat, frame.bounds.maxLng, currentZoom),
+                ]
+                const xs = corners.map((corner) => corner.x)
+                const ys = corners.map((corner) => corner.y)
+                const minX = Math.min(...xs)
+                const maxX = Math.max(...xs)
+                const minY = Math.min(...ys)
+                const maxY = Math.max(...ys)
+                const centerWorldX = (minX + maxX) / 2
+                const centerWorldY = (minY + maxY) / 2
+                const isPoint = (maxX - minX) < 2 && (maxY - minY) < 2
+
+                let x, y, width, height
+                if (isPoint) {
+                    const displaySize = Math.min(120, Math.max(56, Math.min(containerWidth, containerHeight) * 0.1))
+                    width = displaySize
+                    height = displaySize
+                    x = centerWorldX - width / 2 - centerPixel.x + containerWidth / 2
+                    y = centerWorldY - height / 2 - centerPixel.y + containerHeight / 2
+                } else {
+                    x = minX - centerPixel.x + containerWidth / 2
+                    y = minY - centerPixel.y + containerHeight / 2
+                    width = Math.max(2, maxX - minX)
+                    height = Math.max(2, maxY - minY)
+                }
+
+                return {
+                    key: frame.key,
+                    label: frame.label,
+                    x,
+                    y,
+                    width,
+                    height,
+                }
+            } catch (err) {
+                return null
+            }
+        }).filter((frame): frame is { key: string; label: string; x: number; y: number; width: number; height: number } => frame !== null)
+    }, [allAreasMode, allAreaFrames, latLngToPixel, currentZoom, centerPixel.x, centerPixel.y, containerWidth, containerHeight])
+
+    const fitAllAreas = useCallback(() => {
+        if (isStatic || allAreaFrames.length === 0) return
+
+        const minLat = Math.min(...allAreaFrames.map((frame) => frame.bounds.minLat))
+        const maxLat = Math.max(...allAreaFrames.map((frame) => frame.bounds.maxLat))
+        const minLng = Math.min(...allAreaFrames.map((frame) => frame.bounds.minLng))
+        const maxLng = Math.max(...allAreaFrames.map((frame) => frame.bounds.maxLng))
+
+        const centerLatFit = (minLat + maxLat) / 2
+        const centerLngFit = (minLng + maxLng) / 2
+
+        const horizontalPadding = 88
+        const verticalPadding = 132
+        let chosenZoom = MIN_MAP_ZOOM
+
+        const areaCorners = [
+            { lat: minLat, lng: minLng },
+            { lat: minLat, lng: maxLng },
+            { lat: maxLat, lng: minLng },
+            { lat: maxLat, lng: maxLng },
+        ]
+
+        for (let z = 18; z >= MIN_MAP_ZOOM; z -= 1) {
+            const pixels = areaCorners.map((point) => latLngToPixel(point.lat, point.lng, z))
+            const xs = pixels.map((pixel) => pixel.x)
+            const ys = pixels.map((pixel) => pixel.y)
+            const widthNeeded = Math.max(...xs) - Math.min(...xs)
+            const heightNeeded = Math.max(...ys) - Math.min(...ys)
+
+            if (
+                widthNeeded <= containerWidth - horizontalPadding * 2 &&
+                heightNeeded <= containerHeight - verticalPadding * 2
+            ) {
+                chosenZoom = z
+                break
+            }
+        }
+
+        startTransition(() => {
+            setCenterLat(centerLatFit)
+            setCenterLng(centerLngFit)
+            setCurrentZoom(chosenZoom)
+        })
+    }, [isStatic, allAreaFrames, latLngToPixel, containerWidth, containerHeight])
+
+    useEffect(() => {
+        if (!allAreasMode) return
+        fitAllAreas()
+    }, [allAreasMode, fitAllAreas])
+
     // Fit map view to all stations in a given area (frames multiple stations)
     const fitArea = useCallback(
         (areaName: string, displayLabel?: string) => {
             if (isStatic) return
-            const normalize = (str: string) =>
-                str
-                    .toLowerCase()
-                    .trim()
-                    .replace(/\(.*?\)/g, "")
-                    // normalize various dash characters to space
-                    .replace(/[–—‒−‑]/g, " ")
-                    .replace(/[^\w\s\u4e00-\u9fff-]/g, " ")
-                    .replace(/\b(area|片区|区)\b/g, " ")
-                    .replace(/[-_]+/g, " ")
-                    .replace(/\s+/g, " ")
-                    .trim()
-
-            const target = normalize(areaName)
-
-            const matches = stations.filter((s) => {
-                const a = normalize(String(s.area || ""))
-                const aCn = normalize(String(s.areaCn || ""))
-                if (!a && !aCn) return false
-
-                if (a === target || a.includes(target) || target.includes(a)) return true
-                if (aCn === target || aCn.includes(target) || target.includes(aCn)) return true
-
-
-                const tTokens = Array.from(new Set(target.split(" ").filter(Boolean)))
-                const aTokens = Array.from(new Set(a.split(" ").filter(Boolean)))
-                const aCnTokens = Array.from(new Set(aCn.split(" ").filter(Boolean)))
-                const intersectCount = (arr1: string[], arr2: string[]) =>
-                    arr1.filter((tok) => arr2.includes(tok) && tok.length > 2).length
-
-                const matchedCountA = intersectCount(tTokens, aTokens)
-                const matchedCountACn = intersectCount(tTokens, aCnTokens)
-
-                // Require at least two matching tokens to avoid broad single-token matches
-                // unless the target itself is a single token (user clicked a short area label)
-                const tTokenCount = tTokens.length
-                if (
-                    matchedCountA >= 2 ||
-                    matchedCountACn >= 2 ||
-                    (tTokenCount === 1 && (matchedCountA === 1 || matchedCountACn === 1))
-                ) {
-                    return true
-                }
-
-                return false
-            })
+            const matches = getStationsForArea(areaName)
 
             if (!matches || matches.length === 0) {
                 // fallback: set search and show results
@@ -973,8 +1137,8 @@ function GisMap(props: GisMapProps) {
 
             // Choose maximum zoom that still fits all points into container with padding
             const padding = 120
-            let chosenZoom = Math.max(12, Math.min(18, currentZoom))
-            for (let z = 18; z >= 12; z -= 0.5) {
+            let chosenZoom = Math.max(MIN_MAP_ZOOM, Math.min(18, Math.round(currentZoom)))
+            for (let z = 18; z >= MIN_MAP_ZOOM; z -= 1) {
                 const pixels = matches.map((pt) =>
                     latLngToPixel(pt.lat, pt.lng, z)
                 )
@@ -1004,52 +1168,42 @@ function GisMap(props: GisMapProps) {
                 setAreaBounds({ minLat, maxLat, minLng, maxLng })
             })
         },
-        [isStatic, stations, latLngToPixel, containerWidth, containerHeight, currentZoom]
+        [isStatic, getStationsForArea, latLngToPixel, containerWidth, containerHeight, currentZoom]
+    )
+
+    const openAreaDetailPage = useCallback(
+        (areaName: string) => {
+            const areaStations = getStationsForArea(areaName)
+            if (areaStations.length === 0) return
+
+            const targetStation =
+                areaStations.find((station) => station.areaPageKey) ??
+                areaStations[0]
+
+            const fullUrl = `/stations/${createStationSlug(targetStation.name)}`
+
+            startTransition(() => {
+                setCmsUrl(fullUrl)
+                setShowDetailPanel(true)
+                setIsFullWidth(false)
+            })
+        },
+        [getStationsForArea]
     )
 
     // Deduplicated list of service areas (derived from provided areas list)
     const areaList = useMemo(() => {
-        const areas = [
-            { en: "Bitou area", zh: "碧头片区" },
-            { en: "Chegongmiao area", zh: "车公庙片区" },
-            { en: "Xiangmi Lake area", zh: "香蜜湖片区" },
-            { en: "Buji area", zh: "布吉片区" },
-            { en: "Biyan-Guangming Farm area", zh: "碧眼－光明农场片区" },
-            { en: "Nanyou area", zh: "南油片区" },
-            { en: "Shatian area", zh: "沙田片区" },
-            { en: "Shuibei–Tianbei area", zh: "水贝－田贝片区" },
-            { en: "University Town area", zh: "大学城片区" },
-            { en: "Huangbeiling area", zh: "黄贝岭片区" },
-            { en: "Qianhaiwan area", zh: "前海湾片区" },
-            { en: "Huaqiang North area", zh: "华强北片区" },
-            { en: "Baiwang (Baimang) area", zh: "白芒片区" },
-            { en: "Fanshen area", zh: "翻身片区" },
-            { en: "Shekou area", zh: "蛇口片区" },
-            { en: "Tanglang–Changlingpi area", zh: "塘朗－长岭陂片区" },
-            { en: "Shenzhen University–High-tech Park area", zh: "深大－高新园片区" },
-            { en: "Houhai area", zh: "后海片区" },
-            { en: "Futian CBD area", zh: "福田CBD片区" },
-            { en: "Xixiang area", zh: "西乡片区" },
-            { en: "Meilin Checkpoint area", zh: "梅林关片区" },
-            { en: "Longcheng Square area", zh: "龙城广场片区" },
-            { en: "Fenghuang Town–Guangming Town area", zh: "凤凰城－光明城片区" },
-            { en: "Shatoujiao area", zh: "沙头角片区" },
-            { en: "Universiade area", zh: "大运片区" },
-            { en: "Tongle area", zh: "同乐片区" },
-            { en: "Hongshan area", zh: "红山片区" },
-        ]
-
         // Normalize and dedupe while preserving order
         const seen = new Set<string>()
         const dedup: Array<{ en: string; zh: string; image: string }> = []
-        for (const a of areas) {
+        for (const a of METRO_AREAS) {
             const key = a.en.trim().toLowerCase()
             if (!seen.has(key)) {
                 seen.add(key)
                 dedup.push({ ...a, image: resolveAreaImage(a.en) })
             }
         }
-        return dedup
+        return dedup.sort((a, b) => a.en.localeCompare(b.en))
     }, [])
 
     // Navigate to CMS page for station
@@ -1416,12 +1570,7 @@ function GisMap(props: GisMapProps) {
                                     centerPixel.y +
                                     containerHeight / 2
 
-                                const isDotOutside = areaBounds
-                                    ? coord.lat < areaBounds.minLat ||
-                                      coord.lat > areaBounds.maxLat ||
-                                      coord.lng < areaBounds.minLng ||
-                                      coord.lng > areaBounds.maxLng
-                                    : false
+                                                                const isDotOutside = !isCoordinateInsideActiveArea(coord.lat, coord.lng)
 
                                         return (
                                     <circle
@@ -1443,7 +1592,7 @@ function GisMap(props: GisMapProps) {
             )}
 
             {/* Area bounding frame (highlights selected area containing stations) */}
-            {areaBounds && (
+            {(areaBounds || allAreasMode) && (
                 <svg
                     style={{
                         position: "absolute",
@@ -1451,11 +1600,11 @@ function GisMap(props: GisMapProps) {
                         left: 0,
                         width: "100%",
                         height: "100%",
-                        pointerEvents: "none",
-                        zIndex: 650,
+                        pointerEvents: "auto",
+                        zIndex: 2600,
                     }}
                 >
-                    {(() => {
+                    {areaBounds ? (() => {
                         try {
                             const corners = [
                                 latLngToPixel(areaBounds.minLat, areaBounds.minLng, currentZoom),
@@ -1492,18 +1641,29 @@ function GisMap(props: GisMapProps) {
                                 height = Math.max(2, maxY - minY)
                             }
 
-                            // Outside dimming rectangles (top, left, right, bottom)
-                            const topH = Math.max(0, y)
-                            const leftW = Math.max(0, x)
-                            const rightW = Math.max(0, containerWidth - (x + width))
-                            const bottomH = Math.max(0, containerHeight - (y + height))
+                            const overlayFill = selectedArea ? "rgba(0,0,0,0.56)" : "rgba(0,0,0,0.36)"
 
                             return (
                                 <g>
-                                    <rect x={0} y={0} width={containerWidth} height={topH} fill={selectedArea ? "rgba(0,0,0,0.56)" : "rgba(0,0,0,0.36)"} />
-                                    <rect x={0} y={y} width={leftW} height={height} fill={selectedArea ? "rgba(0,0,0,0.56)" : "rgba(0,0,0,0.36)"} />
-                                    <rect x={x + width} y={y} width={rightW} height={height} fill={selectedArea ? "rgba(0,0,0,0.56)" : "rgba(0,0,0,0.36)"} />
-                                    <rect x={0} y={y + height} width={containerWidth} height={bottomH} fill={selectedArea ? "rgba(0,0,0,0.56)" : "rgba(0,0,0,0.36)"} />
+                                    <path
+                                        d={`M0 0 H${containerWidth} V${containerHeight} H0 Z M${x + 8} ${y} H${x + width - 8} A8 8 0 0 1 ${x + width} ${y + 8} V${y + height - 8} A8 8 0 0 1 ${x + width - 8} ${y + height} H${x + 8} A8 8 0 0 1 ${x} ${y + height - 8} V${y + 8} A8 8 0 0 1 ${x + 8} ${y} Z`}
+                                        fill={overlayFill}
+                                        fillRule="evenodd"
+                                        pointerEvents="none"
+                                    />
+
+                                    <rect
+                                        x={x}
+                                        y={y}
+                                        width={width}
+                                        height={height}
+                                        rx={8}
+                                        ry={8}
+                                        fill="transparent"
+                                        pointerEvents="all"
+                                        style={{ cursor: 'pointer' }}
+                                        onClick={() => selectedArea && openAreaDetailPage(selectedArea)}
+                                    />
 
                                     {/* inner clear frame stroke */}
                                     <rect
@@ -1516,7 +1676,42 @@ function GisMap(props: GisMapProps) {
                                         fill="transparent"
                                         stroke="#3EB181"
                                         strokeWidth={2}
+                                        pointerEvents="none"
                                     />
+
+                                    {selectedArea && (
+                                        (() => {
+                                            const titleLabel = searchQuery || selectedArea
+                                            const chip = estimateAreaTitleChip(titleLabel, x + width / 2, y - 34, containerWidth)
+
+                                            return (
+                                                <g pointerEvents="none">
+                                                    <rect
+                                                        x={chip.x}
+                                                        y={chip.y}
+                                                        width={chip.width}
+                                                        height={chip.height}
+                                                        rx={12}
+                                                        ry={12}
+                                                        fill="rgba(42,56,62,0.9)"
+                                                        stroke="rgba(62,177,129,0.95)"
+                                                        strokeWidth={1.5}
+                                                    />
+                                                    <text
+                                                        x={chip.textX}
+                                                        y={chip.textY}
+                                                        fill="#FFFFFF"
+                                                        fontSize="12"
+                                                        fontWeight="700"
+                                                        textAnchor="middle"
+                                                        style={{ textShadow: '0 2px 10px rgba(0,0,0,0.45)' }}
+                                                    >
+                                                        {titleLabel}
+                                                    </text>
+                                                </g>
+                                            )
+                                        })()
+                                    )}
 
                                     {/* Close (X) button */}
                                     {(() => {
@@ -1557,6 +1752,110 @@ function GisMap(props: GisMapProps) {
                         } catch (err) {
                             return null
                         }
+                    })() : (() => {
+                        const maskId = `all-area-frame-mask-${Math.round(currentZoom * 10)}-${Math.round(centerLat * 1000)}-${Math.round(centerLng * 1000)}`
+
+                        return (
+                            <>
+                                <defs>
+                                    <mask id={maskId}>
+                                        <rect x={0} y={0} width={containerWidth} height={containerHeight} fill="white" />
+                                        {allAreaFrameRects.map((frame) => (
+                                            <rect
+                                                key={`${frame.key}-mask`}
+                                                x={frame.x}
+                                                y={frame.y}
+                                                width={frame.width}
+                                                height={frame.height}
+                                                rx={8}
+                                                ry={8}
+                                                fill="black"
+                                            />
+                                        ))}
+                                    </mask>
+                                </defs>
+
+                                <rect
+                                    x={0}
+                                    y={0}
+                                    width={containerWidth}
+                                    height={containerHeight}
+                                    fill="rgba(0,0,0,0.36)"
+                                    mask={`url(#${maskId})`}
+                                    pointerEvents="none"
+                                />
+
+                                {allAreaFrameRects.map((frame) => (
+                                    <g key={frame.key}>
+                                        <rect
+                                            x={frame.x}
+                                            y={frame.y}
+                                            width={frame.width}
+                                            height={frame.height}
+                                            rx={8}
+                                            ry={8}
+                                            fill="transparent"
+                                            pointerEvents="all"
+                                            style={{ cursor: 'pointer' }}
+                                            onMouseEnter={() => setHoveredAreaFrame(frame.key)}
+                                            onMouseLeave={() => setHoveredAreaFrame((current) => current === frame.key ? null : current)}
+                                            onClick={() => openAreaDetailPage(frame.key)}
+                                        />
+                                        <rect
+                                            x={frame.x}
+                                            y={frame.y}
+                                            width={frame.width}
+                                            height={frame.height}
+                                            rx={8}
+                                            ry={8}
+                                            fill="transparent"
+                                            stroke="rgba(62,177,129,0.95)"
+                                            strokeWidth={2}
+                                            pointerEvents="none"
+                                        />
+                                    </g>
+                                ))}
+
+                                {(() => {
+                                    const hoveredFrame = allAreaFrameRects.find((frame) => frame.key === hoveredAreaFrame)
+                                    if (!hoveredFrame) return null
+
+                                    const chip = estimateAreaTitleChip(
+                                        hoveredFrame.label,
+                                        hoveredFrame.x + hoveredFrame.width / 2,
+                                        hoveredFrame.y - 34,
+                                        containerWidth
+                                    )
+
+                                    return (
+                                        <g pointerEvents="none">
+                                            <rect
+                                                x={chip.x}
+                                                y={chip.y}
+                                                width={chip.width}
+                                                height={chip.height}
+                                                rx={12}
+                                                ry={12}
+                                                fill="rgba(42,56,62,0.9)"
+                                                stroke="rgba(62,177,129,0.95)"
+                                                strokeWidth={1.5}
+                                            />
+                                            <text
+                                                x={chip.textX}
+                                                y={chip.textY}
+                                                fill="#FFFFFF"
+                                                fontSize="12"
+                                                fontWeight="700"
+                                                textAnchor="middle"
+                                                style={{ textShadow: '0 2px 10px rgba(0,0,0,0.45)' }}
+                                            >
+                                                {hoveredFrame.label}
+                                            </text>
+                                        </g>
+                                    )
+                                })()}
+                            </>
+                        )
                     })()}
                 </svg>
             )}
@@ -1575,12 +1874,7 @@ function GisMap(props: GisMapProps) {
                         stationPixel.y - centerPixel.y + containerHeight / 2
                                         const isHovered = hoveredStation === index
                                         const stationColor = station.lineColor || "#E91E63"
-                                        const isOutside = areaBounds
-                                                ? station.lat < areaBounds.minLat ||
-                                                    station.lat > areaBounds.maxLat ||
-                                                    station.lng < areaBounds.minLng ||
-                                                    station.lng > areaBounds.maxLng
-                                                : false
+                                        const isOutside = !isCoordinateInsideActiveArea(station.lat, station.lng)
                                         const effectiveBorderColor = isOutside ? "#9CA3AF" : stationColor
                                         const effectiveBg = isOutside ? "#FFFFFF" : "#FFFFFF"
                                         const effectiveLabelBg = isOutside ? "#F1F5F9" : stationColor
@@ -1710,7 +2004,7 @@ function GisMap(props: GisMapProps) {
                                 ) : (
                                     <div
                                         style={{
-                                            width: hasDetail ? (currentZoom < 12 ? 8 : 12) : (currentZoom < 12 ? 6 : 8),
+                                            width: hasDetail ? (currentZoom < 12 ? 10 : 12) : (currentZoom < 12 ? 6 : 8),
                                             height: hasDetail ? (currentZoom < 12 ? 10 : 12) : (currentZoom < 12 ? 6 : 8),
                                             borderRadius: "50%",
                                             backgroundColor: hasDetail ? effectiveBg : stationColor,
@@ -1864,7 +2158,7 @@ function GisMap(props: GisMapProps) {
                     flexDirection: "column",
                     alignItems: "flex-end",
                     gap: 10,
-                    zIndex: 1200,
+                    zIndex: 3200,
                     pointerEvents: "auto",
                     maxWidth: showDetailPanel && !isFullWidth ? `calc((100vw - 120px) * ${mapScale})` : "calc(100vw - 100px)",
                 }}
@@ -1886,6 +2180,7 @@ function GisMap(props: GisMapProps) {
                                 alignItems: "center",
                                 gap: 6,
                                 padding: 4,
+                                height: 48,
                                 borderRadius: 999,
                                 background: "rgba(255,255,255,0.82)",
                                 boxShadow: "0 6px 18px rgba(15,23,42,0.10)",
@@ -1931,7 +2226,14 @@ function GisMap(props: GisMapProps) {
                             <button
                                 onClick={() => startTransition(() => {
                                     setShowLegendWindow(false)
-                                    setShowAreaMenu((isOpen) => !isOpen)
+                                    setShowAreaMenu((isOpen) => {
+                                        const nextIsOpen = !isOpen
+                                        if (nextIsOpen) {
+                                            setSelectedArea(null)
+                                            setAreaBounds(null)
+                                        }
+                                        return nextIsOpen
+                                    })
                                 })}
                                 className={`h-12 w-12 rounded-full shadow-lg flex items-center justify-center text-[10px] font-semibold hover:scale-105 transition-transform p-2 text-center ${
                                     showAreaMenu ? "bg-[#3EB181] text-white" : "bg-white/95 text-gray-800"
@@ -1949,6 +2251,7 @@ function GisMap(props: GisMapProps) {
                             alignItems: "center",
                             gap: 6,
                             padding: 4,
+                            height: 48,
                             borderRadius: 999,
                             background: "rgba(255,255,255,0.82)",
                             boxShadow: "0 6px 18px rgba(15,23,42,0.10)",
@@ -1998,19 +2301,19 @@ function GisMap(props: GisMapProps) {
                 style={{
                     position: "absolute",
                     top: 50,
-                    left: "50%",
-                    transform: "translateX(-50%)",
+                    left: showDetailPanel && !isFullWidth ? 236 : "50%",
+                    transform: showDetailPanel && !isFullWidth ? "none" : "translateX(-50%)",
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 12,
-                    zIndex: 1000,
+                    zIndex: 3200,
                     pointerEvents: "none",
                 }}
             >
                 {/* ========== COMPONENT: Search Bar ========== */}
-                <div style={{ position: "relative", width: 860 * mapScale, maxWidth: showDetailPanel && !isFullWidth ? `calc((100vw - 160px) * ${mapScale})` : "calc(100vw - 160px)", pointerEvents: "auto" }}>
+                <div style={{ position: "relative", width: showDetailPanel && !isFullWidth ? "max(240px, calc(66.6666667vw - 632px))" : 860 * mapScale, maxWidth: showDetailPanel && !isFullWidth ? "max(240px, calc(66.6666667vw - 632px))" : "calc(100vw - 160px)", pointerEvents: "auto" }}>
                     <input
                         type="text"
                         value={searchQuery}
@@ -2018,7 +2321,8 @@ function GisMap(props: GisMapProps) {
                         placeholder={language === "en" ? "Search metro stations..." : "搜索地铁站..."}
                         style={{
                             width: "100%",
-                            padding: "12px 44px 12px 16px",
+                            height: 48,
+                            padding: "0 44px 0 16px",
                             borderRadius: 999,
                             border: "1px solid rgba(42,56,62,0.06)",
                             backgroundColor: "rgba(255,255,255,0.78)",
@@ -2033,7 +2337,7 @@ function GisMap(props: GisMapProps) {
 
                     {/* Search Results Dropdown */}
                     {showSearchResults && searchResults.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl max-h-96 overflow-y-auto z-50">
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl max-h-96 overflow-y-auto z-[3300]">
                             {searchResults.map((station, index) => {
                                 return (
                                     <div
@@ -2070,7 +2374,7 @@ function GisMap(props: GisMapProps) {
         color: selectedArea ? "#FFFFFF" : "#2A383E",
         letterSpacing: "0.05em",
         pointerEvents: "none",
-        zIndex: 1000,
+        zIndex: 3200,
         lineHeight: language === "zh" ? "1em" : "0.85em",
         textRendering: "optimizeLegibility",
         backdropFilter: "blur(0.5px)", // Optional: adds subtle blur effect
@@ -2090,7 +2394,7 @@ function GisMap(props: GisMapProps) {
 
             {/* ========== COMPONENT: Legend Window ========== */}
             {showLegend && showMetroStations && uniqueLines.length > 0 && showLegendWindow && (
-                <div className="absolute bg-white rounded-xl p-5 shadow-xl min-w-[200px] max-w-sm" style={{ top: 150, right: 50, zIndex: 1300 }}>
+                <div className="absolute bg-white rounded-xl p-5 shadow-xl min-w-[200px] max-w-sm" style={{ top: 150, right: 50, zIndex: 3300 }}>
                     <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
                         <div className="font-bold text-gray-900">{language === "en" ? "Metro Lines" : "地铁线路"}</div>
                         <button 
@@ -2133,7 +2437,7 @@ function GisMap(props: GisMapProps) {
                 <div
                     ref={areaMenuRef}
                     className="absolute bg-white rounded-xl p-5 shadow-xl w-[320px] max-w-[calc(100vw-100px)]"
-                    style={{ top: 150, right: 50, zIndex: 1300 }}
+                    style={{ top: 150, right: 50, zIndex: 3300 }}
                     onMouseDown={(e) => e.stopPropagation()}
                     onMouseMove={(e) => e.stopPropagation()}
                     onMouseUp={(e) => e.stopPropagation()}
@@ -2163,6 +2467,7 @@ function GisMap(props: GisMapProps) {
                                     onClick={() => {
                                         setSelectedArea(area.en)
                                         fitArea(area.en, area[language])
+                                        openAreaDetailPage(area.en)
                                     }}
                                     className={`flex items-center gap-2 rounded-lg p-1.5 text-left transition-colors ${
                                         isSelected ? "bg-emerald-50" : "hover:bg-gray-50"
@@ -2198,7 +2503,7 @@ function GisMap(props: GisMapProps) {
                     style={{
                         position: 'fixed',
                         right: 24,
-                        top: 24,
+                        top: 50,
                         zIndex: 7000,
                         pointerEvents: 'auto',
                     }}
@@ -2208,7 +2513,8 @@ function GisMap(props: GisMapProps) {
                             background: '#3EB181',
                             backdropFilter: 'blur(6px)',
                             WebkitBackdropFilter: 'blur(6px)',
-                            padding: '8px',
+                            height: 48,
+                            padding: '4px',
                             boxShadow: '0 8px 24px rgba(15,23,42,0.16)',
                             borderRadius: 999,
                             display: 'flex',
@@ -2223,8 +2529,8 @@ function GisMap(props: GisMapProps) {
                             title={language === 'en' ? (isFullWidth ? 'Collapse' : 'Expand') : (isFullWidth ? '收起' : '展开')}
                             className="border border-white/45 bg-white/95 text-[#2A383E] shadow-sm backdrop-blur-sm transition-colors hover:border-transparent hover:bg-[#3EB181] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3EB181]"
                             style={{
-                                width: 36,
-                                height: 36,
+                                width: 40,
+                                height: 40,
                                 borderRadius: 999,
                                 display: 'flex',
                                 alignItems: 'center',
@@ -2241,8 +2547,8 @@ function GisMap(props: GisMapProps) {
                             title={language === 'en' ? 'Close' : '关闭'}
                             className="border border-white/45 bg-white/95 text-[#2A383E] shadow-sm backdrop-blur-sm transition-colors hover:border-transparent hover:bg-[#3EB181] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3EB181]"
                             style={{
-                                width: 36,
-                                height: 36,
+                                width: 40,
+                                height: 40,
                                 borderRadius: 999,
                                 display: 'flex',
                                 alignItems: 'center',

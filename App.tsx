@@ -5,15 +5,17 @@
     quickly find where each major view is rendered.
 */
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import GlobalTopBar from './components/GlobalTopBar';
 import LandingPage from './components/LandingPage';
 import MetroMapPage from './components/metro-stations/MetroMapPage';
 import MetroPeople from "./components/metro-people/MetroPeople";
 import ThematicMap from './components/metro-city/ThematicMap';
 import StationDetailPage from './pages/StationDetailPage';
 
-function App() {
+function AppShell() {
   return (
-    <BrowserRouter>
+    <>
+      <GlobalTopBar />
       <Routes>
         {/*
           Routes:
@@ -29,6 +31,14 @@ function App() {
         <Route path="/thematicmap" element={<ThematicMap />} />
         <Route path="/stations/:stationSlug" element={<StationDetailPage />} />
       </Routes>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppShell />
     </BrowserRouter>
   );
 }

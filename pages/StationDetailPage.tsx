@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom';
 import BeforeAfterSlider from '../components/metro-stations/BeforeAfterSlider';
 import OverviewToSliderMorph from '../components/metro-stations/OverviewToSliderMorph';
 import ShuibeiOverviewMap from '../components/metro-stations/ShuibeiOverviewMap';
-import LanguageToggle from '../components/LanguageToggle';
 import TextToDiagram from '../components/metro-stations/TextToDiagram';
 import { stationDetailMedia } from '../data/metro-stations/stationDetailMedia';
 import { useAppLanguage } from '../hooks/useAppLanguage';
@@ -714,46 +713,6 @@ function HistoryJourneySection({
   const ctaClass = isLightTheme
     ? 'border border-cyan-700/20 bg-cyan-500/10 text-cyan-900 hover:border-cyan-700/35 hover:bg-cyan-500/18'
     : 'border border-cyan-300/25 bg-cyan-400/10 text-cyan-100 hover:border-cyan-200/50 hover:bg-cyan-400/18';
-  const modePanelClass = isLightTheme
-    ? 'border-black/10 bg-white/88 text-zinc-700'
-    : 'border-white/10 bg-[#07121d]/72 text-white/78';
-  const modeButtonBaseClass = 'rounded-full border px-3 py-1.5 text-xs font-medium transition';
-  const getModeButtonClass = (mode: 'horizontal' | 'vertical') => {
-    const isActive = selectedScrollMode === mode;
-
-    if (isLightTheme) {
-      return isActive
-        ? 'border-cyan-700/28 bg-cyan-500/14 text-cyan-900'
-        : 'border-black/10 bg-white/80 text-zinc-600 hover:border-cyan-700/24 hover:text-cyan-900';
-    }
-
-    return isActive
-      ? 'border-cyan-200/36 bg-cyan-400/18 text-cyan-100'
-      : 'border-white/12 bg-white/6 text-white/65 hover:border-cyan-300/30 hover:text-cyan-100';
-  };
-
-  const renderScrollModePanel = () => (
-    <div className={`inline-flex items-center gap-2 rounded-full border px-2 py-2 ${modePanelClass}`}>
-      <span className={`px-2 text-[10px] font-semibold uppercase tracking-[0.22em] ${subtleTextClass}`}>
-        {copy.historyLayoutLabel}
-      </span>
-      <button
-        type="button"
-        onClick={() => setSelectedScrollMode('horizontal')}
-        className={`${modeButtonBaseClass} ${getModeButtonClass('horizontal')}`}
-      >
-        {copy.historyLayoutHorizontal}
-      </button>
-      <button
-        type="button"
-        onClick={() => setSelectedScrollMode('vertical')}
-        className={`${modeButtonBaseClass} ${getModeButtonClass('vertical')}`}
-      >
-        {copy.historyLayoutVertical}
-      </button>
-    </div>
-  );
-
   const renderVerticalStage = (
     card: StationTimelineCard,
     stage: StationHistoryStage,
@@ -1426,8 +1385,6 @@ function HistoryJourneySection({
         className="relative left-1/2 mt-8 w-screen -translate-x-1/2"
       >
         <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
-          <div className="mb-5 md:mb-6">{renderScrollModePanel()}</div>
-
           <div className="mb-4 rounded-2xl p-5 md:p-6">
             <p className={`text-xs font-semibold uppercase tracking-[0.28em] ${accentTextClass}`}>{eyebrow}</p>
             <h2 className="mt-3 text-2xl font-semibold text-[#3EB181] md:text-3xl">{title}</h2>
@@ -1584,10 +1541,6 @@ function HistoryJourneySection({
       ref={sectionRef}
       className="relative left-1/2 mt-8 w-screen -translate-x-1/2"
     >
-      <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
-        <div className="mb-5 md:mb-6">{renderScrollModePanel()}</div>
-      </div>
-
       <div className="relative mt-4 md:mt-5">
         {cards.map((card, index) => {
           const stagePanels = ensureMinimumStagePanels(card);
@@ -1866,7 +1819,6 @@ function StationDetailPage() {
   if (!detail) {
     return (
       <div className="h-screen overflow-y-auto bg-[#081221] px-6 pb-24 pt-0 text-white md:px-10">
-        <LanguageToggle language={language} onChange={setLanguage} />
         <div className="mx-auto flex max-w-3xl flex-col items-center rounded-[32px] border border-white/10 bg-white/6 px-8 py-14 pt-28 text-center shadow-[0_24px_90px_rgba(0,0,0,0.35)] backdrop-blur-xl md:pt-32">
           <p className="rounded-full border border-white/15 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
             Shenzhen Metro AI Map
@@ -1919,6 +1871,7 @@ function StationDetailPage() {
     return unique.slice(0, Math.max(5, Math.min(8, unique.length)));
   }, [overviewImage?.src, remoteSensingBeforeOptions, remoteSensingAfterOptions]);
   const historyCards = sections.historyCards ?? [];
+  //horizontal/vertical activation
   const historyScrollMode = sections.historyScrollMode ?? 'horizontal';
   const thematicRelations = sections.thematicRelations ?? [];
   const references = sections.references ?? [];
@@ -2202,7 +2155,6 @@ function StationDetailPage() {
   const [expandedThematicCards, setExpandedThematicCards] = useState<Record<string, boolean>>({});
   const [expandedReferenceCards, setExpandedReferenceCards] = useState<Record<string, boolean>>({});
   const [isSectionNavOpen, setIsSectionNavOpen] = useState(false);
-  const [showRunnerGallery, setShowRunnerGallery] = useState(true);
   const [headerImageIndex, setHeaderImageIndex] = useState(0);
   const [pageBackground, setPageBackground] = useState(PAGE_DARK);
   const pageTone = getColorBrightness(pageBackground) > 170 ? 'light' : 'dark';
@@ -2284,7 +2236,7 @@ function StationDetailPage() {
   }, [headerGalleryImages]);
 
   useEffect(() => {
-    if (!showRunnerGallery || headerGalleryImages.length <= 1) {
+    if (headerGalleryImages.length <= 1) {
       return;
     }
 
@@ -2293,7 +2245,7 @@ function StationDetailPage() {
     }, 4800);
 
     return () => window.clearInterval(intervalId);
-  }, [showRunnerGallery, headerGalleryImages]);
+  }, [headerGalleryImages]);
 
   const isNavItemActive = (item: SectionNavItem) => {
     if (!activeNavItemId) return false;
@@ -2483,17 +2435,19 @@ function StationDetailPage() {
   }, [sectionNavItems, stationSlug]);
 
   return (
-    <div
-      ref={pageScrollRef}
-      className="h-screen overflow-x-hidden overflow-y-auto px-4 pt-0 pb-32 text-white md:px-8"
-      style={{
-        overscrollBehaviorY: 'contain',
-        WebkitOverflowScrolling: 'touch',
-        backgroundColor: pageBackground,
-        transition: 'background-color 180ms linear',
-      }}
-    >
-      <LanguageToggle language={language} onChange={setLanguage} />
+    <>
+      <div className="fixed inset-0 -z-10 bg-[#081221]" />
+      <div
+        data-station-detail-page
+        ref={pageScrollRef}
+        className="h-screen overflow-x-hidden overflow-y-auto px-4 pt-0 pb-32 text-white md:px-8"
+        style={{
+          overscrollBehaviorY: 'contain',
+          WebkitOverflowScrolling: 'touch',
+          backgroundColor: pageBackground,
+          transition: 'background-color 180ms linear',
+        }}
+      >
       <style>
         {`
           @keyframes stationHeaderImageReveal {
@@ -2503,27 +2457,21 @@ function StationDetailPage() {
         `}
       </style>
 
-      {/* ── FLOATING SECTION NAVIGATOR ──────────────────────────────────────
-           Fixed to the right side of the viewport. Stays on screen through
-           all scroll positions. Click any item to smooth-scroll the page
-           container (pageScrollRef) to that section.
-           Hidden on mobile (md:flex) to avoid covering content.
-           ─────────────────────────────────────────────────────────────────── */}
       {sectionNavItems.length > 0 && (
         <nav
-          className="fixed right-6 top-[88px] z-50 hidden flex-col items-end md:flex"
+          className="fixed right-32 top-[50px] z-50 hidden flex-col items-end md:flex"
           aria-label={copy.sectionNav}
         >
-          <div className={`flex max-h-[72vh] min-w-[180px] flex-col rounded-2xl border p-2 backdrop-blur-xl ${
+          <div className={`flex min-w-[180px] flex-col rounded-2xl border backdrop-blur-xl ${
             isLightPage
               ? 'border-black/10 bg-white/82 shadow-[0_12px_40px_rgba(0,0,0,0.12)]'
               : 'border-white/10 bg-[#07121d]/72 shadow-[0_12px_40px_rgba(0,0,0,0.28)]'
-          }`}>
+          } ${isSectionNavOpen ? 'max-h-[72vh] p-2' : 'h-12 px-2 py-0'}`}>
             <button
               type="button"
               onClick={() => setIsSectionNavOpen((isOpen) => !isOpen)}
               aria-expanded={isSectionNavOpen}
-              className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.24em] transition ${
+              className={`flex h-12 items-center justify-between gap-3 rounded-xl px-4 text-left text-[10px] font-semibold uppercase tracking-[0.24em] transition ${
                 isLightPage
                   ? 'text-zinc-600 hover:bg-black/5 hover:text-zinc-950'
                   : 'text-white/70 hover:bg-white/10 hover:text-white'
@@ -2535,59 +2483,59 @@ function StationDetailPage() {
             {isSectionNavOpen && (
               <div className="mt-1 flex max-h-[62vh] flex-col gap-0.5 overflow-y-auto pr-1">
                 {visibleSectionNavItems.map((item) => {
-              const hasChildren = navChildrenByParent.has(item.id);
-              const isExpanded = expandedNavIds[item.id];
-              const isActive = isNavItemActive(item);
+                  const hasChildren = navChildrenByParent.has(item.id);
+                  const isExpanded = expandedNavIds[item.id];
+                  const isActive = isNavItemActive(item);
 
-              return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  if (hasChildren) {
-                    toggleNavItem(item.id);
-                  }
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        if (hasChildren) {
+                          toggleNavItem(item.id);
+                        }
 
-                  scrollToSectionTarget(item.id);
-                }}
-                aria-expanded={hasChildren ? isExpanded : undefined}
-                className={`flex items-center gap-2.5 rounded-xl text-left transition-all duration-150 ${
-                  item.level === 0
-                    ? 'px-2.5 py-1.5 text-xs font-medium'
-                    : item.level === 1
-                      ? 'ml-4 px-2 py-1 text-[11px] font-medium'
-                      : 'ml-8 px-2 py-1 text-[11px]'
-                } ${
-                  isActive
-                    ? 'text-[#3EB181]'
-                    : isLightPage
-                      ? 'text-zinc-600 hover:bg-cyan-500/10 hover:text-cyan-900'
-                      : 'text-white/55 hover:bg-cyan-400/12 hover:text-cyan-100'
-                }`}
-              >
-                {item.level === 0 ? (
-                  <span className={`w-5 shrink-0 text-[10px] font-semibold tabular-nums ${
-                    isActive ? 'text-[#3EB181]' : isLightPage ? 'text-zinc-400' : 'text-white/30'
-                  }`}>
-                    {String(item.order ?? 0).padStart(2, '0')}
-                  </span>
-                ) : (
-                  <span className={`shrink-0 ${item.level === 1 ? 'w-2.5' : 'w-4'} ${
-                    isActive ? 'text-[#3EB181]' : isLightPage ? 'text-zinc-300' : 'text-white/20'
-                  }`}>
-                    {item.level === 1 ? '•' : '·'}
-                  </span>
-                )}
-                <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                {hasChildren && (
-                  <span className={`shrink-0 text-[10px] transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''} ${
-                    isActive ? 'text-[#3EB181]' : isLightPage ? 'text-zinc-400' : 'text-white/35'
-                  }`}>
-                    ›
-                  </span>
-                )}
-              </button>
-              );
+                        scrollToSectionTarget(item.id);
+                      }}
+                      aria-expanded={hasChildren ? isExpanded : undefined}
+                      className={`flex items-center gap-2.5 rounded-xl text-left transition-all duration-150 ${
+                        item.level === 0
+                          ? 'px-2.5 py-1.5 text-xs font-medium'
+                          : item.level === 1
+                            ? 'ml-4 px-2 py-1 text-[11px] font-medium'
+                            : 'ml-8 px-2 py-1 text-[11px]'
+                      } ${
+                        isActive
+                          ? 'text-[#3EB181]'
+                          : isLightPage
+                            ? 'text-zinc-600 hover:bg-cyan-500/10 hover:text-cyan-900'
+                            : 'text-white/55 hover:bg-cyan-400/12 hover:text-cyan-100'
+                      }`}
+                    >
+                      {item.level === 0 ? (
+                        <span className={`w-5 shrink-0 text-[10px] font-semibold tabular-nums ${
+                          isActive ? 'text-[#3EB181]' : isLightPage ? 'text-zinc-400' : 'text-white/30'
+                        }`}>
+                          {String(item.order ?? 0).padStart(2, '0')}
+                        </span>
+                      ) : (
+                        <span className={`shrink-0 ${item.level === 1 ? 'w-2.5' : 'w-4'} ${
+                          isActive ? 'text-[#3EB181]' : isLightPage ? 'text-zinc-300' : 'text-white/20'
+                        }`}>
+                          {item.level === 1 ? '•' : '·'}
+                        </span>
+                      )}
+                      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                      {hasChildren && (
+                        <span className={`shrink-0 text-[10px] transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''} ${
+                          isActive ? 'text-[#3EB181]' : isLightPage ? 'text-zinc-400' : 'text-white/35'
+                        }`}>
+                          ›
+                        </span>
+                      )}
+                    </button>
+                  );
                 })}
               </div>
             )}
@@ -2598,7 +2546,7 @@ function StationDetailPage() {
       <div className="w-full pt-24 md:pt-28">
         <section ref={introSectionRef} className={`${lightBandClass} flex min-h-screen items-center`}>
           <div className={`${bandInnerClass} relative`}>
-          {showRunnerGallery && activeHeaderImage && (
+          {activeHeaderImage && (
             <div className="pointer-events-none absolute left-6 right-6 top-0 h-[46vh] min-h-[22rem] overflow-hidden rounded-[34px] md:left-10 md:right-10 md:h-[50vh]">
               <figure key={activeHeaderImage} className="relative h-full w-full overflow-hidden rounded-[34px]">
                 <img
@@ -2612,19 +2560,8 @@ function StationDetailPage() {
               </figure>
             </div>
           )}
-          {headerGalleryImages.length > 0 && (
-            <div className="absolute right-4 top-4 z-20 md:right-6">
-              <button
-                type="button"
-                onClick={() => setShowRunnerGallery((current) => !current)}
-                className="rounded-full border border-white/28 bg-black/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/92 backdrop-blur-sm transition hover:bg-black/32"
-              >
-                {showRunnerGallery ? copy.hideRunnerGallery : copy.showRunnerGallery}
-              </button>
-            </div>
-          )}
           <div className={`overflow-hidden rounded-[34px] ${adaptivePrimaryCardClass}`}>
-          <div className={`relative z-10 px-6 pb-8 md:px-10 md:pb-10 ${showRunnerGallery ? 'pt-[calc(46vh+2rem)] md:pt-[calc(50vh+2rem)]' : 'pt-12 md:pt-14'}`}>
+          <div className={`relative z-10 px-6 pb-8 md:px-10 md:pb-10 ${activeHeaderImage ? 'pt-[calc(46vh+2rem)] md:pt-[calc(50vh+2rem)]' : 'pt-12 md:pt-14'}`}>
             <div>
               <p className="inline-flex rounded-full border border-white/35 bg-white/14 px-4 py-1 text-xs font-semibold uppercase tracking-[0.34em] text-white/95">
                 {copy.sharedTemplate}
@@ -2670,30 +2607,20 @@ function StationDetailPage() {
             id="research-map"
             sectionRef={researchSectionRef}
             theme="light"
-            eyebrow={researchSectionLabel}
+            eyebrow="Research area map"
             title={researchSectionTitle}
             description={copy.overviewDiagramText}
             fullWidth
           >
             <div className={lightSectionClass}>
             <div className="mb-4 rounded-2xl p-5 md:p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-800/80">{researchSectionLabel}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-800/80">Research area map</p>
               <h2 className="mt-3 text-2xl font-semibold text-[#3EB181] md:text-3xl">{researchSectionTitle}</h2>
               <p className="max-w-4xl text-sm leading-7 text-zinc-700 md:text-base">{copy.overviewDiagramText}</p>
             </div>
             <div className="grid gap-6">
               {hasOverviewBoard && (
                 <article className="flex min-h-screen flex-col justify-start rounded-[28px] p-5 md:p-6">
-                  <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <h3 className="text-xl font-semibold text-zinc-950">{language === 'zh' ? areaLabelCn : areaLabel}</h3>
-                    </div>
-                    <div className="rounded-2xl px-4 py-3 text-right">
-                      <p className="text-[10px] uppercase tracking-[0.24em] text-zinc-500">{copy.related}</p>
-                      <p className="mt-1 text-lg font-semibold text-zinc-950">{sharedStations.length}</p>
-                    </div>
-                  </div>
-
                   <div
                     ref={overviewBoardRef}
                     className={useSideBySideOverviewBoard
@@ -2928,9 +2855,9 @@ function StationDetailPage() {
           <HistoryJourneySection
             language={language}
             cards={historyCards}
-            eyebrow={copy.sections[2]}
-            title={historySectionTitle}
-            description={historySectionDescription}
+            eyebrow=""
+            title=""
+            description=""
             scrollMode={historyScrollMode}
             copy={{
               historyJourneyLabel: copy.historyJourneyLabel,
@@ -3193,6 +3120,7 @@ function StationDetailPage() {
         )}
       </div>
     </div>
+    </>
   );
 }
 

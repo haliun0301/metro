@@ -5,7 +5,6 @@
 */
 import React from 'react';
 import GisMap from './GisMap';
-import LanguageToggle from '../LanguageToggle';
 import { useAppLanguage } from '../../hooks/useAppLanguage';
 import { METRO_ROUTES } from '../../data/metro-stations/metroRoutes';
 import { STATIONS } from '../../data/metro-stations/stations';
@@ -26,12 +25,11 @@ const pageCopy = {
 } as const;
 
 export default function MetroMapPage() {
-  // Hook controlling app-level language. Passed down to `GisMap` and `LanguageToggle`.
-  const { language, setLanguage } = useAppLanguage('en');
+  // Hook controlling app-level language. Passed down to `GisMap`.
+  const { language } = useAppLanguage('en');
 
   return (
     <div className="relative w-full min-h-screen bg-gray-50 flex flex-col">
-      <LanguageToggle language={language} onChange={setLanguage} />
       <div className="w-full max-w-7xl mx-auto py-12 px-4">
         <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">{pageCopy.title[language]}</h2>
         <div className="w-full h-[70vh] rounded-2xl overflow-hidden shadow-xl relative">

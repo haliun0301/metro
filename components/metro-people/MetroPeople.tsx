@@ -2,7 +2,6 @@
 
 import { useState, type CSSProperties } from "react"
 import { PeopleData } from "../../data/metro-people/people"
-import LanguageToggle from "../LanguageToggle"
 import PeopleCircles, { type Person } from "./PeopleCircles"
 import CircularDiagram, { type Segment } from "./CircularDiagram"
 import ColumnDiagram, { type DataPoint } from "./ColumnDiagram"
@@ -227,7 +226,7 @@ export interface MetroPeopleProps {
 }
 
 export default function MetroPeople({ people, jsonData, style }: MetroPeopleProps) {
-    const { language, setLanguage } = useAppLanguage("en")
+    const { language } = useAppLanguage("en")
     const [selectedGender, setSelectedGender] = useState<"any" | "male" | "female">("any")
     const [selectedShenzhenBorn, setSelectedShenzhenBorn] = useState<"any" | "yes" | "no">("any")
     const [circleSizeMode, setCircleSizeMode] = useState<"uniform" | "age" | "residence">("age")
@@ -386,27 +385,16 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
         .sort((a, b) => b.value - a.value || a.label.localeCompare(b.label))
 
     // Color palette
-    const colors = darkMode
-        ? {
-            bg: "#18181B",
-            panel: "#232323",
-            card: "#18181B",
-            text: "#F3F4F6",
-            label: "#E5E7EB",
-            accent: "#38BDF8",
-            border: "#232323",
-            faded: "#A1A1AA",
-        }
-        : {
-            bg: "#F9FAFB",
-            panel: "#FFFFFF",
-            card: "#F3F4F6",
-            text: "#232323",
-            label: "#232323",
-            accent: "#2563EB",
-            border: "#E5E7EB",
-            faded: "#A1A1AA",
-        }
+    const colors = {
+        bg: "#FFFFFF",
+        panel: "#FFFFFF",
+        card: "#FFFFFF",
+        text: "#232323",
+        label: "#232323",
+        accent: "#2563EB",
+        border: "#E5E7EB",
+        faded: "#6B7280",
+    }
 
     return (
         <div
@@ -421,41 +409,6 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                 ...style,
             }}
         >
-            <LanguageToggle language={language} onChange={setLanguage} />
-            {/* Header - simplified */}
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "flex-start",
-                    alignItems: "center",
-                    padding: "16px 24px",
-                    borderBottom: `1px solid ${colors.border}`,
-                    flexShrink: 0,
-                    background: colors.panel,
-                }}
-            >
-                <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: colors.text, letterSpacing: 1 }}>{uiCopy.title[language]}</h1>
-                <button
-                    onClick={() => setDarkMode((v) => !v)}
-                    style={{
-                        marginLeft: 24,
-                        padding: "8px 16px",
-                        borderRadius: 8,
-                        border: `1px solid ${colors.border}`,
-                        background: darkMode ? colors.bg : colors.panel,
-                        color: colors.text,
-                        fontWeight: 600,
-                        fontSize: 14,
-                        cursor: "pointer",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                        transition: "all 0.2s",
-                    }}
-                    aria-label="Toggle dark/light mode"
-                >
-                    {darkMode ? uiCopy.themeButton.dark[language] : uiCopy.themeButton.light[language]}
-                </button>
-            </div>
-
             {/* Main content area */}
             <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
                 {/* People circles - main area */}
@@ -466,10 +419,10 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                         minWidth: 0,
                         minHeight: 0,
                         overflow: "hidden",
-                        background: colors.panel,
-                        borderRadius: 16,
+                        background: "transparent",
+                        borderRadius: 0,
                         margin: 16,
-                        boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+                        boxShadow: "none",
                     }}
                 >
                     <PeopleCircles
@@ -478,7 +431,7 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                         selectedGender={selectedGender}
                         selectedShenzhenBorn={selectedShenzhenBorn}
                         sizeMode={circleSizeMode}
-                        backgroundColor="#FFFFFF"
+                        backgroundColor="transparent"
                         density={density}
                         onHoverPerson={handleHoverPerson}
                         onVisibleCountChange={setVisiblePeopleCount}
@@ -490,18 +443,18 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                     style={{
                         flex: 2,
                         padding: 24,
-                        borderLeft: `1px solid ${colors.border}`,
+                        borderLeft: "none",
                         display: "flex",
                         flexDirection: "column",
                         gap: 20,
                         overflowY: "auto",
                         minHeight: 0,
                         minWidth: 0,
-                        background: colors.panel,
-                        backdropFilter: "blur(20px)",
-                        WebkitBackdropFilter: "blur(20px)",
-                        boxShadow: `inset 0 0 0 1px ${colors.border}, 0 8px 32px rgba(0,0,0,0.15)`,
-                        borderRadius: 16,
+                        background: "transparent",
+                        backdropFilter: "none",
+                        WebkitBackdropFilter: "none",
+                        boxShadow: "none",
+                        borderRadius: 0,
                         margin: 16,
                     }}
                 >

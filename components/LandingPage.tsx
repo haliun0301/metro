@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import LanguageToggle from './LanguageToggle';
 import { useAppLanguage } from '../hooks/useAppLanguage';
 
 const metroCityTopics = [
@@ -58,6 +57,20 @@ const pageCopy = {
   heroTitle: {
     en: 'RAPID TRANSIT IN SHENZHEN',
     zh: '深圳快速轨道交通',
+  },
+  menu: {
+    open: {
+      en: 'Open menu',
+      zh: '打开菜单',
+    },
+    close: {
+      en: 'Close menu',
+      zh: '关闭菜单',
+    },
+    title: {
+      en: 'Menu',
+      zh: '菜单',
+    },
   },
   sectionLabels: {
     stations: {
@@ -136,7 +149,7 @@ type HoveredSection = 'stations' | 'people' | 'city' | null;
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { language, setLanguage } = useAppLanguage('en');
+  const { language } = useAppLanguage('en');
   const [scrollY, setScrollY] = useState(0);
   const [hoveredSection, setHoveredSection] = useState<HoveredSection>(null);
 
@@ -184,18 +197,6 @@ export default function LandingPage() {
             backgroundRepeat: 'no-repeat',
           }}
         >
-          <LanguageToggle language={language} onChange={setLanguage} />
-          {/* Menu Icon - top right */}
-          <button
-            className="absolute top-8 right-8 z-20 p-3 rounded-full hover:bg-white shadow-md transition"
-            aria-label="Open menu"
-          >
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <rect y="7" width="32" height="3" rx="1.5" fill="#fff" />
-              <rect y="14.5" width="32" height="3" rx="1.5" fill="#fff" />
-              <rect y="22" width="32" height="3" rx="1.5" fill="#fff" />
-            </svg>
-          </button>
           <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-green-300 opacity-30" />
           <div className="relative z-10 text-center px-4">
             <h1 className="text-6xl md:text-8xl font-extrabold text-white drop-shadow-2xl mb-4 float-animate">

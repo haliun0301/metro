@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import LanguageToggle from '../LanguageToggle';
 import { useAppLanguage, type AppLanguage } from '../../hooks/useAppLanguage';
 import { STATIONS } from '../../data/metro-stations/stations';
 import { THEMATIC_TOPICS } from '../../data/metro-city/thematicTopics';
@@ -236,7 +235,7 @@ const uiCopy = {
 } as const;
 
 export default function ThematicMap() {
-  const { language, setLanguage } = useAppLanguage('en');
+  const { language } = useAppLanguage('en');
   const [selectedThemeIndex, setSelectedThemeIndex] = useState(0);
   const themeButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -254,8 +253,6 @@ export default function ThematicMap() {
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-white">
-      <LanguageToggle language={language} onChange={setLanguage} />
-
       <iframe
         key={language}
         title="Shenzhen Metro Impact Map"

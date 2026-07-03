@@ -606,7 +606,7 @@ export default function PeopleCircles({
                                         height: size,
                                         borderRadius: "50%",
                                         backgroundColor: genderColor,
-                                        border: isHovered ? "3px solid rgba(17, 24, 39, 0.16)" : "2px solid rgba(255,255,255,0.95)",
+                                        border: "none",
                                         boxShadow: isHovered
                                             ? "0 8px 18px rgba(0,0,0,0.16)"
                                             : "0 2px 8px rgba(0,0,0,0.10)",
@@ -674,7 +674,7 @@ export default function PeopleCircles({
                                     height: size,
                                     borderRadius: "50%",
                                     backgroundColor: genderColor,
-                                    border: isHovered ? "3px solid rgba(17, 24, 39, 0.16)" : "2px solid rgba(255,255,255,0.95)",
+                                    border: "none",
                                     boxShadow: isHovered
                                         ? "0 8px 18px rgba(0,0,0,0.16)"
                                         : "0 2px 8px rgba(0,0,0,0.10)",

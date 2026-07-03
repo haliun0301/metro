@@ -144,7 +144,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
         zh: '前海湾发展时间线',
       },
       period: {
-        en: 'Multi-stage historical reading',
+        en: 'history of the area',
         zh: '多阶段历史解读',
       },
       summary: {
@@ -383,7 +383,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
         zh: '天北发展时间线',
       },
       period: {
-        en: 'Multi-stage historical reading',
+        en: 'history of the area',
         zh: '多阶段历史解读',
       },
       summary: {
@@ -558,7 +558,7 @@ export const shuibeiAreaPage: AreaPageContentOverride = {
         zh: '洪湖发展时间线',
       },
       period: {
-        en: 'Multi-stage historical reading',
+        en: 'history of the area',
         zh: '多阶段历史解读',
       },
       summary: {
