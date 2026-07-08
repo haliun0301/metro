@@ -172,7 +172,7 @@ export default function OverviewToSliderMorph({
                 beforeOptions={beforeOptions}
                 afterOptions={afterOptions}
                 initialBeforeId={beforeOptions[0]?.id}
-                initialAfterId={afterOptions[0]?.id}
+                initialAfterId={afterOptions[afterOptions.length - 1]?.id}
                 initialPosition={50}
                 height={sliderHeight}
               />

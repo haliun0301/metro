@@ -2152,6 +2152,7 @@ function StationDetailPage() {
     originX: number;
     originY: number;
   } | null>(null);
+  const [activeOverviewCardId, setActiveOverviewCardId] = useState<string | null>(overviewCards[0]?.id ?? null);
   const [expandedThematicCards, setExpandedThematicCards] = useState<Record<string, boolean>>({});
   const [expandedReferenceCards, setExpandedReferenceCards] = useState<Record<string, boolean>>({});
   const [isSectionNavOpen, setIsSectionNavOpen] = useState(false);
@@ -2281,6 +2282,10 @@ function StationDetailPage() {
   useEffect(() => {
     setOverviewPositions(defaultOverviewPositions);
   }, [defaultOverviewPositions, stationSlug]);
+
+  useEffect(() => {
+    setActiveOverviewCardId(overviewCards[0]?.id ?? null);
+  }, [overviewCards[0]?.id, stationSlug]);
 
   useEffect(() => {
     setExpandedThematicCards({});
@@ -2434,6 +2439,49 @@ function StationDetailPage() {
     };
   }, [sectionNavItems, stationSlug]);
 
+  useEffect(() => {
+    const scrollContainer = pageScrollRef.current;
+    const root = document.documentElement;
+    const isEmbeddedMapPanel = new URLSearchParams(window.location.search).get('embedded') === 'map-panel';
+    let previousPassedCover = false;
+
+    const updateCoverPassedState = () => {
+      if (!scrollContainer || !introSectionRef.current) return;
+
+      const coverEnd = introSectionRef.current.offsetTop + introSectionRef.current.offsetHeight;
+      const hasPassedCover = scrollContainer.scrollTop > coverEnd - 96;
+
+      if (hasPassedCover === previousPassedCover) return;
+      previousPassedCover = hasPassedCover;
+
+      root.classList.toggle('station-detail-cover-passed', hasPassedCover);
+
+      if (isEmbeddedMapPanel && window.parent !== window) {
+        window.parent.postMessage(
+          { type: 'station-detail-cover-passed', passed: hasPassedCover },
+          window.location.origin
+        );
+      }
+    };
+
+    updateCoverPassedState();
+    scrollContainer?.addEventListener('scroll', updateCoverPassedState, { passive: true });
+    window.addEventListener('resize', updateCoverPassedState);
+
+    return () => {
+      root.classList.remove('station-detail-cover-passed');
+      scrollContainer?.removeEventListener('scroll', updateCoverPassedState);
+      window.removeEventListener('resize', updateCoverPassedState);
+
+      if (isEmbeddedMapPanel && window.parent !== window) {
+        window.parent.postMessage(
+          { type: 'station-detail-cover-passed', passed: false },
+          window.location.origin
+        );
+      }
+    };
+  }, [stationSlug]);
+
   return (
     <>
       <div className="fixed inset-0 -z-10 bg-[#081221]" />
@@ -2459,23 +2507,16 @@ function StationDetailPage() {
 
       {sectionNavItems.length > 0 && (
         <nav
+          data-station-section-nav
           className="fixed right-32 top-[50px] z-50 hidden flex-col items-end md:flex"
           aria-label={copy.sectionNav}
         >
-          <div className={`flex min-w-[180px] flex-col rounded-2xl border backdrop-blur-xl ${
-            isLightPage
-              ? 'border-black/10 bg-white/82 shadow-[0_12px_40px_rgba(0,0,0,0.12)]'
-              : 'border-white/10 bg-[#07121d]/72 shadow-[0_12px_40px_rgba(0,0,0,0.28)]'
-          } ${isSectionNavOpen ? 'max-h-[72vh] p-2' : 'h-12 px-2 py-0'}`}>
+          <div className={`flex min-w-[180px] flex-col rounded-2xl border border-transparent bg-white/28 shadow-[0_14px_44px_rgba(15,23,42,0.14)] backdrop-blur-2xl ${isSectionNavOpen ? 'max-h-[72vh] p-2' : 'h-12 px-2 py-0'}`}>
             <button
               type="button"
               onClick={() => setIsSectionNavOpen((isOpen) => !isOpen)}
               aria-expanded={isSectionNavOpen}
-              className={`flex h-12 items-center justify-between gap-3 rounded-xl px-4 text-left text-[10px] font-semibold uppercase tracking-[0.24em] transition ${
-                isLightPage
-                  ? 'text-zinc-600 hover:bg-black/5 hover:text-zinc-950'
-                  : 'text-white/70 hover:bg-white/10 hover:text-white'
-              }`}
+              className="flex h-12 items-center justify-between gap-3 rounded-xl px-4 text-left text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-700 transition hover:bg-black/5 hover:text-zinc-950"
             >
               {copy.sectionNav}
               <span className={`text-xs transition-transform duration-150 ${isSectionNavOpen ? 'rotate-90' : ''}`}>›</span>
@@ -2508,20 +2549,18 @@ function StationDetailPage() {
                       } ${
                         isActive
                           ? 'text-[#3EB181]'
-                          : isLightPage
-                            ? 'text-zinc-600 hover:bg-cyan-500/10 hover:text-cyan-900'
-                            : 'text-white/55 hover:bg-cyan-400/12 hover:text-cyan-100'
+                          : 'text-zinc-600 hover:bg-emerald-500/10 hover:text-zinc-950'
                       }`}
                     >
                       {item.level === 0 ? (
                         <span className={`w-5 shrink-0 text-[10px] font-semibold tabular-nums ${
-                          isActive ? 'text-[#3EB181]' : isLightPage ? 'text-zinc-400' : 'text-white/30'
+                          isActive ? 'text-[#3EB181]' : 'text-zinc-400'
                         }`}>
                           {String(item.order ?? 0).padStart(2, '0')}
                         </span>
                       ) : (
                         <span className={`shrink-0 ${item.level === 1 ? 'w-2.5' : 'w-4'} ${
-                          isActive ? 'text-[#3EB181]' : isLightPage ? 'text-zinc-300' : 'text-white/20'
+                          isActive ? 'text-[#3EB181]' : 'text-zinc-300'
                         }`}>
                           {item.level === 1 ? '•' : '·'}
                         </span>
@@ -2529,7 +2568,7 @@ function StationDetailPage() {
                       <span className="min-w-0 flex-1 truncate">{item.label}</span>
                       {hasChildren && (
                         <span className={`shrink-0 text-[10px] transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''} ${
-                          isActive ? 'text-[#3EB181]' : isLightPage ? 'text-zinc-400' : 'text-white/35'
+                          isActive ? 'text-[#3EB181]' : 'text-zinc-400'
                         }`}>
                           ›
                         </span>
@@ -2612,22 +2651,22 @@ function StationDetailPage() {
             description={copy.overviewDiagramText}
             fullWidth
           >
-            <div className={lightSectionClass}>
-            <div className="mb-4 rounded-2xl p-5 md:p-6">
+            <div className="p-4 md:p-6">
+            <div className="mb-2 rounded-2xl px-2 py-2 md:px-3 md:py-3">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-800/80">Research area map</p>
-              <h2 className="mt-3 text-2xl font-semibold text-[#3EB181] md:text-3xl">{researchSectionTitle}</h2>
-              <p className="max-w-4xl text-sm leading-7 text-zinc-700 md:text-base">{copy.overviewDiagramText}</p>
+              <h2 className="mt-2 text-2xl font-semibold text-[#3EB181] md:text-3xl">{researchSectionTitle}</h2>
+              <p className="mt-1 max-w-4xl text-sm leading-6 text-zinc-700 md:text-base">{copy.overviewDiagramText}</p>
             </div>
-            <div className="grid gap-6">
+            <div className="grid gap-4">
               {hasOverviewBoard && (
-                <article className="flex min-h-screen flex-col justify-start rounded-[28px] p-5 md:p-6">
+                <article className="flex h-[calc(100vh-15rem)] min-h-[28rem] flex-col justify-start overflow-hidden rounded-[28px] p-3 md:h-[calc(100vh-13.5rem)] md:p-4">
                   <div
                     ref={overviewBoardRef}
                     className={useSideBySideOverviewBoard
-                      ? 'grid gap-6 lg:grid-cols-2 lg:items-stretch'
+                      ? 'grid min-h-0 flex-1 gap-4 lg:grid-cols-2 lg:items-stretch'
                       : useInteractiveOverviewBoard
-                        ? 'relative grid gap-4 lg:min-h-[54rem] lg:grid-cols-1'
-                        : 'grid gap-4'}
+                        ? 'relative grid min-h-0 flex-1 gap-4 lg:grid-cols-1'
+                        : 'grid min-h-0 flex-1 gap-4'}
                   >
                     {!useSideBySideOverviewBoard && useInteractiveOverviewBoard && (
                       <svg className="pointer-events-none absolute inset-0 hidden h-full w-full lg:block" aria-hidden="true">
@@ -2647,9 +2686,9 @@ function StationDetailPage() {
                     )}
 
                     {hasOverviewImage && !useMorphTransition && (
-                      <div className={`w-full rounded-[32px] ${
+                      <div className={`min-h-0 w-full rounded-[32px] ${
                         useSideBySideOverviewBoard
-                          ? 'min-h-[58vh] p-3 lg:min-h-[calc(100vh-16rem)]'
+                          ? 'h-full p-2'
                           : useInteractiveOverviewBoard
                             ? 'p-5 lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2'
                             : 'p-5'
@@ -2685,89 +2724,114 @@ function StationDetailPage() {
 
                     {hasOverviewCards && (
                       <div className={useSideBySideOverviewBoard
-                        ? 'grid content-start gap-4 sm:grid-cols-2'
+                        ? 'grid min-h-0 content-center gap-3 overflow-y-auto pr-2'
                         : useInteractiveOverviewBoard
                           ? 'grid gap-4 lg:block'
                           : 'grid gap-4 md:grid-cols-2 xl:grid-cols-3'}>
-                        {overviewCards.map((card, index) => (
-                          <div
-                            key={card.id}
-                            className={useSideBySideOverviewBoard
-                              ? ''
-                              : useInteractiveOverviewBoard
-                                ? 'lg:absolute lg:w-[29rem] lg:-translate-x-1/2 lg:-translate-y-1/2'
-                                : ''}
-                            style={!useSideBySideOverviewBoard && useInteractiveOverviewBoard
-                              ? {
-                                  left: `${overviewPositions[index]?.x ?? 50}%`,
-                                  top: `${overviewPositions[index]?.y ?? 50}%`,
-                                }
-                              : undefined}
-                          >
-                            {!useSideBySideOverviewBoard && useInteractiveOverviewBoard && (
-                              <div className="pointer-events-none absolute left-1/2 top-1/2 hidden h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-700/20 bg-cyan-500/25 shadow-[0_0_18px_rgba(14,165,233,0.18)] lg:block" />
-                            )}
-                            <article
-                              className={`relative rounded-[24px] border bg-transparent p-5 ${
-                                !useSideBySideOverviewBoard && useInteractiveOverviewBoard ? 'lg:backdrop-blur-xl' : ''
-                              } ${
-                                !useSideBySideOverviewBoard && useInteractiveOverviewBoard && dragState?.index === index
-                                  ? 'lg:cursor-grabbing'
-                                  : !useSideBySideOverviewBoard && useInteractiveOverviewBoard
-                                    ? 'lg:cursor-grab'
-                                    : ''
-                              }`}
-                              style={{
-                                borderColor: 'rgba(0,0,0,0.10)',
-                              }}
-                              onMouseEnter={() => {
-                                if (sections.useInteractiveMap) {
-                                  setHighlightedNoteId(card.id);
-                                }
-                              }}
-                              onMouseLeave={() => {
-                                if (sections.useInteractiveMap) {
-                                  setHighlightedNoteId(null);
-                                }
-                              }}
-                              onPointerDown={(event) => {
-                                if (useSideBySideOverviewBoard || !useInteractiveOverviewBoard || window.innerWidth < 1024) return;
+                        {overviewCards.map((card, index) => {
+                          const isCardActive = activeOverviewCardId === card.id || (!activeOverviewCardId && index === 0);
 
-                                event.preventDefault();
-                                setDragState({
-                                  index,
-                                  startClientX: event.clientX,
-                                  startClientY: event.clientY,
-                                  originX: overviewPositions[index]?.x ?? 50,
-                                  originY: overviewPositions[index]?.y ?? 50,
-                                });
-                              }}
+                          return (
+                            <div
+                              key={card.id}
+                              className={useSideBySideOverviewBoard
+                                ? ''
+                                : useInteractiveOverviewBoard
+                                  ? 'lg:absolute lg:w-[29rem] lg:-translate-x-1/2 lg:-translate-y-1/2'
+                                  : ''}
+                              style={!useSideBySideOverviewBoard && useInteractiveOverviewBoard
+                                ? {
+                                    left: `${overviewPositions[index]?.x ?? 50}%`,
+                                    top: `${overviewPositions[index]?.y ?? 50}%`,
+                                  }
+                                : undefined}
                             >
-                              {card.image?.src && (
-                                <figure className="mb-3 overflow-hidden rounded-2xl">
-                                  <img
-                                    src={card.image.src}
-                                    alt={card.image.alt?.[language] ?? card.title}
-                                    className="h-40 w-full object-cover"
-                                  />
-                                  {(card.image.figureName || card.image.caption) && (
-                                    <figcaption className="px-3 py-2 text-[11px] leading-5 text-zinc-600">
-                                      {card.image.figureName && <span className="font-semibold">{card.image.figureName[language]}</span>}
-                                      {card.image.figureName && card.image.caption && <span>: </span>}
-                                      {card.image.caption?.[language]}
-                                    </figcaption>
-                                  )}
-                                </figure>
+                              {!useSideBySideOverviewBoard && useInteractiveOverviewBoard && (
+                                <div className="pointer-events-none absolute left-1/2 top-1/2 hidden h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-700/20 bg-cyan-500/25 shadow-[0_0_18px_rgba(14,165,233,0.18)] lg:block" />
                               )}
-                              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-800/70">{card.title}</p>
-                              {renderTextWithCitations(
-                                card.description,
-                                `${card.id}-overview-note`,
-                                'mt-2 text-sm leading-7 text-zinc-700'
-                              )}
-                            </article>
-                          </div>
-                        ))}
+                              <article
+                                tabIndex={0}
+                                aria-expanded={isCardActive}
+                                className={`relative overflow-hidden rounded-[24px] border bg-transparent p-4 transition-all duration-200 ${
+                                  isCardActive ? '' : 'opacity-78 hover:opacity-100'
+                                } ${
+                                  !useSideBySideOverviewBoard && useInteractiveOverviewBoard ? 'lg:backdrop-blur-xl' : ''
+                                } ${
+                                  !useSideBySideOverviewBoard && useInteractiveOverviewBoard && dragState?.index === index
+                                    ? 'lg:cursor-grabbing'
+                                    : !useSideBySideOverviewBoard && useInteractiveOverviewBoard
+                                      ? 'lg:cursor-grab'
+                                      : ''
+                                }`}
+                                style={{
+                                  borderColor: isCardActive ? 'rgba(62,177,129,0.34)' : 'rgba(0,0,0,0.10)',
+                                }}
+                                onMouseEnter={() => {
+                                  setActiveOverviewCardId(card.id);
+                                  if (sections.useInteractiveMap) {
+                                    setHighlightedNoteId(card.id);
+                                  }
+                                }}
+                                onFocus={() => {
+                                  setActiveOverviewCardId(card.id);
+                                  if (sections.useInteractiveMap) {
+                                    setHighlightedNoteId(card.id);
+                                  }
+                                }}
+                                onMouseLeave={() => {
+                                  if (sections.useInteractiveMap) {
+                                    setHighlightedNoteId(null);
+                                  }
+                                }}
+                                onBlur={() => {
+                                  if (sections.useInteractiveMap) {
+                                    setHighlightedNoteId(null);
+                                  }
+                                }}
+                                onPointerDown={(event) => {
+                                  if (useSideBySideOverviewBoard || !useInteractiveOverviewBoard || window.innerWidth < 1024) return;
+
+                                  event.preventDefault();
+                                  setActiveOverviewCardId(card.id);
+                                  setDragState({
+                                    index,
+                                    startClientX: event.clientX,
+                                    startClientY: event.clientY,
+                                    originX: overviewPositions[index]?.x ?? 50,
+                                    originY: overviewPositions[index]?.y ?? 50,
+                                  });
+                                }}
+                              >
+                                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-800/70">{card.title}</p>
+                                <div className={`grid transition-all duration-200 ${isCardActive ? 'mt-3 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                                  <div className="min-h-0 overflow-hidden">
+                                    {card.image?.src && (
+                                      <figure className="mb-3 overflow-hidden rounded-2xl">
+                                        <img
+                                          src={card.image.src}
+                                          alt={card.image.alt?.[language] ?? card.title}
+                                          className="h-28 w-full object-cover"
+                                        />
+                                        {(card.image.figureName || card.image.caption) && (
+                                          <figcaption className="px-3 py-2 text-[11px] leading-5 text-zinc-600">
+                                            {card.image.figureName && <span className="font-semibold">{card.image.figureName[language]}</span>}
+                                            {card.image.figureName && card.image.caption && <span>: </span>}
+                                            {card.image.caption?.[language]}
+                                          </figcaption>
+                                        )}
+                                      </figure>
+                                    )}
+                                    {renderTextWithCitations(
+                                      card.description,
+                                      `${card.id}-overview-note`,
+                                      'text-sm leading-6 text-zinc-700'
+                                    )}
+                                  </div>
+                                </div>
+                              </article>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -2835,7 +2899,7 @@ function StationDetailPage() {
                     beforeOptions={remoteSensingBeforeOptions}
                     afterOptions={remoteSensingAfterOptions}
                     initialBeforeId={remoteSensingBeforeOptions[0]?.id}
-                    initialAfterId={remoteSensingAfterOptions[0]?.id}
+                    initialAfterId={remoteSensingAfterOptions[remoteSensingAfterOptions.length - 1]?.id}
                     initialPosition={50}
                     height={Math.max(
                       700,

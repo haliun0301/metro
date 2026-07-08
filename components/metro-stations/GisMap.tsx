@@ -108,6 +108,7 @@ function GisMap(props: GisMapProps) {
     } = props
 
     const mapRef = useRef<HTMLDivElement>(null)
+    const topControlsRef = useRef<HTMLDivElement>(null)
     const detailIframeClickCleanup = useRef<(() => void) | null>(null)
     const isStatic = useIsStaticRenderer()
 
@@ -124,6 +125,8 @@ function GisMap(props: GisMapProps) {
     const [showDetailPanel, setShowDetailPanel] = useState(false)
     const [isFullWidth, setIsFullWidth] = useState(false)
     const [cmsUrl, setCmsUrl] = useState<string>("")
+    const [detailCoverPassed, setDetailCoverPassed] = useState(false)
+    const [detailControlsHover, setDetailControlsHover] = useState(false)
     const [isExpanded, setIsExpanded] = useState(true)
     const [visibleLines, setVisibleLines] = useState<Set<string>>(new Set())
     const [showLegendWindow, setShowLegendWindow] = useState(false)
@@ -158,6 +161,12 @@ function GisMap(props: GisMapProps) {
 
     // Scale factor for in-map UI when side panel is open (map shrinks to 2/3)
     const mapScale = showDetailPanel && !isFullWidth ? 2 / 3 : 1
+    const isDetailPanelHalfOpen = showDetailPanel && !isFullWidth
+    const shouldFadeDetailControls = showDetailPanel && isFullWidth && detailCoverPassed && !detailControlsHover
+    const [halfOpenSearchFrame, setHalfOpenSearchFrame] = useState({
+        left: 296,
+        width: 0,
+    })
 
     // Animation state for station clicks
     const [animatingStationKey, setAnimatingStationKey] = useState<
@@ -215,6 +224,94 @@ function GisMap(props: GisMapProps) {
             detailIframeClickCleanup.current?.()
         }
     }, [])
+
+    useEffect(() => {
+        if (isStatic || typeof window === "undefined") return
+
+        const handleStationDetailMessage = (event: MessageEvent) => {
+            if (event.origin !== window.location.origin) return
+            if (event.data?.type !== "station-detail-cover-passed") return
+
+            setDetailCoverPassed(Boolean(event.data.passed))
+        }
+
+        window.addEventListener("message", handleStationDetailMessage)
+        return () => window.removeEventListener("message", handleStationDetailMessage)
+    }, [isStatic])
+
+    useEffect(() => {
+        if (isStatic || typeof document === "undefined") return
+
+        const shouldUseMapSurface = isDetailPanelHalfOpen || showAreaMenu || Boolean(selectedArea)
+        const isDetailPanelFullWidth = showDetailPanel && isFullWidth
+        const shouldHideControls = showDetailPanel && isFullWidth && detailCoverPassed
+        document.documentElement.classList.toggle(
+            "map-left-controls-map-surface",
+            shouldUseMapSurface
+        )
+        document.documentElement.classList.toggle(
+            "map-panel-detail-full-width",
+            isDetailPanelFullWidth
+        )
+        document.documentElement.classList.toggle(
+            "map-panel-detail-cover-passed",
+            shouldHideControls
+        )
+
+        return () => {
+            document.documentElement.classList.remove("map-left-controls-map-surface")
+            document.documentElement.classList.remove("map-panel-detail-full-width")
+            document.documentElement.classList.remove("map-panel-detail-cover-passed")
+        }
+    }, [detailCoverPassed, isDetailPanelHalfOpen, isFullWidth, isStatic, selectedArea, showAreaMenu, showDetailPanel])
+
+    useEffect(() => {
+        if (showDetailPanel) {
+            setShowAreaMenu(false)
+        }
+    }, [showDetailPanel])
+
+    useEffect(() => {
+        if (isStatic || typeof window === "undefined" || !isDetailPanelHalfOpen) return
+
+        const updateHalfOpenSearchFrame = () => {
+            const mapElement = mapRef.current
+            const rightControls = topControlsRef.current
+            const leftControls = document.querySelector('[data-global-top-bar]')
+            if (!mapElement || !rightControls || !(leftControls instanceof HTMLElement)) return
+
+            const mapRect = mapElement.getBoundingClientRect()
+            const leftRect = leftControls.getBoundingClientRect()
+            const rightRect = rightControls.getBoundingClientRect()
+            const equalGap = 24
+            const nextLeft = Math.round(leftRect.right - mapRect.left + equalGap)
+            const nextRight = Math.round(rightRect.left - mapRect.left - equalGap)
+            const nextWidth = Math.max(0, nextRight - nextLeft)
+
+            setHalfOpenSearchFrame((current) => {
+                if (current.left === nextLeft && current.width === nextWidth) return current
+                return { left: nextLeft, width: nextWidth }
+            })
+        }
+
+        updateHalfOpenSearchFrame()
+        window.addEventListener("resize", updateHalfOpenSearchFrame)
+
+        const resizeObserver = typeof ResizeObserver !== "undefined"
+            ? new ResizeObserver(updateHalfOpenSearchFrame)
+            : null
+        if (resizeObserver) {
+            if (mapRef.current) resizeObserver.observe(mapRef.current)
+            if (topControlsRef.current) resizeObserver.observe(topControlsRef.current)
+            const leftControls = document.querySelector('[data-global-top-bar]')
+            if (leftControls instanceof HTMLElement) resizeObserver.observe(leftControls)
+        }
+
+        return () => {
+            window.removeEventListener("resize", updateHalfOpenSearchFrame)
+            resizeObserver?.disconnect()
+        }
+    }, [isDetailPanelHalfOpen, isStatic, language, showControls, showLegend, showMetroStations])
 
     const tileUrls = useMemo(
         () => ({
@@ -1180,10 +1277,11 @@ function GisMap(props: GisMapProps) {
                 areaStations.find((station) => station.areaPageKey) ??
                 areaStations[0]
 
-            const fullUrl = `/stations/${createStationSlug(targetStation.name)}`
+            const fullUrl = `/stations/${createStationSlug(targetStation.name)}?embedded=map-panel`
 
             startTransition(() => {
                 setCmsUrl(fullUrl)
+                setDetailCoverPassed(false)
                 setShowDetailPanel(true)
                 setIsFullWidth(false)
             })
@@ -1213,10 +1311,11 @@ function GisMap(props: GisMapProps) {
             if (station.isDetail === false) return
 
             const slug = createStationSlug(station.name)
-            const fullUrl = `/stations/${slug}`
+            const fullUrl = `/stations/${slug}?embedded=map-panel`
 
             startTransition(() => {
                 setCmsUrl(fullUrl)
+                setDetailCoverPassed(false)
                 setShowDetailPanel(true)
                 setIsFullWidth(false)
             })
@@ -1642,23 +1741,23 @@ function GisMap(props: GisMapProps) {
                             }
 
                             const overlayFill = selectedArea ? "rgba(0,0,0,0.56)" : "rgba(0,0,0,0.36)"
+                            const circleCx = x + width / 2
+                            const circleCy = y + height / 2
+                            const circleRadius = Math.max(48, Math.hypot(width, height) / 2 + 10)
 
                             return (
                                 <g>
                                     <path
-                                        d={`M0 0 H${containerWidth} V${containerHeight} H0 Z M${x + 8} ${y} H${x + width - 8} A8 8 0 0 1 ${x + width} ${y + 8} V${y + height - 8} A8 8 0 0 1 ${x + width - 8} ${y + height} H${x + 8} A8 8 0 0 1 ${x} ${y + height - 8} V${y + 8} A8 8 0 0 1 ${x + 8} ${y} Z`}
+                                        d={`M0 0 H${containerWidth} V${containerHeight} H0 Z M${circleCx - circleRadius} ${circleCy} a${circleRadius} ${circleRadius} 0 1 0 ${circleRadius * 2} 0 a${circleRadius} ${circleRadius} 0 1 0 ${-circleRadius * 2} 0`}
                                         fill={overlayFill}
                                         fillRule="evenodd"
                                         pointerEvents="none"
                                     />
 
-                                    <rect
-                                        x={x}
-                                        y={y}
-                                        width={width}
-                                        height={height}
-                                        rx={8}
-                                        ry={8}
+                                    <circle
+                                        cx={circleCx}
+                                        cy={circleCy}
+                                        r={circleRadius}
                                         fill="transparent"
                                         pointerEvents="all"
                                         style={{ cursor: 'pointer' }}
@@ -1666,13 +1765,10 @@ function GisMap(props: GisMapProps) {
                                     />
 
                                     {/* inner clear frame stroke */}
-                                    <rect
-                                        x={x}
-                                        y={y}
-                                        width={width}
-                                        height={height}
-                                        rx={8}
-                                        ry={8}
+                                    <circle
+                                        cx={circleCx}
+                                        cy={circleCy}
+                                        r={circleRadius}
                                         fill="transparent"
                                         stroke="#3EB181"
                                         strokeWidth={2}
@@ -1682,7 +1778,7 @@ function GisMap(props: GisMapProps) {
                                     {selectedArea && (
                                         (() => {
                                             const titleLabel = searchQuery || selectedArea
-                                            const chip = estimateAreaTitleChip(titleLabel, x + width / 2, y - 34, containerWidth)
+                                            const chip = estimateAreaTitleChip(titleLabel, circleCx, circleCy - circleRadius - 34, containerWidth)
 
                                             return (
                                                 <g pointerEvents="none">
@@ -1717,11 +1813,11 @@ function GisMap(props: GisMapProps) {
                                     {(() => {
                                         const btnSize = 18
                                         const padding = 8
-                                        // place button just outside the top-right of the frame
-                                        let btnX = x + width + padding
+                                        // place button just outside the top-right of the circular frame
+                                        let btnX = circleCx + circleRadius + padding
                                         // keep inside container if near edge
                                         btnX = Math.min(btnX, containerWidth - btnSize - padding)
-                                        const btnY = y - btnSize / 2
+                                        const btnY = circleCy - circleRadius - btnSize / 2
                                         const cx = btnX + btnSize / 2
                                         const cy = btnY + btnSize / 2
                                         return (
@@ -1760,18 +1856,19 @@ function GisMap(props: GisMapProps) {
                                 <defs>
                                     <mask id={maskId}>
                                         <rect x={0} y={0} width={containerWidth} height={containerHeight} fill="white" />
-                                        {allAreaFrameRects.map((frame) => (
-                                            <rect
-                                                key={`${frame.key}-mask`}
-                                                x={frame.x}
-                                                y={frame.y}
-                                                width={frame.width}
-                                                height={frame.height}
-                                                rx={8}
-                                                ry={8}
-                                                fill="black"
-                                            />
-                                        ))}
+                                        {allAreaFrameRects.map((frame) => {
+                                            const circleRadius = Math.max(44, Math.hypot(frame.width, frame.height) / 2 + 8)
+
+                                            return (
+                                                <circle
+                                                    key={`${frame.key}-mask`}
+                                                    cx={frame.x + frame.width / 2}
+                                                    cy={frame.y + frame.height / 2}
+                                                    r={circleRadius}
+                                                    fill="black"
+                                                />
+                                            )
+                                        })}
                                     </mask>
                                 </defs>
 
@@ -1785,36 +1882,36 @@ function GisMap(props: GisMapProps) {
                                     pointerEvents="none"
                                 />
 
-                                {allAreaFrameRects.map((frame) => (
-                                    <g key={frame.key}>
-                                        <rect
-                                            x={frame.x}
-                                            y={frame.y}
-                                            width={frame.width}
-                                            height={frame.height}
-                                            rx={8}
-                                            ry={8}
-                                            fill="transparent"
-                                            pointerEvents="all"
-                                            style={{ cursor: 'pointer' }}
-                                            onMouseEnter={() => setHoveredAreaFrame(frame.key)}
-                                            onMouseLeave={() => setHoveredAreaFrame((current) => current === frame.key ? null : current)}
-                                            onClick={() => openAreaDetailPage(frame.key)}
-                                        />
-                                        <rect
-                                            x={frame.x}
-                                            y={frame.y}
-                                            width={frame.width}
-                                            height={frame.height}
-                                            rx={8}
-                                            ry={8}
-                                            fill="transparent"
-                                            stroke="rgba(62,177,129,0.95)"
-                                            strokeWidth={2}
-                                            pointerEvents="none"
-                                        />
-                                    </g>
-                                ))}
+                                {allAreaFrameRects.map((frame) => {
+                                    const circleCx = frame.x + frame.width / 2
+                                    const circleCy = frame.y + frame.height / 2
+                                    const circleRadius = Math.max(44, Math.hypot(frame.width, frame.height) / 2 + 8)
+
+                                    return (
+                                        <g key={frame.key}>
+                                            <circle
+                                                cx={circleCx}
+                                                cy={circleCy}
+                                                r={circleRadius}
+                                                fill="transparent"
+                                                pointerEvents="all"
+                                                style={{ cursor: 'pointer' }}
+                                                onMouseEnter={() => setHoveredAreaFrame(frame.key)}
+                                                onMouseLeave={() => setHoveredAreaFrame((current) => current === frame.key ? null : current)}
+                                                onClick={() => openAreaDetailPage(frame.key)}
+                                            />
+                                            <circle
+                                                cx={circleCx}
+                                                cy={circleCy}
+                                                r={circleRadius}
+                                                fill="transparent"
+                                                stroke="rgba(62,177,129,0.95)"
+                                                strokeWidth={2}
+                                                pointerEvents="none"
+                                            />
+                                        </g>
+                                    )
+                                })}
 
                                 {(() => {
                                     const hoveredFrame = allAreaFrameRects.find((frame) => frame.key === hoveredAreaFrame)
@@ -1823,7 +1920,7 @@ function GisMap(props: GisMapProps) {
                                     const chip = estimateAreaTitleChip(
                                         hoveredFrame.label,
                                         hoveredFrame.x + hoveredFrame.width / 2,
-                                        hoveredFrame.y - 34,
+                                        hoveredFrame.y + hoveredFrame.height / 2 - Math.max(44, Math.hypot(hoveredFrame.width, hoveredFrame.height) / 2 + 8) - 34,
                                         containerWidth
                                     )
 
@@ -2150,6 +2247,8 @@ function GisMap(props: GisMapProps) {
 
             {/* ========== COMPONENT: Top-right map controls ========== */}
             <div
+                ref={topControlsRef}
+                data-map-top-controls
                 style={{
                     position: "absolute",
                     top: 50,
@@ -2182,7 +2281,7 @@ function GisMap(props: GisMapProps) {
                                 padding: 4,
                                 height: 48,
                                 borderRadius: 999,
-                                background: "rgba(255,255,255,0.82)",
+                                background: "rgba(255,255,255,0.92)",
                                 boxShadow: "0 6px 18px rgba(15,23,42,0.10)",
                                 backdropFilter: "blur(8px)",
                                 WebkitBackdropFilter: "blur(8px)",
@@ -2191,7 +2290,13 @@ function GisMap(props: GisMapProps) {
                             <button
                                 onClick={handleZoomIn}
                                 className="flex items-center justify-center rounded-full text-gray-800 transition-transform hover:scale-105"
-                                style={{ width: 34, height: 34, background: "#FFFFFF", boxShadow: "0 1px 4px rgba(15,23,42,0.08)" }}
+                                style={{
+                                    width: 34,
+                                    height: 34,
+                                    background: "rgba(255,255,255,0.92)",
+                                    color: "#1F2937",
+                                    boxShadow: "0 1px 4px rgba(15,23,42,0.08)",
+                                }}
                                 aria-label={language === "en" ? "Zoom in" : "放大"}
                                 title={language === "en" ? "Zoom in" : "放大"}
                             >
@@ -2200,7 +2305,13 @@ function GisMap(props: GisMapProps) {
                             <button
                                 onClick={handleZoomOut}
                                 className="flex items-center justify-center rounded-full text-gray-800 transition-transform hover:scale-105"
-                                style={{ width: 34, height: 34, background: "#FFFFFF", boxShadow: "0 1px 4px rgba(15,23,42,0.08)" }}
+                                style={{
+                                    width: 34,
+                                    height: 34,
+                                    background: "rgba(255,255,255,0.92)",
+                                    color: "#1F2937",
+                                    boxShadow: "0 1px 4px rgba(15,23,42,0.08)",
+                                }}
                                 aria-label={language === "en" ? "Zoom out" : "缩小"}
                                 title={language === "en" ? "Zoom out" : "缩小"}
                             >
@@ -2217,7 +2328,7 @@ function GisMap(props: GisMapProps) {
                                     setShowLegendWindow((isOpen) => !isOpen)
                                 })}
                                 className={`h-12 w-12 rounded-full shadow-lg flex items-center justify-center text-[10px] font-semibold hover:scale-105 transition-transform p-2 text-center ${
-                                    showLegendWindow ? "bg-[#3EB181] text-white" : "bg-white/95 text-gray-800"
+                                    showLegendWindow ? "bg-[#3EB181] text-white" : "bg-white/92 text-gray-800"
                                 }`}
                                 title={language === "en" ? "Show Metro Lines" : "显示地铁线路"}
                             >
@@ -2236,7 +2347,7 @@ function GisMap(props: GisMapProps) {
                                     })
                                 })}
                                 className={`h-12 w-12 rounded-full shadow-lg flex items-center justify-center text-[10px] font-semibold hover:scale-105 transition-transform p-2 text-center ${
-                                    showAreaMenu ? "bg-[#3EB181] text-white" : "bg-white/95 text-gray-800"
+                                    showAreaMenu ? "bg-[#3EB181] text-white" : "bg-white/92 text-gray-800"
                                 }`}
                                 title={language === "en" ? "Show Metro Areas" : "显示地铁片区"}
                             >
@@ -2253,7 +2364,7 @@ function GisMap(props: GisMapProps) {
                             padding: 4,
                             height: 48,
                             borderRadius: 999,
-                            background: "rgba(255,255,255,0.82)",
+                            background: "rgba(255,255,255,0.92)",
                             boxShadow: "0 6px 18px rgba(15,23,42,0.10)",
                             backdropFilter: "blur(8px)",
                             WebkitBackdropFilter: "blur(8px)",
@@ -2271,8 +2382,10 @@ function GisMap(props: GisMapProps) {
                                     width: hoveredMapStyle === style ? 34 : 32,
                                     height: hoveredMapStyle === style ? 34 : 32,
                                     borderRadius: 999,
-                                    border: currentMapStyle === style ? "3px solid #3EB181" : "2px solid rgba(0,0,0,0.06)",
-                                    background: 'rgba(255,255,255,0.95)',
+                                    border: currentMapStyle === style
+                                        ? "3px solid #3EB181"
+                                        : "2px solid rgba(0,0,0,0.06)",
+                                    background: 'rgba(255,255,255,0.92)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -2301,8 +2414,8 @@ function GisMap(props: GisMapProps) {
                 style={{
                     position: "absolute",
                     top: 50,
-                    left: showDetailPanel && !isFullWidth ? 236 : "50%",
-                    transform: showDetailPanel && !isFullWidth ? "none" : "translateX(-50%)",
+                    left: isDetailPanelHalfOpen ? halfOpenSearchFrame.left : "50%",
+                    transform: isDetailPanelHalfOpen ? "none" : "translateX(-50%)",
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -2313,7 +2426,18 @@ function GisMap(props: GisMapProps) {
                 }}
             >
                 {/* ========== COMPONENT: Search Bar ========== */}
-                <div style={{ position: "relative", width: showDetailPanel && !isFullWidth ? "max(240px, calc(66.6666667vw - 632px))" : 860 * mapScale, maxWidth: showDetailPanel && !isFullWidth ? "max(240px, calc(66.6666667vw - 632px))" : "calc(100vw - 160px)", pointerEvents: "auto" }}>
+                <div
+                    style={{
+                        position: "relative",
+                        width: isDetailPanelHalfOpen
+                            ? halfOpenSearchFrame.width
+                            : 860 * mapScale,
+                        maxWidth: isDetailPanelHalfOpen
+                            ? halfOpenSearchFrame.width
+                            : "calc(100vw - 160px)",
+                        pointerEvents: "auto",
+                    }}
+                >
                     <input
                         type="text"
                         value={searchQuery}
@@ -2500,12 +2624,20 @@ function GisMap(props: GisMapProps) {
             {/* ========== COMPONENT: Side Panel for CMS Content ========== */}
             {showDetailPanel && (
                 <div
+                    data-detail-panel-controls
+                    onMouseEnter={() => setDetailControlsHover(true)}
+                    onMouseLeave={() => setDetailControlsHover(false)}
+                    onFocusCapture={() => setDetailControlsHover(true)}
+                    onBlurCapture={() => setDetailControlsHover(false)}
                     style={{
                         position: 'fixed',
                         right: 24,
                         top: 50,
                         zIndex: 7000,
                         pointerEvents: 'auto',
+                        opacity: shouldFadeDetailControls ? 0 : 1,
+                        transform: shouldFadeDetailControls ? 'translateY(-10px)' : 'translateY(0)',
+                        transition: 'opacity 180ms ease, transform 180ms ease',
                     }}
                 >
                     <div
@@ -2542,7 +2674,7 @@ function GisMap(props: GisMapProps) {
                         </button>
 
                         <button
-                            onClick={() => startTransition(() => { setShowDetailPanel(false); setIsFullWidth(false); setCmsUrl('') })}
+                            onClick={() => startTransition(() => { setShowDetailPanel(false); setIsFullWidth(false); setCmsUrl(''); setDetailCoverPassed(false) })}
                             aria-label={language === 'en' ? 'Close details' : '关闭详情'}
                             title={language === 'en' ? 'Close' : '关闭'}
                             className="border border-white/45 bg-white/95 text-[#2A383E] shadow-sm backdrop-blur-sm transition-colors hover:border-transparent hover:bg-[#3EB181] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3EB181]"
