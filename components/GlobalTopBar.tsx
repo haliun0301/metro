@@ -126,6 +126,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
   const isHomePage = location.pathname === '/';
   const isV2 = variant === 'v2';
   const showStationCircleMenu = true;
+  const showStationMapBackground = true;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -286,9 +287,8 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
       };
     });
   }, [stationAreaGroups]);
-  const activeStationCircleGroup =
-    stationCircleGroups.find((group) => group.area === hoveredStationCircleArea) ??
-    stationCircleGroups.find((group) => group.area === activeStationArea);
+  const hoveredStationCircleGroup = stationCircleGroups.find((group) => group.area === hoveredStationCircleArea);
+  const selectedStationCircleGroup = hoveredStationCircleGroup ?? stationCircleGroups.find((group) => group.area === activeStationArea);
   const stationBrowseItems = [
     {
       key: 'areas' as const,
@@ -489,20 +489,46 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                 {activeMenuItem === 'stations' ? (
                   showStationCircleMenu ? (
                     <div className="flex h-full min-h-[650px] flex-col">
-                      <div className="shrink-0 pb-5">
+                      <div className="shrink-0 pb-4">
                         <div className="text-xs font-black uppercase tracking-[0.24em] text-[#3EB181]">
                           {language === 'zh' ? '地铁站点片区' : 'Metro Station Areas'}
                         </div>
-                        <div className="mt-2 max-w-[24rem] text-sm font-semibold leading-6 text-white/58">
-                          {language === 'zh' ? '悬停圆形查看属于该片区的站点。' : 'Hover a circle to reveal the stations inside that area.'}
+                        <div className="mt-2 w-full max-w-none text-sm font-semibold leading-6 text-white/58">
+                          {language === 'zh'
+                            ? '这些片区是本项目开展地铁与城市空间研究的重点研究区域。每个圆形代表一个研究片区；悬停圆形即可查看该片区包含的站点。'
+                            : 'These are the research areas where we conduct our metro and urban-space study. Each circle represents one research area; hover a circle to reveal the stations included in that area.'}
                         </div>
                       </div>
                       <div
-                        className="relative min-h-[440px] flex-1 overflow-hidden"
+                        className="relative mb-10 mt-6 min-h-[440px] flex-1 overflow-hidden"
                       >
+                        {showStationMapBackground && (
+                          <>
+                            <div className="pointer-events-none absolute inset-0 opacity-[0.34] grayscale-[35%] saturate-75">
+                              <div className="absolute left-1/2 top-1/2 grid w-[118%] -translate-x-1/2 -translate-y-1/2 grid-cols-4 overflow-hidden">
+                                {[891, 892, 893].map((tileY) => (
+                                  [1671, 1672, 1673, 1674].map((tileX) => (
+                                    <img
+                                      key={`osm-menu-${tileX}-${tileY}`}
+                                      src={`https://tile.openstreetmap.org/11/${tileX}/${tileY}.png`}
+                                      alt=""
+                                      className="h-full w-full object-cover"
+                                      draggable={false}
+                                    />
+                                  ))
+                                ))}
+                              </div>
+                              <div className="absolute inset-0 bg-[#2A383E]/58" />
+                            </div>
+                            <div className="pointer-events-none absolute bottom-1 right-2 z-[1] text-[10px] font-semibold text-white/32">
+                              © OpenStreetMap contributors
+                            </div>
+                          </>
+                        )}
                         <div className="absolute inset-0">
                           {stationCircleGroups.map((group) => {
-                            const isActive = activeStationCircleGroup?.area === group.area;
+                            const isActive = hoveredStationCircleGroup?.area === group.area;
+                            const isDimmed = Boolean(hoveredStationCircleGroup) && !isActive;
                             const label = language === 'zh' ? group.areaCn : group.area;
                             const circleStack = Math.round(120 - group.radius);
 
@@ -520,12 +546,17 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                                   top: `${group.y}%`,
                                   width: group.radius * 2,
                                   height: group.radius * 2,
-                                  backgroundColor: isActive ? group.color : `${group.color}d9`,
+                                  backgroundColor: isDimmed ? 'rgba(100,112,112,0.72)' : isActive ? group.color : `${group.color}d9`,
+                                  opacity: isDimmed ? 0.68 : 1,
+                                  filter: isDimmed ? 'grayscale(0.72) saturate(0.55)' : 'none',
                                   zIndex: isActive ? 220 : circleStack,
                                 }}
                                 onMouseEnter={() => {
                                   setHoveredStationCircleArea(group.area);
                                   setActiveStationArea(group.area);
+                                }}
+                                onMouseLeave={() => {
+                                  setHoveredStationCircleArea((currentArea) => currentArea === group.area ? '' : currentArea);
                                 }}
                                 onFocus={() => {
                                   setHoveredStationCircleArea(group.area);
@@ -536,42 +567,48 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                                   setHoveredStationCircleArea(group.area);
                                 }}
                                 aria-label={label}
-                              />
+                              >
+                                {isActive && (
+                                  <span className="max-w-[78%] px-2 text-center text-[11px] font-black uppercase leading-tight tracking-wide text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
+                                    {label.replace(/\s+area$/i, '')}
+                                  </span>
+                                )}
+                              </button>
                             );
                           })}
                         </div>
                       </div>
-                      <div className="mt-3 min-h-[7.25rem] shrink-0 border-t border-white/12 pt-3">
-                        {activeStationCircleGroup ? (
+                      <div className="mt-3 min-h-[7.25rem] shrink-0 pt-3">
+                        {selectedStationCircleGroup ? (
                           <div
                             className="w-full text-white"
-                            onMouseEnter={() => setHoveredStationCircleArea(activeStationCircleGroup.area)}
+                            onMouseEnter={() => setHoveredStationCircleArea(selectedStationCircleGroup.area)}
                           >
                             <div className="flex items-start gap-3">
                               <div
                                 className="mt-1 h-4 w-4 shrink-0 rounded-full"
-                                style={{ backgroundColor: activeStationCircleGroup.color }}
+                                style={{ backgroundColor: selectedStationCircleGroup.color }}
                               />
                               <div className="min-w-0">
                                 <div className="text-lg font-black leading-tight text-white">
-                                  {language === 'zh' ? activeStationCircleGroup.areaCn : activeStationCircleGroup.area}
+                                  {language === 'zh' ? selectedStationCircleGroup.areaCn : selectedStationCircleGroup.area}
                                 </div>
                                 <div className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-white/42">
-                                  {activeStationCircleGroup.stations.length} {language === 'zh' ? '个站点' : 'stations'}
+                                  {selectedStationCircleGroup.stations.length} {language === 'zh' ? '个站点' : 'stations'}
                                 </div>
                               </div>
                             </div>
                             <div className="mt-3 flex max-h-[6.5rem] flex-wrap gap-2 overflow-y-auto pr-1">
-                              {activeStationCircleGroup.stations.map((station) => (
+                              {selectedStationCircleGroup.stations.map((station) => (
                                 <button
                                 key={station.route}
                                 type="button"
-                                  className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold leading-6 text-white/68 transition duration-200 ease-out hover:bg-[#3EB181]/18 hover:text-white focus:bg-[#3EB181]/18 focus:text-white focus:outline-none"
+                                  className="flex items-center gap-2 rounded-full border border-transparent px-3 py-1.5 text-sm font-bold leading-6 text-white/68 transition duration-200 ease-out hover:border-[#3EB181]/80 hover:bg-[#3EB181]/18 hover:text-white focus:border-[#3EB181]/80 focus:bg-[#3EB181]/18 focus:text-white focus:outline-none"
                                   onClick={() => goToMenuRoute(station.route)}
                                 >
                                   <span
                                     className="h-2 w-2 shrink-0 rounded-full bg-[#3EB181]"
-                                    style={{ backgroundColor: station.lineColor || activeStationCircleGroup.color }}
+                                    style={{ backgroundColor: station.lineColor || selectedStationCircleGroup.color }}
                                   />
                                   {station.label}
                                 </button>
@@ -744,13 +781,6 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                           >
                             <span className="block text-base font-semibold uppercase leading-tight tracking-[0.18em]">
                               {item.label}
-                            </span>
-                            <span
-                              className={`mt-2 block max-w-[12rem] text-xs font-medium normal-case leading-5 tracking-normal transition duration-200 ${
-                                isActive ? 'text-white/54 opacity-100' : 'max-h-0 overflow-hidden opacity-0'
-                              }`}
-                            >
-                              {item.subtitle}
                             </span>
                           </button>
                         );
