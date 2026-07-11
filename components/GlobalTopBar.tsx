@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import LanguageToggle from './LanguageToggle';
@@ -146,6 +146,12 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
     setMenuOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (menuOpen) {
+      setHoveredStationCircleArea('');
+    }
+  }, [menuOpen]);
+
   const stationAreaGroups = useMemo(() => {
     return METRO_AREAS.map((area) => {
       const stationLinks: StationMenuLink[] = STATIONS.filter(
@@ -187,7 +193,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
   }, [stationAreaGroups]);
 
   const stationLineGroups = useMemo(() => {
-    const lineMap = new Map<string, Array<{ label: string; route: string }>>();
+    const lineMap = new Map<string, Array<{ label: string; route: string; lineColor?: string }>>();
 
     STATIONS.filter((station) => station.isDetail).forEach((station) => {
       station.line.split('&').map((line) => line.trim()).filter(Boolean).forEach((line) => {
@@ -195,6 +201,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
         const stationLink = {
           label: language === 'zh' ? station.nameCn || station.name : station.name,
           route,
+          lineColor: station.lineColor,
         };
         const existingStations = lineMap.get(line) ?? [];
 
@@ -288,6 +295,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
     });
   }, [stationAreaGroups]);
   const hoveredStationCircleGroup = stationCircleGroups.find((group) => group.area === hoveredStationCircleArea);
+  const hasFocusedStationCircle = Boolean(hoveredStationCircleGroup);
   const selectedStationCircleGroup = hoveredStationCircleGroup ?? stationCircleGroups.find((group) => group.area === activeStationArea);
   const stationBrowseItems = [
     {
@@ -385,7 +393,6 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
     if (itemKey === 'stations' && stationAreaGroups.length > 0) {
       setActiveStationBrowseMode('areas');
       setActiveStationArea((currentArea) => currentArea || stationAreaGroups[0].area);
-      setHoveredStationCircleArea((currentArea) => currentArea || stationAreaGroups[0].area);
     }
 
     if (itemKey === 'people') {
@@ -450,7 +457,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
             aria-label={copy.menu.close[language]}
             onClick={() => setMenuOpen(false)}
           />
-          <div className="relative flex h-full w-full flex-col overflow-y-auto bg-[#2A383E]/50 px-6 py-20 shadow-2xl md:px-10">
+          <div className="relative flex h-full w-full flex-col overflow-y-auto bg-[#2A383E]/50 px-6 py-20 shadow-2xl md:px-8">
             <button
               type="button"
               className="absolute right-8 top-8 text-4xl font-light leading-none text-white/80 transition hover:text-white focus:outline-none focus:ring-2 focus:ring-white/80"
@@ -460,7 +467,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
               ×
             </button>
             <nav
-              className="grid min-h-0 w-full flex-1 content-start gap-10 md:grid-cols-[11rem_minmax(0,1fr)]"
+              className="grid min-h-0 w-full flex-1 content-start gap-8 md:grid-cols-[9.5rem_minmax(0,1fr)]"
               aria-label={copy.menu.title[language]}
             >
               <div className="flex h-full flex-col items-start gap-8 pt-2">
@@ -488,7 +495,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
               >
                 {activeMenuItem === 'stations' ? (
                   showStationCircleMenu ? (
-                    <div className="flex h-full min-h-[650px] flex-col">
+                    <div className="flex h-full min-h-[700px] flex-col">
                       <div className="shrink-0 pb-4">
                         <div className="text-xs font-black uppercase tracking-[0.24em] text-[#3EB181]">
                           {language === 'zh' ? '地铁站点片区' : 'Metro Station Areas'}
@@ -500,7 +507,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                         </div>
                       </div>
                       <div
-                        className="relative mb-10 mt-6 min-h-[440px] flex-1 overflow-hidden"
+                        className="relative mb-10 mt-6 min-h-[520px] flex-1 overflow-hidden"
                       >
                         {showStationMapBackground && (
                           <>
@@ -527,8 +534,9 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                         )}
                         <div className="absolute inset-0">
                           {stationCircleGroups.map((group) => {
-                            const isActive = hoveredStationCircleGroup?.area === group.area;
-                            const isDimmed = Boolean(hoveredStationCircleGroup) && !isActive;
+                            const isFocused = hoveredStationCircleGroup?.area === group.area;
+                            const isActive = !hasFocusedStationCircle || isFocused;
+                            const isDimmed = hasFocusedStationCircle && !isActive;
                             const label = language === 'zh' ? group.areaCn : group.area;
                             const circleStack = Math.round(120 - group.radius);
 
@@ -537,7 +545,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                                 key={group.area}
                                 type="button"
                                 className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-center transition duration-200 ease-out focus:outline-none ${
-                                  isActive
+                                  isFocused
                                     ? 'scale-105 shadow-[0_24px_70px_rgba(36,49,54,0.22)]'
                                     : 'shadow-[0_14px_38px_rgba(36,49,54,0.12)] hover:scale-105 focus:scale-105'
                                 }`}
@@ -546,10 +554,10 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                                   top: `${group.y}%`,
                                   width: group.radius * 2,
                                   height: group.radius * 2,
-                                  backgroundColor: isDimmed ? 'rgba(100,112,112,0.72)' : isActive ? group.color : `${group.color}d9`,
+                                  backgroundColor: isDimmed ? 'rgba(100,112,112,0.72)' : group.color,
                                   opacity: isDimmed ? 0.68 : 1,
                                   filter: isDimmed ? 'grayscale(0.72) saturate(0.55)' : 'none',
-                                  zIndex: isActive ? 220 : circleStack,
+                                  zIndex: isFocused ? 220 : circleStack,
                                 }}
                                 onMouseEnter={() => {
                                   setHoveredStationCircleArea(group.area);
@@ -568,7 +576,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                                 }}
                                 aria-label={label}
                               >
-                                {isActive && (
+                                {isFocused && (
                                   <span className="max-w-[78%] px-2 text-center text-[11px] font-black uppercase leading-tight tracking-wide text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
                                     {label.replace(/\s+area$/i, '')}
                                   </span>
@@ -599,20 +607,25 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                               </div>
                             </div>
                             <div className="mt-3 flex max-h-[6.5rem] flex-wrap gap-2 overflow-y-auto pr-1">
-                              {selectedStationCircleGroup.stations.map((station) => (
-                                <button
-                                key={station.route}
-                                type="button"
-                                  className="flex items-center gap-2 rounded-full border border-transparent px-3 py-1.5 text-sm font-bold leading-6 text-white/68 transition duration-200 ease-out hover:border-[#3EB181]/80 hover:bg-[#3EB181]/18 hover:text-white focus:border-[#3EB181]/80 focus:bg-[#3EB181]/18 focus:text-white focus:outline-none"
-                                  onClick={() => goToMenuRoute(station.route)}
-                                >
-                                  <span
-                                    className="h-2 w-2 shrink-0 rounded-full bg-[#3EB181]"
-                                    style={{ backgroundColor: station.lineColor || selectedStationCircleGroup.color }}
-                                  />
-                                  {station.label}
-                                </button>
-                              ))}
+                              {selectedStationCircleGroup.stations.map((station) => {
+                                const stationHoverColor = station.lineColor || selectedStationCircleGroup.color;
+
+                                return (
+                                  <button
+                                    key={station.route}
+                                    type="button"
+                                    className="flex items-center gap-2 rounded-full border border-transparent px-3 py-1.5 text-sm font-bold leading-6 text-white/68 transition duration-200 ease-out hover:border-[var(--station-hover-color)] hover:bg-[var(--station-hover-color)] hover:text-white focus:border-[var(--station-hover-color)] focus:bg-[var(--station-hover-color)] focus:text-white focus:outline-none"
+                                    style={{ '--station-hover-color': stationHoverColor } as CSSProperties}
+                                    onClick={() => goToMenuRoute(station.route)}
+                                  >
+                                    <span
+                                      className="h-2 w-2 shrink-0 rounded-full bg-[#3EB181]"
+                                      style={{ backgroundColor: stationHoverColor }}
+                                    />
+                                    {station.label}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
                         ) : (
@@ -717,19 +730,24 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                             {language === 'zh' ? activeStationGroup.areaCn : activeStationGroup.area}
                           </div>
                           <div className="mt-4 flex max-w-3xl flex-wrap gap-x-4 gap-y-2">
-                            {activeStationGroup.stations.map((station) => (
-                              <button
-                                key={station.route}
-                                type="button"
-                                className={isV2
-                                  ? 'rounded-full bg-[#243136]/6 px-3 py-1.5 text-sm font-bold leading-6 text-[#243136]/66 transition duration-200 ease-out hover:bg-[#3EB181] hover:text-white focus:bg-[#3EB181] focus:text-white focus:outline-none md:text-base'
-                                  : 'origin-left text-sm font-medium leading-6 text-white/62 transition duration-200 ease-out hover:scale-105 hover:text-[#3EB181] focus:scale-105 focus:outline-none focus:text-[#3EB181] md:text-base'
-                                }
-                                onClick={() => goToMenuRoute(station.route)}
-                              >
-                                {station.label}
-                              </button>
-                            ))}
+                            {activeStationGroup.stations.map((station) => {
+                              const stationHoverColor = station.lineColor || '#3EB181';
+
+                              return (
+                                <button
+                                  key={station.route}
+                                  type="button"
+                                  className={isV2
+                                    ? 'rounded-full bg-[#243136]/6 px-3 py-1.5 text-sm font-bold leading-6 text-[#243136]/66 transition duration-200 ease-out hover:bg-[var(--station-hover-color)] hover:text-white focus:bg-[var(--station-hover-color)] focus:text-white focus:outline-none md:text-base'
+                                    : 'origin-left rounded-full border border-transparent px-3 py-1.5 text-sm font-medium leading-6 text-white/62 transition duration-200 ease-out hover:scale-105 hover:border-[var(--station-hover-color)] hover:bg-[var(--station-hover-color)] hover:text-white focus:scale-105 focus:border-[var(--station-hover-color)] focus:bg-[var(--station-hover-color)] focus:text-white focus:outline-none md:text-base'
+                                  }
+                                  style={{ '--station-hover-color': stationHoverColor } as CSSProperties}
+                                  onClick={() => goToMenuRoute(station.route)}
+                                >
+                                  {station.label}
+                                </button>
+                              );
+                            })}
                           </div>
                         </>
                       ) : null}
@@ -741,19 +759,24 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                             {activeLineGroup.label}
                           </div>
                           <div className="mt-4 flex max-w-3xl flex-wrap gap-x-4 gap-y-2">
-                            {activeLineGroup.stations.map((station) => (
-                              <button
-                                key={station.route}
-                                type="button"
-                                className={isV2
-                                  ? 'rounded-full bg-[#243136]/6 px-3 py-1.5 text-sm font-bold leading-6 text-[#243136]/66 transition duration-200 ease-out hover:bg-[#3EB181] hover:text-white focus:bg-[#3EB181] focus:text-white focus:outline-none md:text-base'
-                                  : 'origin-left text-sm font-medium leading-6 text-white/62 transition duration-200 ease-out hover:scale-105 hover:text-[#3EB181] focus:scale-105 focus:outline-none focus:text-[#3EB181] md:text-base'
-                                }
-                                onClick={() => goToMenuRoute(station.route)}
-                              >
-                                {station.label}
-                              </button>
-                            ))}
+                            {activeLineGroup.stations.map((station) => {
+                              const stationHoverColor = station.lineColor || '#3EB181';
+
+                              return (
+                                <button
+                                  key={station.route}
+                                  type="button"
+                                  className={isV2
+                                    ? 'rounded-full bg-[#243136]/6 px-3 py-1.5 text-sm font-bold leading-6 text-[#243136]/66 transition duration-200 ease-out hover:bg-[var(--station-hover-color)] hover:text-white focus:bg-[var(--station-hover-color)] focus:text-white focus:outline-none md:text-base'
+                                    : 'origin-left rounded-full border border-transparent px-3 py-1.5 text-sm font-medium leading-6 text-white/62 transition duration-200 ease-out hover:scale-105 hover:border-[var(--station-hover-color)] hover:bg-[var(--station-hover-color)] hover:text-white focus:scale-105 focus:border-[var(--station-hover-color)] focus:bg-[var(--station-hover-color)] focus:text-white focus:outline-none md:text-base'
+                                  }
+                                  style={{ '--station-hover-color': stationHoverColor } as CSSProperties}
+                                  onClick={() => goToMenuRoute(station.route)}
+                                >
+                                  {station.label}
+                                </button>
+                              );
+                            })}
                           </div>
                         </>
                       ) : null}
