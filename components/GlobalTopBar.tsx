@@ -19,6 +19,26 @@ const AREA_CIRCLE_COLORS = [
   '#E985B5',
   '#4FA7A2',
   '#D88745',
+  '#53C6E8',
+  '#A3B83F',
+  '#F07C48',
+  '#9B7BEA',
+  '#30A08A',
+  '#E15F89',
+  '#75A843',
+  '#4D77C8',
+  '#D9A441',
+  '#C65BAA',
+  '#45B8B0',
+  '#B66A3E',
+  '#6F9FE5',
+  '#D86F6B',
+  '#8FBF5A',
+  '#B785D9',
+  '#57A66D',
+  '#E49A52',
+  '#5FA1B8',
+  '#C95068',
 ] as const;
 
 const THEME_TILE_IMAGES = [
@@ -47,7 +67,7 @@ type ShenzhenBoundaryFeature = {
 const SHENZHEN_MAP_VIEWBOX = {
   width: 1000,
   height: 560,
-  padding: 38,
+  padding: 14,
 } as const;
 
 const shenzhenBoundary = JSON.parse(shenzhenBoundaryText) as ShenzhenBoundaryFeature;
@@ -339,18 +359,22 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
     return stationAreaGroups.map((group, index) => {
       const avgLat = group.stations.reduce((total, station) => total + station.lat, 0) / group.stations.length;
       const avgLng = group.stations.reduce((total, station) => total + station.lng, 0) / group.stations.length;
-      const lats = group.stations.map((station) => station.lat);
-      const lngs = group.stations.map((station) => station.lng);
-      const spread = Math.max(Math.max(...lats) - Math.min(...lats), Math.max(...lngs) - Math.min(...lngs));
-      const detailWeight = Math.min(group.stations.length, 8) / 8;
       const projectedCenter = projectShenzhenPoint(avgLng, avgLat);
-      const spreadPixels = spread * shenzhenMapScale;
+      const stationClusterRadius = Math.max(
+        ...group.stations.map((station) => {
+          const projectedStation = projectShenzhenPoint(station.lng, station.lat);
+          return Math.hypot(projectedStation.x - projectedCenter.x, projectedStation.y - projectedCenter.y);
+        }),
+        0
+      );
 
       return {
         ...group,
+        lat: avgLat,
+        lng: avgLng,
         x: clamp((projectedCenter.x / SHENZHEN_MAP_VIEWBOX.width) * 100, 3, 97),
         y: clamp((projectedCenter.y / SHENZHEN_MAP_VIEWBOX.height) * 100, 4, 96),
-        radius: clamp(30 + spreadPixels * 0.28 + detailWeight * 19, 34, 74),
+        radius: clamp(stationClusterRadius + 18, 30, 68),
         color: AREA_CIRCLE_COLORS[index % AREA_CIRCLE_COLORS.length],
       };
     });
@@ -570,24 +594,19 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                       <div
                         className="relative mb-10 mt-6 min-h-[520px] flex-1 overflow-hidden"
                       >
-                        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                        <div className="absolute inset-0 overflow-hidden">
                           <svg
-                            className="absolute left-1/2 top-1/2 h-[98%] w-[98%] -translate-x-1/2 -translate-y-1/2"
+                            className="absolute inset-0 h-full w-full"
                             viewBox={`0 0 ${SHENZHEN_MAP_VIEWBOX.width} ${SHENZHEN_MAP_VIEWBOX.height}`}
+                            preserveAspectRatio="xMidYMid meet"
                             role="img"
                             aria-label={language === 'zh' ? '深圳市地图边界' : 'Shenzhen city boundary map'}
                           >
                             <defs>
-                              <radialGradient id="stationMenuWaterGlow" cx="52%" cy="58%" r="74%">
-                                <stop offset="0%" stopColor="#7ed9b4" stopOpacity="0.18" />
-                                <stop offset="58%" stopColor="#2f8fda" stopOpacity="0.09" />
-                                <stop offset="100%" stopColor="#172126" stopOpacity="0" />
-                              </radialGradient>
                               <filter id="stationMenuMapShadow" x="-12%" y="-14%" width="124%" height="128%">
                                 <feDropShadow dx="0" dy="16" stdDeviation="18" floodColor="#081218" floodOpacity="0.3" />
                               </filter>
                             </defs>
-                            <rect width="100%" height="100%" fill="url(#stationMenuWaterGlow)" />
                             <path
                               d={shenzhenBoundaryPath}
                               fill="rgba(62, 177, 129, 0.16)"
@@ -605,6 +624,68 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                               opacity="0.42"
                             />
                             {stationCircleGroups.map((group) => {
+                              const isFocused = hoveredStationCircleGroup?.area === group.area;
+                              const isActive = !hasFocusedStationCircle || isFocused;
+                              const isDimmed = hasFocusedStationCircle && !isActive;
+                              const label = language === 'zh' ? group.areaCn : group.area;
+                              const projectedCenter = projectShenzhenPoint(group.lng, group.lat);
+                              const circleStack = Math.round(120 - group.radius);
+
+                              return (
+                                <foreignObject
+                                  key={`station-area-circle-${group.area}`}
+                                  x={projectedCenter.x - group.radius}
+                                  y={projectedCenter.y - group.radius}
+                                  width={group.radius * 2}
+                                  height={group.radius * 2}
+                                  style={{ overflow: 'visible', opacity: isDimmed ? 0.68 : 1 }}
+                                >
+                                  <button
+                                    type="button"
+                                    className={`flex h-full w-full items-center justify-center rounded-full text-center transition duration-200 ease-out focus:outline-none ${
+                                      isFocused
+                                        ? 'scale-105 shadow-[0_24px_70px_rgba(36,49,54,0.22)]'
+                                        : 'shadow-[0_14px_38px_rgba(36,49,54,0.12)] hover:scale-105 focus:scale-105'
+                                    }`}
+                                    style={{
+                                      backgroundColor: isDimmed ? 'rgba(100,112,112,0.72)' : group.color,
+                                      filter: isDimmed ? 'grayscale(0.72) saturate(0.55)' : 'none',
+                                      zIndex: isFocused ? 220 : circleStack,
+                                    }}
+                                    onMouseEnter={() => {
+                                      setHoveredStationCircleArea(group.area);
+                                      setActiveStationArea(group.area);
+                                    }}
+                                    onMouseLeave={() => {
+                                      setHoveredStationCircleArea((currentArea) => currentArea === group.area ? '' : currentArea);
+                                    }}
+                                    onFocus={() => {
+                                      setHoveredStationCircleArea(group.area);
+                                      setActiveStationArea(group.area);
+                                    }}
+                                    onClick={() => {
+                                      setActiveStationArea(group.area);
+                                      setHoveredStationCircleArea(group.area);
+                                    }}
+                                    aria-label={label}
+                                  >
+                                    {isFocused && (
+                                      <span className="max-w-[78%] px-2 text-center text-[11px] font-black uppercase leading-tight tracking-wide text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
+                                        {label.replace(/\s+area$/i, '')}
+                                      </span>
+                                    )}
+                                  </button>
+                                </foreignObject>
+                              );
+                            })}
+                          </svg>
+                          <svg
+                            className="pointer-events-none absolute inset-0 h-full w-full"
+                            viewBox={`0 0 ${SHENZHEN_MAP_VIEWBOX.width} ${SHENZHEN_MAP_VIEWBOX.height}`}
+                            preserveAspectRatio="xMidYMid meet"
+                            aria-hidden="true"
+                          >
+                            {stationCircleGroups.filter((group) => group.area === hoveredStationCircleArea).map((group) => {
                               const projectedStations = group.stations.map((station) => {
                                 const point = projectShenzhenPoint(station.lng, station.lat);
 
@@ -615,76 +696,22 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                               });
 
                               return (
-                                <g key={`station-menu-map-${group.area}`} opacity="0.64">
+                                <g key={`station-menu-map-${group.area}`} opacity="0.78">
                                   {projectedStations.map((station, stationIndex) => (
                                     <circle
                                       key={`${group.area}-${stationIndex}`}
                                       cx={station.x}
                                       cy={station.y}
-                                      r="3.8"
+                                      r="4.2"
                                       fill={station.color}
-                                      stroke="rgba(255,255,255,0.62)"
-                                      strokeWidth="1.2"
+                                      stroke="rgba(255,255,255,0.88)"
+                                      strokeWidth="1.5"
                                     />
                                   ))}
                                 </g>
                               );
                             })}
                           </svg>
-                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_58%,rgba(255,255,255,0.04),transparent_54%),linear-gradient(180deg,rgba(42,56,62,0.08),rgba(42,56,62,0.42))]" />
-                        </div>
-                        <div className="absolute inset-0">
-                          {stationCircleGroups.map((group) => {
-                            const isFocused = hoveredStationCircleGroup?.area === group.area;
-                            const isActive = !hasFocusedStationCircle || isFocused;
-                            const isDimmed = hasFocusedStationCircle && !isActive;
-                            const label = language === 'zh' ? group.areaCn : group.area;
-                            const circleStack = Math.round(120 - group.radius);
-
-                            return (
-                              <button
-                                key={group.area}
-                                type="button"
-                                className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-center transition duration-200 ease-out focus:outline-none ${
-                                  isFocused
-                                    ? 'scale-105 shadow-[0_24px_70px_rgba(36,49,54,0.22)]'
-                                    : 'shadow-[0_14px_38px_rgba(36,49,54,0.12)] hover:scale-105 focus:scale-105'
-                                }`}
-                                style={{
-                                  left: `${group.x}%`,
-                                  top: `${group.y}%`,
-                                  width: group.radius * 2,
-                                  height: group.radius * 2,
-                                  backgroundColor: isDimmed ? 'rgba(100,112,112,0.72)' : group.color,
-                                  opacity: isDimmed ? 0.68 : 1,
-                                  filter: isDimmed ? 'grayscale(0.72) saturate(0.55)' : 'none',
-                                  zIndex: isFocused ? 220 : circleStack,
-                                }}
-                                onMouseEnter={() => {
-                                  setHoveredStationCircleArea(group.area);
-                                  setActiveStationArea(group.area);
-                                }}
-                                onMouseLeave={() => {
-                                  setHoveredStationCircleArea((currentArea) => currentArea === group.area ? '' : currentArea);
-                                }}
-                                onFocus={() => {
-                                  setHoveredStationCircleArea(group.area);
-                                  setActiveStationArea(group.area);
-                                }}
-                                onClick={() => {
-                                  setActiveStationArea(group.area);
-                                  setHoveredStationCircleArea(group.area);
-                                }}
-                                aria-label={label}
-                              >
-                                {isFocused && (
-                                  <span className="max-w-[78%] px-2 text-center text-[11px] font-black uppercase leading-tight tracking-wide text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
-                                    {label.replace(/\s+area$/i, '')}
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          })}
                         </div>
                       </div>
                       <div className="mt-3 min-h-[7.25rem] shrink-0 pt-3">
