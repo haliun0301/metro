@@ -1,5 +1,6 @@
 import { useMemo, useState, startTransition, useEffect, useRef, useCallback, type CSSProperties } from "react"
 import { motion } from "framer-motion"
+import { useNavigate } from "react-router-dom"
 import { PeopleData } from "../../data/metro-people/people"
 
 const CURRENT_YEAR = 2026
@@ -127,6 +128,7 @@ export default function PeopleCircles({
     density = 100,
     sizeMode = "uniform",
 }: PeopleCirclesProps) {
+    const navigate = useNavigate()
     const parsedFromJson: Person[] | null = useMemo(() => {
         if (!jsonData) return null
         try {
@@ -464,8 +466,8 @@ export default function PeopleCircles({
             return
         }
         e.preventDefault()
-        window.location.assign(personUrl)
-    }, [handleClick])
+        navigate(personUrl)
+    }, [handleClick, navigate])
 
     const hoveredPerson =
         hoveredIndex !== null && hoveredIndex < effectivePeople.length
@@ -532,16 +534,15 @@ export default function PeopleCircles({
                 const targetOpacity = isGreyedOut ? 0.4 : 1
 
                 const personUrl = person?.id
-                    ? `https://shenzhen-subway.framer.website/individual/${person.id}`
+                    ? `/people/${person.id}`
                     : null
 
                 return (
                     personUrl ? (
-                        <a
-                            href={personUrl}
+                        <button
+                            type="button"
                             onClick={(e) => handlePersonNavigate(circle.index, personUrl, e)}
                             style={{
-                                textDecoration: "none",
                                 position: "absolute",
                                 left: `${pos.xPercent}%`,
                                 top: `${pos.yPercent}%`,
@@ -553,6 +554,9 @@ export default function PeopleCircles({
                                 alignItems: "center",
                                 justifyContent: "center",
                                 zIndex: isDragging ? 100 : isHovered ? 50 : 1,
+                                padding: 0,
+                                border: "none",
+                                background: "transparent",
                             }}
                         >
                             <motion.div
@@ -614,7 +618,7 @@ export default function PeopleCircles({
                                     }}
                                 />
                             </motion.div>
-                        </a>
+                        </button>
                     ) : (
                         <motion.div
                             key={`person-${circle.index}`}

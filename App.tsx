@@ -12,6 +12,7 @@ import MetroMapPage from './components/metro-stations/MetroMapPage';
 import MetroPeople from "./components/metro-people/MetroPeople";
 import ThematicMap from './components/metro-city/ThematicMap';
 import StationDetailPage from './pages/StationDetailPage';
+import PersonDetailPage from './pages/PersonDetailPage';
 
 function AppShell() {
   const location = useLocation();
@@ -80,6 +81,7 @@ function AppShell() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/map" element={<MetroMapPage />} />
         <Route path="/people" element={<MetroPeople />} />
+        <Route path="/people/:personId" element={<PersonDetailPage />} />
         <Route path="/thematicmap" element={<ThematicMap />} />
         <Route path="/stations/:stationSlug" element={<StationDetailPage />} />
       </Routes>
