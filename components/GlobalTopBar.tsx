@@ -8,6 +8,7 @@ import { createStationSlug } from '../data/metro-stations/stationDetails';
 import { METRO_AREAS, isMetroAreaMatch } from '../data/metro-stations/metroAreas';
 import { THEMATIC_TOPICS } from '../data/metro-city/thematicTopics';
 import { PeopleData } from '../data/metro-people/people';
+import shenzhenBoundaryText from '../data/metro-stations/shenzhenBoundary.geojson?raw';
 
 const AREA_CIRCLE_COLORS = [
   '#3EB181',
@@ -34,6 +35,74 @@ const THEME_TILE_IMAGES = [
   '/assets/station-details/shuibeiArea/Shuibei/Section 2/1.png',
   '/assets/station-details/shuibeiArea/Shuibei/Section 4/Remote Sensing 2/Title.png',
 ] as const;
+
+type LngLatPosition = [number, number];
+type ShenzhenBoundaryFeature = {
+  geometry: {
+    type: 'MultiPolygon';
+    coordinates: LngLatPosition[][][];
+  };
+};
+
+const SHENZHEN_MAP_VIEWBOX = {
+  width: 1000,
+  height: 560,
+  padding: 38,
+} as const;
+
+const shenzhenBoundary = JSON.parse(shenzhenBoundaryText) as ShenzhenBoundaryFeature;
+const shenzhenBoundaryCoordinates = shenzhenBoundary.geometry.coordinates;
+const shenzhenBoundaryPoints = shenzhenBoundaryCoordinates.flat(2);
+const shenzhenBoundaryBounds = shenzhenBoundaryPoints.reduce(
+  (bounds, [lng, lat]) => ({
+    minLng: Math.min(bounds.minLng, lng),
+    maxLng: Math.max(bounds.maxLng, lng),
+    minLat: Math.min(bounds.minLat, lat),
+    maxLat: Math.max(bounds.maxLat, lat),
+  }),
+  {
+    minLng: Number.POSITIVE_INFINITY,
+    maxLng: Number.NEGATIVE_INFINITY,
+    minLat: Number.POSITIVE_INFINITY,
+    maxLat: Number.NEGATIVE_INFINITY,
+  }
+);
+
+const shenzhenMapScale = Math.min(
+  (SHENZHEN_MAP_VIEWBOX.width - SHENZHEN_MAP_VIEWBOX.padding * 2) /
+    Math.max(0.001, shenzhenBoundaryBounds.maxLng - shenzhenBoundaryBounds.minLng),
+  (SHENZHEN_MAP_VIEWBOX.height - SHENZHEN_MAP_VIEWBOX.padding * 2) /
+    Math.max(0.001, shenzhenBoundaryBounds.maxLat - shenzhenBoundaryBounds.minLat)
+);
+const shenzhenProjectedWidth =
+  (shenzhenBoundaryBounds.maxLng - shenzhenBoundaryBounds.minLng) * shenzhenMapScale;
+const shenzhenProjectedHeight =
+  (shenzhenBoundaryBounds.maxLat - shenzhenBoundaryBounds.minLat) * shenzhenMapScale;
+const shenzhenMapOffsetX = (SHENZHEN_MAP_VIEWBOX.width - shenzhenProjectedWidth) / 2;
+const shenzhenMapOffsetY = (SHENZHEN_MAP_VIEWBOX.height - shenzhenProjectedHeight) / 2;
+
+function projectShenzhenPoint(lng: number, lat: number) {
+  return {
+    x: shenzhenMapOffsetX + (lng - shenzhenBoundaryBounds.minLng) * shenzhenMapScale,
+    y: shenzhenMapOffsetY + (shenzhenBoundaryBounds.maxLat - lat) * shenzhenMapScale,
+  };
+}
+
+const shenzhenBoundaryPath = shenzhenBoundaryCoordinates
+  .flatMap((polygon) => polygon.map((ring) => {
+    const projectedRing = ring.map(([lng, lat]) => projectShenzhenPoint(lng, lat));
+    const [firstPoint, ...remainingPoints] = projectedRing;
+
+    if (!firstPoint) return '';
+
+    return [
+      `M ${firstPoint.x.toFixed(2)} ${firstPoint.y.toFixed(2)}`,
+      ...remainingPoints.map((point) => `L ${point.x.toFixed(2)} ${point.y.toFixed(2)}`),
+      'Z',
+    ].join(' ');
+  }))
+  .filter(Boolean)
+  .join(' ');
 
 const copy = {
   menu: {
@@ -126,7 +195,6 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
   const isHomePage = location.pathname === '/';
   const isV2 = variant === 'v2';
   const showStationCircleMenu = true;
-  const showStationMapBackground = true;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -268,15 +336,6 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
   const stationCircleGroups = useMemo(() => {
     if (stationAreaGroups.length === 0) return [];
 
-    const allLats = stationAreaGroups.flatMap((group) => group.stations.map((station) => station.lat));
-    const allLngs = stationAreaGroups.flatMap((group) => group.stations.map((station) => station.lng));
-    const minLat = Math.min(...allLats);
-    const maxLat = Math.max(...allLats);
-    const minLng = Math.min(...allLngs);
-    const maxLng = Math.max(...allLngs);
-    const latRange = Math.max(0.001, maxLat - minLat);
-    const lngRange = Math.max(0.001, maxLng - minLng);
-
     return stationAreaGroups.map((group, index) => {
       const avgLat = group.stations.reduce((total, station) => total + station.lat, 0) / group.stations.length;
       const avgLng = group.stations.reduce((total, station) => total + station.lng, 0) / group.stations.length;
@@ -284,12 +343,14 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
       const lngs = group.stations.map((station) => station.lng);
       const spread = Math.max(Math.max(...lats) - Math.min(...lats), Math.max(...lngs) - Math.min(...lngs));
       const detailWeight = Math.min(group.stations.length, 8) / 8;
+      const projectedCenter = projectShenzhenPoint(avgLng, avgLat);
+      const spreadPixels = spread * shenzhenMapScale;
 
       return {
         ...group,
-        x: clamp(8 + ((avgLng - minLng) / lngRange) * 84, 7, 93),
-        y: clamp(10 + ((maxLat - avgLat) / latRange) * 80, 9, 91),
-        radius: clamp(28 + spread * 190 + detailWeight * 20, 34, 72),
+        x: clamp((projectedCenter.x / SHENZHEN_MAP_VIEWBOX.width) * 100, 3, 97),
+        y: clamp((projectedCenter.y / SHENZHEN_MAP_VIEWBOX.height) * 100, 4, 96),
+        radius: clamp(30 + spreadPixels * 0.28 + detailWeight * 19, 34, 74),
         color: AREA_CIRCLE_COLORS[index % AREA_CIRCLE_COLORS.length],
       };
     });
@@ -509,29 +570,69 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                       <div
                         className="relative mb-10 mt-6 min-h-[520px] flex-1 overflow-hidden"
                       >
-                        {showStationMapBackground && (
-                          <>
-                            <div className="pointer-events-none absolute inset-0 opacity-[0.34] grayscale-[35%] saturate-75">
-                              <div className="absolute left-1/2 top-1/2 grid w-[118%] -translate-x-1/2 -translate-y-1/2 grid-cols-4 overflow-hidden">
-                                {[891, 892, 893].map((tileY) => (
-                                  [1671, 1672, 1673, 1674].map((tileX) => (
-                                    <img
-                                      key={`osm-menu-${tileX}-${tileY}`}
-                                      src={`https://tile.openstreetmap.org/11/${tileX}/${tileY}.png`}
-                                      alt=""
-                                      className="h-full w-full object-cover"
-                                      draggable={false}
+                        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                          <svg
+                            className="absolute left-1/2 top-1/2 h-[98%] w-[98%] -translate-x-1/2 -translate-y-1/2"
+                            viewBox={`0 0 ${SHENZHEN_MAP_VIEWBOX.width} ${SHENZHEN_MAP_VIEWBOX.height}`}
+                            role="img"
+                            aria-label={language === 'zh' ? '深圳市地图边界' : 'Shenzhen city boundary map'}
+                          >
+                            <defs>
+                              <radialGradient id="stationMenuWaterGlow" cx="52%" cy="58%" r="74%">
+                                <stop offset="0%" stopColor="#7ed9b4" stopOpacity="0.18" />
+                                <stop offset="58%" stopColor="#2f8fda" stopOpacity="0.09" />
+                                <stop offset="100%" stopColor="#172126" stopOpacity="0" />
+                              </radialGradient>
+                              <filter id="stationMenuMapShadow" x="-12%" y="-14%" width="124%" height="128%">
+                                <feDropShadow dx="0" dy="16" stdDeviation="18" floodColor="#081218" floodOpacity="0.3" />
+                              </filter>
+                            </defs>
+                            <rect width="100%" height="100%" fill="url(#stationMenuWaterGlow)" />
+                            <path
+                              d={shenzhenBoundaryPath}
+                              fill="rgba(62, 177, 129, 0.16)"
+                              fillRule="evenodd"
+                              stroke="rgba(236, 255, 247, 0.54)"
+                              strokeWidth="2.2"
+                              filter="url(#stationMenuMapShadow)"
+                            />
+                            <path
+                              d={shenzhenBoundaryPath}
+                              fill="none"
+                              stroke="rgba(62, 177, 129, 0.44)"
+                              strokeWidth="5.5"
+                              strokeLinejoin="round"
+                              opacity="0.42"
+                            />
+                            {stationCircleGroups.map((group) => {
+                              const projectedStations = group.stations.map((station) => {
+                                const point = projectShenzhenPoint(station.lng, station.lat);
+
+                                return {
+                                  ...point,
+                                  color: station.lineColor || group.color,
+                                };
+                              });
+
+                              return (
+                                <g key={`station-menu-map-${group.area}`} opacity="0.64">
+                                  {projectedStations.map((station, stationIndex) => (
+                                    <circle
+                                      key={`${group.area}-${stationIndex}`}
+                                      cx={station.x}
+                                      cy={station.y}
+                                      r="3.8"
+                                      fill={station.color}
+                                      stroke="rgba(255,255,255,0.62)"
+                                      strokeWidth="1.2"
                                     />
-                                  ))
-                                ))}
-                              </div>
-                              <div className="absolute inset-0 bg-[#2A383E]/58" />
-                            </div>
-                            <div className="pointer-events-none absolute bottom-1 right-2 z-[1] text-[10px] font-semibold text-white/32">
-                              © OpenStreetMap contributors
-                            </div>
-                          </>
-                        )}
+                                  ))}
+                                </g>
+                              );
+                            })}
+                          </svg>
+                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_58%,rgba(255,255,255,0.04),transparent_54%),linear-gradient(180deg,rgba(42,56,62,0.08),rgba(42,56,62,0.42))]" />
+                        </div>
                         <div className="absolute inset-0">
                           {stationCircleGroups.map((group) => {
                             const isFocused = hoveredStationCircleGroup?.area === group.area;
