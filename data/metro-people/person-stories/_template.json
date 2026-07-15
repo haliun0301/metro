@@ -1,0 +1,59 @@
+{
+  "personId": "replace-with-person-id",
+  "sections": [
+    {
+      "id": "life-trajectory",
+      "paragraphs": [
+        "Add the participant's life trajectory paragraph here."
+      ]
+    },
+    {
+      "id": "mobility-pattern",
+      "paragraphs": [
+        "Add the participant's mobility pattern paragraph here."
+      ]
+    },
+    {
+      "id": "first-metro-ride",
+      "paragraphs": [
+        "Add the participant's first metro ride paragraph here."
+      ]
+    },
+    {
+      "id": "moments",
+      "paragraphs": [
+        "Add one or more memorable metro moments here."
+      ]
+    },
+    {
+      "id": "metro-vs-other-transport",
+      "paragraphs": [
+        "Add the participant's comparison with other transport here."
+      ]
+    },
+    {
+      "id": "places-transformed-by-metro",
+      "paragraphs": [
+        "Add the participant's account of places transformed by the metro here."
+      ]
+    },
+    {
+      "id": "key-metro-network-nodes",
+      "paragraphs": [
+        "Add the participant's key Shenzhen Metro nodes here."
+      ]
+    },
+    {
+      "id": "metro-impact-on-my-life",
+      "paragraphs": [
+        "Add the participant's account of the metro's impact on their life here."
+      ]
+    },
+    {
+      "id": "metro-impact-on-shenzhen",
+      "paragraphs": [
+        "Add the participant's account of the metro's impact on Shenzhen here."
+      ]
+    }
+  ]
+}

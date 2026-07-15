@@ -469,17 +469,6 @@ export default function PeopleCircles({
         navigate(personUrl)
     }, [handleClick, navigate])
 
-    const hoveredPerson =
-        hoveredIndex !== null && hoveredIndex < effectivePeople.length
-            ? effectivePeople[hoveredIndex]
-            : undefined
-
-    const hoveredCircle = hoveredIndex !== null
-        ? circlesData.find((c) => c.index === hoveredIndex)
-        : undefined
-    
-    const hoveredCirclePos = hoveredCircle ? getCirclePosition(hoveredCircle) : undefined
-
     return (
         <div
             ref={containerRef}
@@ -690,59 +679,6 @@ export default function PeopleCircles({
                 )
             })}
 
-            {hoveredPerson && hoveredCirclePos && draggingIndex === null && (
-                <div
-                    style={{
-                        position: "absolute",
-                        left: `${hoveredCirclePos.xPercent}%`,
-                        top: `${hoveredCirclePos.yPercent}%`,
-                        transform: "translate(-50%, -130%)",
-                        pointerEvents: "none",
-                        backgroundColor: "#FFFFFF",
-                        borderRadius: 12,
-                        boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-                        padding: 8,
-                        minWidth: 120,
-                        maxWidth: 200,
-                        zIndex: 200,
-                    }}
-                    aria-hidden="true"
-                >
-                    {(hoveredPerson.imageFile || hoveredPerson.image?.src) && (
-                        <div
-                            style={{
-                                width: "100%",
-                                borderRadius: 8,
-                                overflow: "hidden",
-                                marginBottom: showNameOnHover ? 6 : 0,
-                            }}
-                        >
-                            <img
-                                src={hoveredPerson.imageFile || hoveredPerson.image?.src || ""}
-                                alt={hoveredPerson.name}
-                                style={{ display: "block", width: "100%", height: "auto", objectFit: "cover" }}
-                            />
-                        </div>
-                    )}
-                    {showNameOnHover && hoveredPerson.name && (
-                        <div
-                            style={{
-                                fontSize: nameFontSize,
-                                fontWeight: nameFontWeight,
-                                lineHeight: "1.2em",
-                                letterSpacing: "-0.01em",
-                                textAlign: "center",
-                                color: "#000000",
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                            }}
-                        >
-                            {hoveredPerson.name}
-                        </div>
-                    )}
-                </div>
-            )}
         </div>
     )
 }

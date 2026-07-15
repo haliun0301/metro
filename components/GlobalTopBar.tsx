@@ -127,8 +127,8 @@ const shenzhenBoundaryPath = shenzhenBoundaryCoordinates
 const copy = {
   menu: {
     returnHome: {
-      en: 'Return home',
-      zh: '返回首页',
+      en: 'Return to previous page',
+      zh: '返回上一页',
     },
     open: {
       en: 'Open menu',
@@ -501,6 +501,11 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
 
   const returnHome = () => {
     setMenuOpen(false);
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
     navigate('/');
   };
 

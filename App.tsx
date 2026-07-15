@@ -81,7 +81,7 @@ function AppShell() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/map" element={<MetroMapPage />} />
         <Route path="/people" element={<MetroPeople />} />
-        <Route path="/people/:personId" element={<PersonDetailPage />} />
+        <Route path="/people/:personId" element={<><MetroPeople /><PersonDetailPage /></>} />
         <Route path="/thematicmap" element={<ThematicMap />} />
         <Route path="/stations/:stationSlug" element={<StationDetailPage />} />
       </Routes>
