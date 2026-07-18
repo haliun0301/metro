@@ -31,6 +31,7 @@ export interface CircularDiagramProps {
     size?: number
     style?: CSSProperties
     highlightedLabel?: string | null
+    onSegmentHover?: (segment: Segment | null) => void
 }
 
 const defaultSegments: Segment[] = [
@@ -55,6 +56,7 @@ export default function CircularDiagram({
     size,
     style,
     highlightedLabel = null,
+    onSegmentHover,
 }: CircularDiagramProps) {
     const [hoverIndex, setHoverIndex] = useState<number | null>(null)
     const [hasAnimated, setHasAnimated] = useState(false)
@@ -140,10 +142,12 @@ export default function CircularDiagram({
 
     const handleMouseEnter = (index: number) => {
         startTransition(() => setHoverIndex(index))
+        onSegmentHover?.(normalizedSegments[index] ?? null)
     }
 
     const handleMouseLeave = (_e: MouseEvent<SVGPathElement>) => {
         startTransition(() => setHoverIndex(null))
+        onSegmentHover?.(null)
     }
 
     const centerText = showCenterTotal && total > 0 ? `${total}` : centerLabel

@@ -2494,7 +2494,7 @@ function GisMap(props: GisMapProps) {
         left: 50,
         fontSize: 96,
         fontWeight: 900,
-        fontFamily: language === "zh" ? "'Noto Sans SC', sans-serif" : "Inter",
+        fontFamily: "var(--font-sans)",
         color: selectedArea ? "#FFFFFF" : "#2A383E",
         letterSpacing: "0.05em",
         pointerEvents: "none",

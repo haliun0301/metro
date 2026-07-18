@@ -1,6 +1,6 @@
 // MetroPeople Page: Unites PeopleCircles, CircularDiagram, and ColumnDiagram components
 
-import { useState, type CSSProperties } from "react"
+import { useEffect, useState, type CSSProperties } from "react"
 import { PeopleData } from "../../data/metro-people/people"
 import PeopleCircles, { type Person } from "./PeopleCircles"
 import CircularDiagram, { type Segment } from "./CircularDiagram"
@@ -38,6 +38,18 @@ const occupationCategoryColors: Record<OccupationCategoryName, string> = {
     "Personal & Retail Services": "#607D8B",
 }
 
+const occupationLayoutKeys: Record<OccupationCategoryName, string> = {
+    "Business & Enterprise": "business",
+    "Non-Working / Other Status": "other",
+    "Finance & Commerce": "finance",
+    "STEM": "stem",
+    "Education & Academia": "education",
+    "Public Sector & State-Owned": "public",
+    "Operations & Logistics": "operations",
+    "Professional Services": "professional",
+    "Personal & Retail Services": "services",
+}
+
 const uiCopy = {
     title: {
         en: "Metro People",
@@ -47,6 +59,8 @@ const uiCopy = {
         en: "Filters",
         zh: "筛选条件",
     },
+    openPanel: { en: "Open analysis panel", zh: "打开分析面板" },
+    closePanel: { en: "Close analysis panel", zh: "关闭分析面板" },
     shown: {
         en: "shown",
         zh: "已显示",
@@ -83,9 +97,8 @@ const uiCopy = {
     sizeHintAge: { en: "Older people appear as larger circles.", zh: "年龄越大，圆点越大。" },
     sizeHintResidence: { en: "People who have lived longer in Shenzhen appear as larger circles. Shenzhen-born residents use lifetime residence.", zh: "在深圳居住时间越长，圆点越大。深圳出生居民按终身居住年限计算。" },
     sizeHintUniform: { en: "All people use the same circle size.", zh: "所有人使用相同圆点大小。" },
-    tabDemographic: { en: "📊 Demographic", zh: "📊 人口特征" },
-    tabOccupation: { en: "💼 Occupation", zh: "💼 职业" },
-    tabCloud: { en: "☁️ Cloud", zh: "☁️ 词云" },
+    tabDemographic: { en: "Demographic", zh: "人口特征" },
+    tabOccupation: { en: "Occupation", zh: "职业" },
     genderDistribution: { en: "Gender Distribution", zh: "性别分布" },
     originDistribution: { en: "Origin Distribution", zh: "来源分布" },
     people: { en: "People", zh: "人数" },
@@ -236,17 +249,51 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
     const [hoveredGender, setHoveredGender] = useState<string | null>(null)
     const [hoveredOrigin, setHoveredOrigin] = useState<string | null>(null)
     const [hoveredOccupation, setHoveredOccupation] = useState<string | null>(null)
+    const [hoveredColumnGroup, setHoveredColumnGroup] = useState<{ type: "birth" | "arrival"; decade: string } | null>(null)
+    const [hoveredSectorGroup, setHoveredSectorGroup] = useState<{ type: "gender" | "origin"; label: string } | null>(null)
     const [visiblePeopleCount, setVisiblePeopleCount] = useState<number>(0)
-    // Tab state: "demographic", "occupation", or "cloud"
-    const [activeTab, setActiveTab] = useState<"demographic" | "occupation" | "cloud">("demographic")
+    const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false)
+    const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true)
+    const [circleLayoutMode, setCircleLayoutMode] = useState<"free" | "birthDecade" | "arrivalDecade" | "gender" | "origin" | "occupation">("birthDecade")
+    const [selectedGraphId, setSelectedGraphId] = useState<"gender" | "origin" | "birthDecade" | "arrivalDecade" | "occupationDistribution" | "occupationCloud">("birthDecade")
+    const [viewportSize, setViewportSize] = useState(() => ({
+        width: typeof window === "undefined" ? 1440 : window.innerWidth,
+        height: typeof window === "undefined" ? 900 : window.innerHeight,
+    }))
+    // Tab state: "demographic" or "occupation"
+    const [activeTab, setActiveTab] = useState<"demographic" | "occupation">("demographic")
     // Dark/light mode state
     const [darkMode, setDarkMode] = useState<boolean>(false)
+
+    useEffect(() => {
+        const updateViewportSize = () => setViewportSize({ width: window.innerWidth, height: window.innerHeight })
+        window.addEventListener("resize", updateViewportSize)
+        return () => window.removeEventListener("resize", updateViewportSize)
+    }, [])
+
+    const demographicChartSize = Math.max(82, Math.min(
+        220,
+        Math.round(viewportSize.width * 0.25 - 72),
+        Math.round((viewportSize.height - 250) / 2 - 48),
+    ))
+    const demographicCardPadding = viewportSize.height < 760 ? 8 : 10
+    const demographicGap = viewportSize.height < 760 ? 6 : 8
 
     // Helper to convert year to decade string
     const getDecade = (year: number | undefined): string | null => {
         if (!year || typeof year !== "number") return null
         const decade = Math.floor(year / 10) * 10
         return `${decade}s`
+    }
+
+    const normalizeDecadeLabel = (decade: string | null): string | null => {
+        if (!decade) return null
+        return decade.replace("年代", "s")
+    }
+
+    const formatDecadeLabel = (decade: string | null): string | null => {
+        if (!decade) return null
+        return language === "zh" ? decade.replace("s", "年代") : decade
     }
 
     const parsedFromJson = (() => {
@@ -283,9 +330,47 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
         return true
     })
 
+
+    const highlightPersonFromGraph = hoveredColumnGroup || hoveredSectorGroup || hoveredOccupation
+        ? (person: Person) => {
+            if (hoveredOccupation) {
+                const occupation = normalizeOccupation(person)
+                const hoveredKey = hoveredOccupation.trim().toLowerCase()
+                return [occupation.category, occupation.label, occupation.labelCn, person.occupation, person.occupationCn]
+                    .some((value) => value?.trim().toLowerCase() === hoveredKey)
+            }
+
+            if (hoveredColumnGroup) {
+                if (hoveredColumnGroup.type === "birth") {
+                    return getDecade(person.yearOfBirth) === hoveredColumnGroup.decade
+                }
+                return getDecade(getArrivalYear(person)) === hoveredColumnGroup.decade
+            }
+
+            if (hoveredSectorGroup?.type === "gender") {
+                const genderLabel = person.gender === "male"
+                    ? uiCopy.male[language]
+                    : person.gender === "female"
+                        ? uiCopy.female[language]
+                        : null
+                return genderLabel === hoveredSectorGroup.label
+            }
+
+            if (hoveredSectorGroup?.type === "origin") {
+                if (typeof person.shenzhenBorn !== "boolean") return false
+                const originLabel = person.shenzhenBorn ? uiCopy.shenzhenBorn[language] : uiCopy.migrated[language]
+                return originLabel === hoveredSectorGroup.label
+            }
+
+            return false
+        }
+        : undefined
+
     // Callback when hovering on a person circle
     const handleHoverPerson = (person: Person | null) => {
         if (person) {
+            setHoveredColumnGroup(null)
+            setHoveredSectorGroup(null)
             setHoveredBirthDecade(getDecade(person.yearOfBirth))
             setHoveredArrivalDecade(getDecade(getArrivalYear(person)))
             setHoveredGender(person.gender === "male" ? uiCopy.male[language] : person.gender === "female" ? uiCopy.female[language] : null)
@@ -294,7 +379,21 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
             } else {
                 setHoveredOrigin(null)
             }
+            setHoveredOccupation(normalizeOccupation(person).label)
         } else {
+            setHoveredBirthDecade(null)
+            setHoveredArrivalDecade(null)
+            setHoveredGender(null)
+            setHoveredOrigin(null)
+            setHoveredOccupation(null)
+        }
+    }
+
+    const handleHoverOccupation = (label: string | null) => {
+        setHoveredOccupation(label)
+        if (label) {
+            setHoveredColumnGroup(null)
+            setHoveredSectorGroup(null)
             setHoveredBirthDecade(null)
             setHoveredArrivalDecade(null)
             setHoveredGender(null)
@@ -396,6 +495,16 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
         faded: "#6B7280",
     }
 
+    const graphOptions = [
+        { id: "gender" as const, label: uiCopy.genderDistribution[language], mode: "gender" as const, tab: "demographic" as const },
+        { id: "origin" as const, label: uiCopy.originDistribution[language], mode: "origin" as const, tab: "demographic" as const },
+        { id: "birthDecade" as const, label: uiCopy.birthDecade[language], mode: "birthDecade" as const, tab: "demographic" as const },
+        { id: "arrivalDecade" as const, label: uiCopy.arrivalYear[language], mode: "arrivalDecade" as const, tab: "demographic" as const },
+        { id: "occupationDistribution" as const, label: uiCopy.occupationDistribution[language], mode: "occupation" as const, tab: "occupation" as const },
+        { id: "occupationCloud" as const, label: uiCopy.occupationCloud[language], mode: "occupation" as const, tab: "occupation" as const },
+    ]
+    const selectedGraphTitle = graphOptions.find((option) => option.id === selectedGraphId)?.label
+
     return (
         <div
             style={{
@@ -409,20 +518,57 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                 ...style,
             }}
         >
+            <header
+                style={{
+                    position: "relative",
+                    zIndex: 30,
+                    display: "flex",
+                    minHeight: 114,
+                    flexShrink: 0,
+                    alignItems: "flex-start",
+                    justifyContent: "center",
+                    paddingTop: 50,
+                    boxSizing: "border-box",
+                    borderBottom: "none",
+                    background: "rgba(255,255,255,0.72)",
+                    backdropFilter: "blur(18px)",
+                    WebkitBackdropFilter: "blur(18px)",
+                }}
+            >
+                <div
+                    aria-live="polite"
+                    style={{
+                        padding: "0 24px",
+                        display: "flex",
+                        height: 48,
+                        alignItems: "center",
+                        color: colors.text,
+                        fontSize: 20,
+                        fontWeight: 700,
+                        letterSpacing: "0.12em",
+                        textAlign: "center",
+                        textTransform: "uppercase",
+                    }}
+                >
+                    {selectedGraphTitle}
+                </div>
+            </header>
+
             {/* Main content area */}
-            <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
+            <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0, position: "relative" }}>
                 {/* People circles - main area */}
                 <div
                     style={{
-                        flex: 2,
+                        flex: 1,
                         position: "relative",
                         minWidth: 0,
                         minHeight: 0,
                         overflow: "hidden",
                         background: "transparent",
                         borderRadius: 0,
-                        margin: 16,
+                        margin: "24px 28px 68px",
                         boxShadow: "none",
+                        transition: "flex 240ms ease",
                     }}
                 >
                     <PeopleCircles
@@ -433,20 +579,54 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                         sizeMode={circleSizeMode}
                         backgroundColor="transparent"
                         density={density}
+                        layoutMode={circleLayoutMode}
+                        language={language}
+                        occupationOrder={occupationDiagramData.map((item) => occupationLayoutKeys[item.label as OccupationCategoryName])}
                         onHoverPerson={handleHoverPerson}
+                        highlightPerson={highlightPersonFromGraph}
                         onVisibleCountChange={setVisiblePeopleCount}
                     />
                 </div>
 
+                <button
+                    type="button"
+                    onClick={() => setIsSidebarOpen((isOpen) => !isOpen)}
+                    aria-label={isSidebarOpen ? uiCopy.closePanel[language] : uiCopy.openPanel[language]}
+                    aria-expanded={isSidebarOpen}
+                    style={{
+                        position: "absolute",
+                        top: "50%",
+                        right: isSidebarOpen ? "calc(50% - 22px)" : "162px",
+                        zIndex: 20,
+                        width: 44,
+                        height: 64,
+                        transform: "translateY(-50%)",
+                        border: "1px solid transparent",
+                        borderRadius: 16,
+                        background: "transparent",
+                        color: "#37443E",
+                        fontSize: 24,
+                        lineHeight: 1,
+                        cursor: "pointer",
+                        backdropFilter: "none",
+                        WebkitBackdropFilter: "none",
+                        boxShadow: "none",
+                        transition: "right 240ms ease, background 160ms ease",
+                    }}
+                >
+                    {isSidebarOpen ? "›" : "‹"}
+                </button>
+
                 {/* Sidebar with filters and diagrams */}
+                {isSidebarOpen ? (
                 <div
                     style={{
-                        flex: 2,
+                        flex: 1,
                         padding: 24,
                         borderLeft: "none",
                         display: "flex",
                         flexDirection: "column",
-                        gap: 20,
+                        gap: demographicGap,
                         overflowY: "auto",
                         minHeight: 0,
                         minWidth: 0,
@@ -455,27 +635,50 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                         WebkitBackdropFilter: "none",
                         boxShadow: "none",
                         borderRadius: 0,
-                        margin: 16,
+                        margin: "24px 16px 68px",
                     }}
                 >
                     {/* Filters Section */}
+                    {isFiltersOpen && (
                     <div
                         style={{
+                            order: 2,
+                            width: "100%",
                             display: "flex",
                             flexDirection: "column",
-                            gap: 12,
-                            padding: 16,
-                            borderRadius: 12,
-                            background: colors.card,
-                            backdropFilter: "blur(10px)",
-                            WebkitBackdropFilter: "blur(10px)",
-                            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                            alignItems: "stretch",
+                            gap: isFiltersOpen ? 10 : 0,
+                            padding: isFiltersOpen ? 14 : 0,
+                            borderRadius: 16,
+                            background: "transparent",
+                            border: "none",
+                            backdropFilter: "none",
+                            WebkitBackdropFilter: "none",
+                            boxShadow: "none",
                         }}
                     >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: colors.text }}>
+                        <button
+                            type="button"
+                            onClick={() => setIsFiltersOpen((isOpen) => !isOpen)}
+                            aria-expanded={isFiltersOpen}
+                            style={{
+                                display: "none",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                gap: 12,
+                                width: isFiltersOpen ? "100%" : "auto",
+                                minHeight: isFiltersOpen ? 42 : 34,
+                                padding: isFiltersOpen ? "0 8px" : "0 10px",
+                                border: "none",
+                                borderRadius: 12,
+                                background: "transparent",
+                                cursor: "pointer",
+                                textAlign: "left",
+                            }}
+                        >
+                            <span style={{ fontSize: 12, fontWeight: 700, color: colors.text, textTransform: "uppercase", letterSpacing: "0.18em" }}>
                                 {uiCopy.filters[language]}
-                            </h3>
+                            </span>
                             <div
                                 style={{
                                     display: "flex",
@@ -483,6 +686,7 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                                     gap: 8,
                                 }}
                             >
+                                {isFiltersOpen && (<>
                                 <span
                                     style={{
                                         fontSize: 13,
@@ -507,10 +711,24 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                                 >
                                     / {PeopleData.length} {uiCopy.total[language]}
                                 </span>
+                                </>)}
+                                <span
+                                    aria-hidden="true"
+                                    style={{
+                                        color: colors.label,
+                                        fontSize: 16,
+                                        transform: isFiltersOpen ? "rotate(90deg)" : "rotate(0deg)",
+                                        transition: "transform 160ms ease",
+                                    }}
+                                >
+                                    ›
+                                </span>
                             </div>
-                        </div>
-                        
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        </button>
+
+                        {isFiltersOpen && (
+                        <>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minWidth: 0 }}>
                             <label style={{ fontSize: 13, color: colors.label, minWidth: 60 }}>{uiCopy.density[language]}</label>
                             <input
                                 type="range"
@@ -523,7 +741,7 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                             <span style={{ fontSize: 12, color: colors.text, minWidth: 36 }}>{density}%</span>
                         </div>
 
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minWidth: 0 }}>
                             <label style={{ fontSize: 13, color: colors.label, minWidth: 60 }}>{uiCopy.gender[language]}</label>
                             <select
                                 value={selectedGender}
@@ -544,7 +762,7 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                             </select>
                         </div>
 
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minWidth: 0 }}>
                             <label style={{ fontSize: 13, color: colors.label, minWidth: 60 }}>{uiCopy.origin[language]}</label>
                             <select
                                 value={selectedShenzhenBorn}
@@ -565,7 +783,7 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                             </select>
                         </div>
 
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minWidth: 0 }}>
                             <label style={{ fontSize: 13, color: colors.label, minWidth: 60 }}>{uiCopy.size[language]}</label>
                             <select
                                 value={circleSizeMode}
@@ -586,14 +804,17 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                             </select>
                         </div>
 
-                        <div style={{ fontSize: 12, color: colors.faded, lineHeight: 1.4 }}>
+                        <div style={{ width: "100%", fontSize: 12, color: colors.faded, lineHeight: 1.4 }}>
                             {circleSizeMode === "age"
                                                                 ? uiCopy.sizeHintAge[language]
                                 : circleSizeMode === "residence"
                                                                     ? uiCopy.sizeHintResidence[language]
                                                                     : uiCopy.sizeHintUniform[language]}
                         </div>
+                        </>
+                        )}
                     </div>
+                    )}
 
                     {/* Tab Buttons */}
                     <div
@@ -602,143 +823,175 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                             gap: 6,
                             padding: 4,
                             borderRadius: 12,
-                            background: "rgba(0, 0, 0, 0.05)",
+                            background: "transparent",
+                            border: "none",
                         }}
                     >
                         <button
-                            onClick={() => setActiveTab("demographic")}
+                            onClick={() => {
+                                setActiveTab("demographic")
+                                setIsFiltersOpen(false)
+                            }}
                             style={{
                                 flex: 1,
                                 padding: "10px 12px",
                                 borderRadius: 8,
                                 border: "none",
-                                background: activeTab === "demographic" 
-                                    ? "#FFFFFF" 
-                                    : "transparent",
+                                background: "transparent",
                                 color: activeTab === "demographic" ? "#333" : "#666",
                                 fontSize: 13,
                                 fontWeight: 600,
                                 cursor: "pointer",
-                                boxShadow: activeTab === "demographic" 
-                                    ? "0 2px 8px rgba(0,0,0,0.1)" 
-                                    : "none",
+                                boxShadow: "none",
                                 transition: "all 0.2s ease",
                             }}
                         >
                             {uiCopy.tabDemographic[language]}
                         </button>
                         <button
-                            onClick={() => setActiveTab("occupation")}
+                            onClick={() => {
+                                setActiveTab("occupation")
+                                setIsFiltersOpen(false)
+                            }}
                             style={{
                                 flex: 1,
                                 padding: "10px 12px",
                                 borderRadius: 8,
                                 border: "none",
-                                background: activeTab === "occupation" 
-                                    ? "#FFFFFF" 
-                                    : "transparent",
+                                background: "transparent",
                                 color: activeTab === "occupation" ? "#333" : "#666",
                                 fontSize: 13,
                                 fontWeight: 600,
                                 cursor: "pointer",
-                                boxShadow: activeTab === "occupation" 
-                                    ? "0 2px 8px rgba(0,0,0,0.1)" 
-                                    : "none",
+                                boxShadow: "none",
                                 transition: "all 0.2s ease",
                             }}
                         >
                             {uiCopy.tabOccupation[language]}
                         </button>
                         <button
-                            onClick={() => setActiveTab("cloud")}
+                            type="button"
+                            onClick={() => setIsFiltersOpen((isOpen) => !isOpen)}
+                            aria-expanded={isFiltersOpen}
                             style={{
                                 flex: 1,
                                 padding: "10px 12px",
                                 borderRadius: 8,
                                 border: "none",
-                                background: activeTab === "cloud" 
-                                    ? "#FFFFFF" 
-                                    : "transparent",
-                                color: activeTab === "cloud" ? "#333" : "#666",
+                                background: "transparent",
+                                color: isFiltersOpen ? "#333" : "#666",
                                 fontSize: 13,
                                 fontWeight: 600,
                                 cursor: "pointer",
-                                boxShadow: activeTab === "cloud" 
-                                    ? "0 2px 8px rgba(0,0,0,0.1)" 
-                                    : "none",
+                                boxShadow: "none",
                                 transition: "all 0.2s ease",
                             }}
                         >
-                            {uiCopy.tabCloud[language]}
+                            {uiCopy.filters[language]}
                         </button>
                     </div>
 
                     {/* Tab Content */}
-                    {activeTab === "demographic" ? (
+                    {isFiltersOpen ? null : activeTab === "demographic" ? (
                         <>
                             {/* Circular Diagrams Row */}
                             <div
                                 style={{
                                     display: "flex",
                                     flexDirection: "row",
-                                    gap: 16,
-                                    flexWrap: "wrap",
+                                    gap: demographicGap,
+                                    flex: "1 1 0",
+                                    minHeight: 0,
                                 }}
                             >
                                 <div
+                                    onClick={() => {
+                                        setCircleLayoutMode("gender")
+                                        setSelectedGraphId("gender")
+                                    }}
                                     style={{
                                         flex: 1,
                                         minWidth: 200,
                                         display: "flex",
                                         flexDirection: "column",
                                         alignItems: "center",
-                                        padding: 16,
+                                        justifyContent: "center",
+                                        padding: demographicCardPadding,
                                         borderRadius: 12,
-                                        background: "rgba(255, 255, 255, 0.25)",
-                                        backdropFilter: "blur(10px)",
-                                        WebkitBackdropFilter: "blur(10px)",
-                                        boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                                        border: "none",
+                                        background: "transparent",
+                                        backdropFilter: "none",
+                                        WebkitBackdropFilter: "none",
+                                        boxShadow: "none",
+                                        cursor: "pointer",
+                                        transition: "border-color 180ms ease",
                                     }}
                                 >
-                                    <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16, color: colors.text }}>
+                                    <h3 style={{ width: "100%", fontSize: 13, fontWeight: 600, marginBottom: 4, color: colors.text, textAlign: "center" }}>
                                         {uiCopy.genderDistribution[language]}
                                     </h3>
                                     <CircularDiagram
                                         segments={genderData}
-                                        size={150}
+                                        size={demographicChartSize}
                                         showLegend={true}
                                         showCenterTotal={true}
                                         backgroundColor="transparent"
                                         highlightedLabel={hoveredGender}
+                                        onSegmentHover={(segment) => {
+                                            const label = segment?.label ?? null
+                                            setHoveredGender(label)
+                                            setHoveredOrigin(null)
+                                            setHoveredBirthDecade(null)
+                                            setHoveredArrivalDecade(null)
+                                            setHoveredColumnGroup(null)
+                                            setHoveredSectorGroup(label ? { type: "gender", label } : null)
+                                        }}
                                     />
                                 </div>
 
                                 <div
+                                    onClick={() => {
+                                        setCircleLayoutMode("origin")
+                                        setSelectedGraphId("origin")
+                                    }}
                                     style={{
                                         flex: 1,
                                         minWidth: 200,
                                         display: "flex",
                                         flexDirection: "column",
                                         alignItems: "center",
-                                        padding: 16,
+                                        justifyContent: "center",
+                                        padding: demographicCardPadding,
                                         borderRadius: 12,
-                                        background: "rgba(255, 255, 255, 0.25)",
-                                        backdropFilter: "blur(10px)",
-                                        WebkitBackdropFilter: "blur(10px)",
-                                        boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                                        border: "none",
+                                        background: "transparent",
+                                        backdropFilter: "none",
+                                        WebkitBackdropFilter: "none",
+                                        boxShadow: "none",
+                                        cursor: "pointer",
+                                        transition: "border-color 180ms ease",
                                     }}
                                 >
-                                    <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16, color: colors.text }}>
+                                    <h3 style={{ width: "100%", fontSize: 13, fontWeight: 600, marginBottom: 4, color: colors.text, textAlign: "center" }}>
                                         {uiCopy.originDistribution[language]}
                                     </h3>
                                     <CircularDiagram
                                         segments={originData}
-                                        size={150}
+                                        size={demographicChartSize}
                                         showLegend={true}
                                         showCenterTotal={true}
                                         centerLabel={uiCopy.people[language]}
                                         backgroundColor="transparent"
                                         highlightedLabel={hoveredOrigin}
+                                        onSegmentHover={(segment) => {
+                                            const label = segment?.label ?? null
+                                            setHoveredOrigin(label)
+                                            setHoveredGender(null)
+                                            setHoveredBirthDecade(null)
+                                            setHoveredArrivalDecade(null)
+                                            setHoveredColumnGroup(null)
+                                            setHoveredSectorGroup(label ? { type: "origin", label } : null)
+                                        }}
                                     />
                                 </div>
                             </div>
@@ -748,109 +1001,222 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                                 style={{
                                     display: "flex",
                                     flexDirection: "row",
-                                    gap: 16,
-                                    flexWrap: "wrap",
+                                    gap: demographicGap,
+                                    flex: "1 1 0",
+                                    minHeight: 0,
                                 }}
                             >
                                 <div
+                                    onClick={() => {
+                                        setCircleLayoutMode("birthDecade")
+                                        setSelectedGraphId("birthDecade")
+                                    }}
                                     style={{
                                         flex: 1,
                                         minWidth: 200,
-                                        padding: 16,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        padding: demographicCardPadding,
                                         borderRadius: 12,
-                                        background: "rgba(255, 255, 255, 0.25)",
-                                        backdropFilter: "blur(10px)",
-                                        WebkitBackdropFilter: "blur(10px)",
-                                        boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                                        border: "none",
+                                        background: "transparent",
+                                        backdropFilter: "none",
+                                        WebkitBackdropFilter: "none",
+                                        boxShadow: "none",
+                                        cursor: "pointer",
+                                        transition: "border-color 180ms ease",
                                     }}
                                 >
-                                    <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: colors.text }}>
+                                    <h3 style={{ width: "100%", fontSize: 13, fontWeight: 600, marginBottom: 4, color: colors.text, textAlign: "center" }}>
                                         {uiCopy.birthDecade[language]}
                                     </h3>
                                     <ColumnDiagram
                                         data={birthDecadeData}
-                                        height={140}
+                                        height={demographicChartSize}
                                         columnColor="#2196F3"
                                         showGrid={true}
                                         gridSteps={4}
                                         backgroundColor="transparent"
-                                        highlightedYear={hoveredBirthDecade}
+                                        highlightedYear={formatDecadeLabel(hoveredBirthDecade)}
+                                        onColumnHover={(dataPoint) => {
+                                            const decade = normalizeDecadeLabel(dataPoint?.year ?? null)
+                                            setHoveredBirthDecade(decade)
+                                            setHoveredArrivalDecade(null)
+                                            setHoveredColumnGroup(decade ? { type: "birth", decade } : null)
+                                            setHoveredSectorGroup(null)
+                                            setHoveredGender(null)
+                                            setHoveredOrigin(null)
+                                        }}
                                     />
                                 </div>
 
                                 <div
+                                    onClick={() => {
+                                        setCircleLayoutMode("arrivalDecade")
+                                        setSelectedGraphId("arrivalDecade")
+                                    }}
                                     style={{
                                         flex: 1,
                                         minWidth: 200,
-                                        padding: 16,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        padding: demographicCardPadding,
                                         borderRadius: 12,
-                                        background: "rgba(255, 255, 255, 0.25)",
-                                        backdropFilter: "blur(10px)",
-                                        WebkitBackdropFilter: "blur(10px)",
-                                        boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                                        border: "none",
+                                        background: "transparent",
+                                        backdropFilter: "none",
+                                        WebkitBackdropFilter: "none",
+                                        boxShadow: "none",
+                                        cursor: "pointer",
+                                        transition: "border-color 180ms ease",
                                     }}
                                 >
-                                    <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: colors.text }}>
+                                    <h3 style={{ width: "100%", fontSize: 13, fontWeight: 600, marginBottom: 4, color: colors.text, textAlign: "center" }}>
                                         {uiCopy.arrivalYear[language]}
                                     </h3>
                                     <ColumnDiagram
                                         data={residenceYearData}
-                                        height={140}
+                                        height={demographicChartSize}
                                         columnColor="#9C27B0"
                                         showGrid={true}
                                         gridSteps={4}
                                         backgroundColor="transparent"
-                                        highlightedYear={hoveredArrivalDecade}
+                                        highlightedYear={formatDecadeLabel(hoveredArrivalDecade)}
+                                        onColumnHover={(dataPoint) => {
+                                            const decade = normalizeDecadeLabel(dataPoint?.year ?? null)
+                                            setHoveredArrivalDecade(decade)
+                                            setHoveredBirthDecade(null)
+                                            setHoveredColumnGroup(decade ? { type: "arrival", decade } : null)
+                                            setHoveredSectorGroup(null)
+                                            setHoveredGender(null)
+                                            setHoveredOrigin(null)
+                                        }}
                                     />
                                 </div>
                             </div>
                         </>
-                    ) : activeTab === "occupation" ? (
-                        /* Occupation Tab Content */
-                        <div
-                            style={{
-                                padding: 20,
-                                borderRadius: 12,
-                                background: "rgba(255, 255, 255, 0.25)",
-                                backdropFilter: "blur(10px)",
-                                WebkitBackdropFilter: "blur(10px)",
-                                boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-                            }}
-                        >
-                            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20, color: colors.text }}>
-                                {uiCopy.occupationDistribution[language]}
-                            </h3>
-                            <OccupationDiagram
-                                data={occupationDiagramData}
-                                highlightedLabel={hoveredOccupation}
-                                onHoverOccupation={setHoveredOccupation}
-                                language={language}
-                            />
-                        </div>
                     ) : (
-                        /* Cloud Tab Content */
-                        <div
-                            style={{
-                                padding: 20,
-                                borderRadius: 12,
-                                background: "rgba(255, 255, 255, 0.25)",
-                                backdropFilter: "blur(10px)",
-                                WebkitBackdropFilter: "blur(10px)",
-                                boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-                            }}
-                        >
-                            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: colors.text }}>
-                                {uiCopy.occupationCloud[language]}
-                            </h3>
-                            <OccupationCloud
-                                data={occupationCloudData}
-                                highlightedLabel={hoveredOccupation}
-                                onHoverOccupation={setHoveredOccupation}
-                                language={language}
-                            />
+                        /* Occupation Tab Content */
+                        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                            <div
+                                onClick={() => {
+                                    setCircleLayoutMode("occupation")
+                                    setSelectedGraphId("occupationDistribution")
+                                }}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    padding: 20,
+                                    borderRadius: 12,
+                                    border: "none",
+                                    background: "transparent",
+                                    backdropFilter: "none",
+                                    WebkitBackdropFilter: "none",
+                                    boxShadow: "none",
+                                    cursor: "pointer",
+                                    transition: "border-color 180ms ease",
+                                }}
+                            >
+                                <h3 style={{ width: "100%", fontSize: 16, fontWeight: 600, marginBottom: 20, color: colors.text, textAlign: "center" }}>
+                                    {uiCopy.occupationDistribution[language]}
+                                </h3>
+                                <OccupationDiagram
+                                    data={occupationDiagramData}
+                                    highlightedLabel={hoveredOccupation}
+                                    onHoverOccupation={handleHoverOccupation}
+                                    language={language}
+                                />
+                            </div>
+
+                            <div
+                                onClick={() => {
+                                    setCircleLayoutMode("occupation")
+                                    setSelectedGraphId("occupationCloud")
+                                }}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    padding: 20,
+                                    borderRadius: 12,
+                                    border: "none",
+                                    background: "transparent",
+                                    backdropFilter: "none",
+                                    WebkitBackdropFilter: "none",
+                                    boxShadow: "none",
+                                    cursor: "pointer",
+                                    transition: "border-color 180ms ease",
+                                }}
+                            >
+                                <h3 style={{ width: "100%", fontSize: 16, fontWeight: 600, marginBottom: 16, color: colors.text, textAlign: "center" }}>
+                                    {uiCopy.occupationCloud[language]}
+                                </h3>
+                                <OccupationCloud
+                                    data={occupationCloudData}
+                                    highlightedLabel={hoveredOccupation}
+                                    onHoverOccupation={handleHoverOccupation}
+                                    language={language}
+                                />
+                            </div>
                         </div>
                     )}
                 </div>
+                ) : (
+                    <aside
+                        aria-label={language === "zh" ? "图表布局选项" : "Graph layout options"}
+                        style={{
+                            flex: "0 0 168px",
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "center",
+                            gap: 8,
+                            padding: 8,
+                            margin: 8,
+                            minWidth: 0,
+                        }}
+                    >
+                        {graphOptions.map((option, index) => {
+                            const isActive = selectedGraphId === option.id
+                            return (
+                                <button
+                                    key={`${option.mode}-${index}`}
+                                    type="button"
+                                    aria-pressed={isActive}
+                                    onClick={() => {
+                                        setActiveTab(option.tab)
+                                        setCircleLayoutMode(option.mode)
+                                        setSelectedGraphId(option.id)
+                                    }}
+                                    style={{
+                                        width: "100%",
+                                        padding: "10px 8px",
+                                        borderRadius: 10,
+                                        border: "none",
+                                        background: "transparent",
+                                        color: colors.text,
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        lineHeight: 1.3,
+                                        textAlign: "center",
+                                        cursor: "pointer",
+                                        backdropFilter: "none",
+                                        WebkitBackdropFilter: "none",
+                                        boxShadow: "none",
+                                    }}
+                                >
+                                    {option.label}
+                                </button>
+                            )
+                        })}
+                    </aside>
+                )}
             </div>
         </div>
     )

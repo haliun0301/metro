@@ -1,0 +1,41 @@
+{
+  "personId": "person082",
+  "sections": [
+    {
+      "id": "life-trajectory",
+      "paragraphs": []
+    },
+    {
+      "id": "mobility-pattern",
+      "paragraphs": []
+    },
+    {
+      "id": "first-metro-ride",
+      "paragraphs": []
+    },
+    {
+      "id": "moments",
+      "paragraphs": []
+    },
+    {
+      "id": "metro-vs-other-transport",
+      "paragraphs": []
+    },
+    {
+      "id": "places-transformed-by-metro",
+      "paragraphs": []
+    },
+    {
+      "id": "key-metro-network-nodes",
+      "paragraphs": []
+    },
+    {
+      "id": "metro-impact-on-my-life",
+      "paragraphs": []
+    },
+    {
+      "id": "metro-impact-on-shenzhen",
+      "paragraphs": []
+    }
+  ]
+}

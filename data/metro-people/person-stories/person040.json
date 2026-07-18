@@ -1,0 +1,97 @@
+{
+  "personId": "person040",
+  "sections": [
+    {
+      "id": "life-trajectory",
+      "paragraphs": [
+        "In my early years working and living in Nanshan District, the city's roads and infrastructure were inadequate. Commuting mainly involved company shuttle buses without air conditioning, minibuses, and small buses; for more remote areas, motorcycle taxis were necessary. After starting a family and raising children in 2000, my travel revolved around my home and nearby parks and supermarkets. Since 2006, I have lived in Futian District. I have experienced the rise in housing prices, population concentration, and a sense of home brought about by the construction of Binhai Avenue and subsequent subway lines. My life has shifted from being confined to Nanshan to the flexible commuting options provided by the subway network. I emphasize the ease and predictability brought by the subway, but also point out issues such as the long transfer distance at Chegongmiao Station and the inconvenience of crossing the turnstiles with strollers or wheelchairs."
+      ],
+      "timeline": [
+        {
+          "period": "1996-2000",
+          "text": "Came to Shenzhen in 1996, mainly residing and working in Nanshan District."
+        },
+        {
+          "period": "2000-2006",
+          "text": "Married in 2000 and subsequently raised children. Life remained primarily in Nanshan District."
+        },
+        {
+          "period": "2006-Present",
+          "text": "Moved to Futian District, Lianhua North, in 2006. Work remains near the Mawan Power Plant and Chiwan area."
+        }
+      ]
+    },
+    {
+      "id": "mobility-pattern",
+      "paragraphs": [
+        "Before the subway, weekday transportation options were relatively limited. I mainly took the company shuttle bus, a state-owned enterprise bus with no air conditioning but windows that could be opened. Connections to remote areas were poor: minibuses stopped wherever passengers wanted, and after getting off I still had to take a motorcycle taxi to the company gate.",
+        "On weekends and holidays before the subway, I primarily took taxis because there were so many people. When I was single, I also took minibuses and small buses. Most leisure time stayed around Nanshan, including Zhongshan Park, Sihai Park, Xiaonanshan, and Shekou Stadium for running or tennis.",
+        "After the subway opened, weekdays still mainly involved shuttle buses. If I missed the shuttle, I took Line 2 and then a connecting bus to the factory gate. I also mostly used the subway to pick up and drop off my child during the kindergarten stage.",
+        "On weekends and holidays after the subway, I mostly used Line 2. I used to frequently go to Happy Valley by taking Line 2 to Window of the World, transferring to Line 1, and getting off at Qiaocheng East. For shopping, I mostly went to Sam's Club by bus or coach and then took a taxi back, or used Walmart's free shuttle bus. Medical appointments were mostly nearby. To reach Shenzhen North Railway Station from Jingtian takes about 40 minutes and requires a transfer, which feels inconvenient; to the airport, I more often take Line 11."
+      ]
+    },
+    {
+      "id": "first-metro-ride",
+      "paragraphs": [
+        "I tried the subway about a month after Line 1 opened. At that time, I took the whole family out and took a taxi to Window of the World to take the subway. We did not have a specific destination; we just rode all the way to the train station, then from the train station back to Window of the World, going back and forth. It felt quite novel, and it was relatively clean, which was great."
+      ]
+    },
+    {
+      "id": "moments",
+      "paragraphs": [
+        "Story 1: Once, I had a massage first, then did strenuous exercise without eating. After getting on the train and after the doors closed, I suddenly felt dizzy and collapsed. The subway staff found me a chair to sit on, and I ate some food that a friend had bought for me. That helped me recover before I went home.",
+        "Story 2: It is troublesome to pass through the turnstile with a stroller, large items, or a wheelchair; you need to ask for help at the manual access lane.",
+        "Story 3: In the past, if you lost your ticket or card, you had to explain and buy a new ticket when exiting the station, which was a bit awkward."
+      ],
+      "items": [
+        {
+          "text": "Story 1: Once, I had a massage first, then did strenuous exercise without eating. After getting on the train and after the doors closed, I suddenly felt dizzy and collapsed. The subway staff found me a chair to sit on, and I ate some food that a friend had bought for me. That helped me recover before I went home.",
+          "image": "/assets/person-stories/person040/moment-1.png",
+          "alt": "Person040 memorable metro moment 1"
+        },
+        {
+          "text": "Story 2: It is troublesome to pass through the turnstile with a stroller, large items, or a wheelchair; you need to ask for help at the manual access lane.",
+          "image": "/assets/person-stories/person040/moment-2.png",
+          "alt": "Person040 memorable metro moment 2"
+        },
+        {
+          "text": "Story 3: In the past, if you lost your ticket or card, you had to explain and buy a new ticket when exiting the station, which was a bit awkward.",
+          "image": "/assets/person-stories/person040/moment-3.png",
+          "alt": "Person040 memorable metro moment 3"
+        }
+      ]
+    },
+    {
+      "id": "metro-vs-other-transport",
+      "paragraphs": [
+        "The subway makes time controllable. The estimated time error is very small, which is difficult to control with private cars and buses, especially during rush hour. Subways are mainly underground, so there is not much scenery to see, and they are relatively enclosed. If the air conditioning is not good, it can be very stuffy. Buses are quite crowded during rush hour, so the experience is much worse. Compared to private cars, taking the subway lets you save energy and focus on other things."
+      ]
+    },
+    {
+      "id": "places-transformed-by-metro",
+      "paragraphs": [
+        "The subway and expressway have driven up property prices and increased population density around Binhai Avenue. Line 1 made tourist attractions such as Window of the World more convenient. The opening of Line 4, which connects to the border, also led to an increase in the number of people from Hong Kong living in Shenzhen, soaring property prices, and increasingly dense housing developments."
+      ]
+    },
+    {
+      "id": "key-metro-network-nodes",
+      "paragraphs": [
+        "Key transportation hubs include Window of the World, the Airport, Luohu District, Grand Theatre, Guomao District, Children's Palace, Shopping Park, Civic Center, Convention and Exhibition Center, Shenzhen North Railway Station, and Shekou Port.",
+        "Other memorable nodes include Fanshen Station for its distinctive features, and Dafeng Station for incorporating Dafeng Village elements into the station. Newly built lines have even more cultural characteristics."
+      ]
+    },
+    {
+      "id": "metro-impact-on-my-life",
+      "paragraphs": [
+        "It has changed my world. Before the subway, my radius of influence was basically limited to Nanshan District, and even then, I would only go out of Nanshan a few times a year. Now, with the subway, I can go wherever I want, whenever I want, because it connects to everywhere.",
+        "Before, I was afraid to go to Longgang because it was so far, and the round trip could take more than four hours. Now I do not have to think about that anymore. In the future, even if I go to Dapeng, it will be very convenient to take the subway, and I will not worry about it. The subway has indeed brought a lot of convenience to travel, and there are more ways to spend leisure time now, unlike before when it was so limited. Now you can go wherever you want to play."
+      ]
+    },
+    {
+      "id": "metro-impact-on-shenzhen",
+      "paragraphs": [
+        "The subway has driven up property prices. The subway and expressway have driven up property prices and increased population density around Binhai Avenue. Line 1 has made tourist attractions such as Window of the World more convenient. The opening of Line 4, which connects to the border, has also led to an increase in the number of people from Hong Kong living in Shenzhen, soaring property prices, and increasingly dense housing developments."
+      ]
+    }
+  ]
+}

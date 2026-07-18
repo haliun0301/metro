@@ -31,6 +31,7 @@ export interface ColumnDiagramProps {
     columnSpacing?: number
     responsiveMode?: "auto" | "mobile" | "tablet" | "desktop"
     onColumnClick?: (dataPoint: DataPoint) => void
+    onColumnHover?: (dataPoint: DataPoint | null) => void
     labelGridSpacing?: number
     width?: number
     height?: number
@@ -82,6 +83,7 @@ export default function ColumnDiagram({
     columnSpacing = 16,
     responsiveMode = "auto",
     onColumnClick,
+    onColumnHover,
     labelGridSpacing = 4,
     width,
     height,
@@ -363,9 +365,11 @@ export default function ColumnDiagram({
                                             }}
                                             onMouseEnter={() => {
                                                 startTransition(() => setHovered(d))
+                                                onColumnHover?.(d)
                                             }}
                                             onMouseLeave={() => {
                                                 startTransition(() => setHovered(null))
+                                                onColumnHover?.(null)
                                             }}
                                         />
                                         {hovered?.year === d.year && (

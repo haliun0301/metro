@@ -685,17 +685,13 @@ function HistoryJourneySection({
 
   const isMobile = viewportSize.width < 768;
   const isLightTheme = theme === 'light';
-  const frameClass = isLightTheme
-    ? 'bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(241,241,238,0.94))]'
-    : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(0,0,0,0.94))]';
+  const frameClass = '';
   const overlayClass = isLightTheme
     ? 'bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.08),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.08),transparent_24%),linear-gradient(180deg,rgba(0,0,0,0.01),transparent_30%)]'
     : 'bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.15),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(168,85,247,0.16),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_30%)]';
   const edgeLeftClass = isLightTheme ? 'bg-gradient-to-r from-[#f2f2ef] to-transparent' : 'bg-gradient-to-r from-[#050e1b] to-transparent';
   const edgeRightClass = isLightTheme ? 'bg-gradient-to-l from-[#f2f2ef] to-transparent' : 'bg-gradient-to-l from-[#050e1b] to-transparent';
-  const stickyCardClass = isLightTheme
-    ? 'bg-white/82'
-    : 'bg-[#07121d]/62';
+  const stickyCardClass = '';
   const titleTextClass = isLightTheme ? 'text-zinc-950' : 'text-white';
   const bodyTextClass = isLightTheme ? 'text-zinc-700' : 'text-white/68';
   const subtleTextClass = isLightTheme ? 'text-zinc-500' : 'text-white/45';
@@ -759,11 +755,7 @@ function HistoryJourneySection({
     const smoothScaleEnd = Math.min(0.36, watchStart + 0.18);
     const enterProgress = getRevealWindow(clampedStageProgress, 0, smoothScaleEnd);
     const isStageActive = isInitialFirstStage || (clampedStageProgress >= watchStart && clampedStageProgress <= watchEnd);
-    const activeStageClass = isStageActive
-      ? isLightTheme
-        ? 'bg-cyan-500/6'
-        : 'bg-cyan-400/10'
-      : '';
+    const activeStageClass = '';
     const stageContentOpacity = isStageActive ? 1 : 0.3;
     const stageScale = isInitialFirstStage
       ? maxScale

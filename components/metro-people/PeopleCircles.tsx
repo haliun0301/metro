@@ -18,6 +18,7 @@ export interface Person {
     nicknameCn: string
     profileUrl: string
     image?: ResponsiveImage
+    profileImage?: ResponsiveImage
     gender?: "male" | "female"
     circleSize?: number
     circleColor?: string
@@ -30,6 +31,21 @@ export interface Person {
 }
 
 export const defaultPeople: Person[] = PeopleData as Person[]
+
+const profileImageModules = import.meta.glob('../../assets/person-stories/**/*.{png,jpg,jpeg,webp,avif,gif}', {
+    eager: true,
+    import: 'default',
+    query: '?url',
+}) as Record<string, string>
+
+function resolveProfileImage(src?: string) {
+    if (!src) return undefined
+    if (/^(https?:)?\/\//.test(src) || src.startsWith('data:')) return src
+
+    const normalizedSrc = src.startsWith('/') ? src : '/' + src
+    const moduleKey = '../..' + normalizedSrc
+    return profileImageModules[moduleKey] || src
+}
 
 // Minimal person icon - filled style
 function PersonIcon({ color, size }: { color: string; size: number }) {
@@ -82,11 +98,15 @@ export interface PeopleCirclesProps {
     onHoverPersonGender?: (gender: "male" | "female" | null) => void
     onHoverPersonShenzhenBorn?: (shenzhenBorn: boolean | null) => void
     onHoverPerson?: (person: Person | null) => void
+    highlightPerson?: (person: Person) => boolean
     onVisibleCountChange?: (count: number) => void
     selectedGender?: "any" | "male" | "female"
     selectedShenzhenBorn?: "any" | "yes" | "no"
     density?: number
     sizeMode?: "uniform" | "age" | "residence"
+    layoutMode?: "free" | "birthDecade" | "arrivalDecade" | "gender" | "origin" | "occupation"
+    language?: "en" | "zh"
+    occupationOrder?: string[]
 }
 
 const MAX_CIRCLES = 111
@@ -122,11 +142,15 @@ export default function PeopleCircles({
     onHoverPersonGender,
     onHoverPersonShenzhenBorn,
     onHoverPerson,
+    highlightPerson,
     onVisibleCountChange,
     selectedGender = "any",
     selectedShenzhenBorn = "any",
     density = 100,
     sizeMode = "uniform",
+    layoutMode = "free",
+    language = "en",
+    occupationOrder = [],
 }: PeopleCirclesProps) {
     const navigate = useNavigate()
     const parsedFromJson: Person[] | null = useMemo(() => {
@@ -156,6 +180,7 @@ export default function PeopleCircles({
     
     // Drag state - use refs for position during drag to avoid re-renders
     const containerRef = useRef<HTMLDivElement>(null)
+    const [containerSize, setContainerSize] = useState({ width: 800, height: 700 })
     const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
     const dragOffsetRef = useRef<{ x: number; y: number; finalX?: number; finalY?: number }>({ x: 0, y: 0 })
     const [customPositions, setCustomPositions] = useState<Map<number, { xPercent: number; yPercent: number }>>(new Map())
@@ -168,6 +193,22 @@ export default function PeopleCircles({
     // Track which icons have completed their initial animation
     const initializedIndicesRef = useRef<Set<number>>(new Set())
     const [initialAnimationComplete, setInitialAnimationComplete] = useState(false)
+
+    useEffect(() => {
+        const container = containerRef.current
+        if (!container) return
+
+        const updateSize = () => {
+            const rect = container.getBoundingClientRect()
+            if (rect.width > 0 && rect.height > 0) {
+                setContainerSize({ width: rect.width, height: rect.height })
+            }
+        }
+        updateSize()
+        const observer = new ResizeObserver(updateSize)
+        observer.observe(container)
+        return () => observer.disconnect()
+    }, [])
 
     const circleCount = Math.min(effectivePeople.length, MAX_CIRCLES)
     const spreadRadius = 0.10 + (density / 100) * 0.35
@@ -243,12 +284,15 @@ export default function PeopleCircles({
 
     // Get position for a circle (custom if moved, otherwise default)
     const getCirclePosition = useCallback((circle: { index: number; xPercent: number; yPercent: number }) => {
+        if (layoutMode !== "free") {
+            return { xPercent: circle.xPercent, yPercent: circle.yPercent }
+        }
         const customPos = customPositions.get(circle.index)
         if (customPos) {
             return customPos
         }
         return { xPercent: circle.xPercent, yPercent: circle.yPercent }
-    }, [customPositions])
+    }, [customPositions, layoutMode])
 
     const visibleCircles = useMemo(() => {
         return circlesData.filter((circle) => {
@@ -272,6 +316,204 @@ export default function PeopleCircles({
         })
     }, [circlesData, effectivePeople, selectedGender, selectedShenzhenBorn])
 
+    const organizedLayout = useMemo(() => {
+        if (layoutMode === "free") {
+            return {
+                circles: visibleCircles,
+                guides: [] as Array<{ key: string; label: string; xPercent: number; yPercent?: number; orientation?: "vertical" | "horizontal" }>,
+                pie: null as null | {
+                    centerXPercent: number
+                    centerYPercent: number
+                    diameter: number
+                    separators: number[]
+                    labels: Array<{ key: string; label: string; xPercent: number; yPercent: number }>
+                },
+            }
+        }
+
+        const decadeKeys = ["1940s", "1950s", "1960s", "1970s", "1980s", "1990s", "2000s", "2010s"]
+        const categoryKeys = layoutMode === "birthDecade" || layoutMode === "arrivalDecade"
+            ? decadeKeys
+            : layoutMode === "gender"
+                ? ["male", "female", "unknown"]
+                : layoutMode === "origin"
+                    ? ["born", "migrated", "unknown"]
+                    : ["business", "finance", "stem", "education", "public", "operations", "professional", "services", "other"]
+
+        const getCategory = (person: Person) => {
+            if (layoutMode === "birthDecade") {
+                return typeof person.yearOfBirth === "number" ? `${Math.floor(person.yearOfBirth / 10) * 10}s` : "unknown"
+            }
+            if (layoutMode === "arrivalDecade") {
+                const arrivalYear = typeof person.yearOfResidence === "number"
+                    ? person.yearOfResidence
+                    : person.shenzhenBorn && typeof person.yearOfBirth === "number"
+                        ? person.yearOfBirth
+                        : undefined
+                return typeof arrivalYear === "number" ? `${Math.floor(arrivalYear / 10) * 10}s` : "unknown"
+            }
+            if (layoutMode === "gender") return person.gender ?? "unknown"
+            if (layoutMode === "origin") return person.shenzhenBorn === true ? "born" : person.shenzhenBorn === false ? "migrated" : "unknown"
+
+            const occupation = `${person.occupation ?? ""} ${person.occupationCn ?? ""}`.toLowerCase()
+            if (/企业|创业|business|entrepreneur|manager|管理/.test(occupation)) return "business"
+            if (/金融|银行|finance|bank|account|会计|commerce/.test(occupation)) return "finance"
+            if (/工程|技术|程序|科研|engineer|developer|technology|scientist|stem/.test(occupation)) return "stem"
+            if (/教育|教师|老师|学生|education|teacher|professor|student|academic/.test(occupation)) return "education"
+            if (/政府|公务|国企|public sector|government|state-owned/.test(occupation)) return "public"
+            if (/司机|运输|物流|运营|driver|transport|logistics|operations/.test(occupation)) return "operations"
+            if (/医生|律师|设计|咨询|doctor|lawyer|designer|consultant|professional/.test(occupation)) return "professional"
+            if (/零售|服务|销售|餐饮|retail|service|sales|restaurant/.test(occupation)) return "services"
+            return "other"
+        }
+
+        const groups = new Map<string, typeof visibleCircles>()
+        categoryKeys.forEach((key) => groups.set(key, []))
+        visibleCircles.forEach((circle) => {
+            const person = effectivePeople[circle.index]
+            const category = person ? getCategory(person) : "unknown"
+            if (!groups.has(category)) groups.set(category, [])
+            groups.get(category)?.push(circle)
+        })
+        const isVerticalBarLayout = layoutMode === "birthDecade" || layoutMode === "arrivalDecade"
+        const genderRank = isVerticalBarLayout
+            ? ({ male: 0, female: 1 } as const)
+            : ({ female: 0, male: 1 } as const)
+        groups.forEach((group) => {
+            group.sort((a, b) => {
+                const personA = effectivePeople[a.index]
+                const personB = effectivePeople[b.index]
+                const rankA = personA?.gender ? genderRank[personA.gender] : 2
+                const rankB = personB?.gender ? genderRank[personB.gender] : 2
+                if (rankA !== rankB) return rankA - rankB
+                const birthA = personA?.yearOfBirth ?? Number.MAX_SAFE_INTEGER
+                const birthB = personB?.yearOfBirth ?? Number.MAX_SAFE_INTEGER
+                if (birthA !== birthB) return birthA - birthB
+                return (personA?.name ?? "").localeCompare(personB?.name ?? "")
+            })
+        })
+
+        const populatedKeys = categoryKeys.filter((key) => (groups.get(key)?.length ?? 0) > 0)
+        const requestedOccupationKeys = occupationOrder.filter((key) => populatedKeys.includes(key))
+        const activeKeys = layoutMode === "occupation" && requestedOccupationKeys.length > 0
+            ? [...requestedOccupationKeys, ...populatedKeys.filter((key) => !requestedOccupationKeys.includes(key))]
+            : layoutMode === "birthDecade" || layoutMode === "arrivalDecade"
+            ? categoryKeys
+            : populatedKeys.length > 0 ? populatedKeys : categoryKeys
+        const left = activeKeys.length > 5 ? 7 : 16
+        const right = activeKeys.length > 5 ? 93 : 84
+        const xStep = activeKeys.length > 1 ? (right - left) / (activeKeys.length - 1) : 0
+        const labels: Record<string, { en: string; zh: string }> = {
+            male: { en: "Male", zh: "男性" },
+            female: { en: "Female", zh: "女性" },
+            born: { en: "Shenzhen born", zh: "深圳出生" },
+            migrated: { en: "Migrated", zh: "迁入深圳" },
+            unknown: { en: "Unknown", zh: "未知" },
+            business: { en: "Business", zh: "企业" },
+            finance: { en: "Finance", zh: "金融" },
+            stem: { en: "STEM", zh: "科技" },
+            education: { en: "Education", zh: "教育" },
+            public: { en: "Public", zh: "公共部门" },
+            operations: { en: "Operations", zh: "运营" },
+            professional: { en: "Professional", zh: "专业服务" },
+            services: { en: "Services", zh: "零售服务" },
+            other: { en: "Other", zh: "其他" },
+        }
+
+        if (layoutMode === "gender" || layoutMode === "origin") {
+            const pieKeys = populatedKeys.length > 0 ? populatedKeys : categoryKeys
+            const total = Math.max(1, pieKeys.reduce((sum, key) => sum + (groups.get(key)?.length ?? 0), 0))
+            const centerX = containerSize.width * 0.5
+            const centerY = containerSize.height * 0.47
+            const radius = Math.min(containerSize.width, containerSize.height) * 0.34
+            let startAngle = -Math.PI / 2
+            const separators: number[] = []
+            const pieLabels: Array<{ key: string; label: string; xPercent: number; yPercent: number }> = []
+            const positionedCircles = pieKeys.flatMap((key) => {
+                const group = groups.get(key) ?? []
+                const sectorAngle = (group.length / total) * Math.PI * 2
+                const sectorStart = startAngle
+                const sectorMiddle = sectorStart + sectorAngle / 2
+                separators.push((sectorStart * 180) / Math.PI)
+                pieLabels.push({
+                    key,
+                    label: labels[key]?.[language] ?? key,
+                    xPercent: ((centerX + Math.cos(sectorMiddle) * radius * 1.14) / containerSize.width) * 100,
+                    yPercent: ((centerY + Math.sin(sectorMiddle) * radius * 1.14) / containerSize.height) * 100,
+                })
+
+                const points = group.map((circle, index) => {
+                    const radialFraction = Math.sqrt((index + 0.7) / Math.max(1, group.length))
+                    const angleFraction = (index * 0.61803398875) % 1
+                    const angle = sectorStart + sectorAngle * (0.08 + angleFraction * 0.84)
+                    const pointRadius = radius * (0.15 + radialFraction * 0.77)
+                    return {
+                        ...circle,
+                        xPercent: ((centerX + Math.cos(angle) * pointRadius) / containerSize.width) * 100,
+                        yPercent: ((centerY + Math.sin(angle) * pointRadius) / containerSize.height) * 100,
+                    }
+                })
+                startAngle += sectorAngle
+                return points
+            })
+
+            return {
+                circles: positionedCircles,
+                guides: [] as Array<{ key: string; label: string; xPercent: number; yPercent?: number; orientation?: "vertical" | "horizontal" }>,
+                pie: {
+                    centerXPercent: (centerX / containerSize.width) * 100,
+                    centerYPercent: (centerY / containerSize.height) * 100,
+                    diameter: radius * 2,
+                    separators,
+                    labels: pieLabels,
+                },
+            }
+        }
+
+        if (layoutMode === "occupation") {
+            const top = 10
+            const bottom = 90
+            const yStep = activeKeys.length > 1 ? (bottom - top) / (activeKeys.length - 1) : 0
+            const rowLeft = 18
+            const rowRight = 93
+            const maxRowCount = Math.max(1, ...activeKeys.map((key) => groups.get(key)?.length ?? 0))
+            const sharedXStep = Math.min(5.2, (rowRight - rowLeft) / Math.max(1, maxRowCount - 1))
+            const guides = activeKeys.map((key, index) => ({
+                key,
+                label: labels[key]?.[language] ?? key,
+                xPercent: rowLeft,
+                yPercent: top + index * yStep,
+                orientation: "horizontal" as const,
+            }))
+            const positionedCircles = guides.flatMap((guide) => (
+                (groups.get(guide.key) ?? []).map((circle, index) => ({
+                    ...circle,
+                    xPercent: rowLeft + index * sharedXStep,
+                    yPercent: guide.yPercent,
+                }))
+            ))
+            return { circles: positionedCircles, guides, pie: null }
+        }
+
+        const guides = activeKeys.map((key, index) => ({
+            key,
+            label: labels[key]?.[language] ?? (language === "zh" ? key.replace("s", "年代") : key),
+            xPercent: left + index * xStep,
+        }))
+        const maxCategoryCount = Math.max(1, ...guides.map((guide) => groups.get(guide.key)?.length ?? 0))
+        const sharedYStep = Math.min(6.2, 72 / Math.max(1, maxCategoryCount - 1))
+        const positionedCircles = guides.flatMap((guide) => {
+            const group = groups.get(guide.key) ?? []
+            return group.map((circle, index) => ({
+                ...circle,
+                xPercent: guide.xPercent,
+                yPercent: 84 - index * sharedYStep,
+            }))
+        })
+
+        return { circles: positionedCircles, guides, pie: null }
+    }, [containerSize, effectivePeople, language, layoutMode, occupationOrder, visibleCircles])
+
     useEffect(() => {
         onVisibleCountChange?.(visibleCircles.length)
     }, [visibleCircles.length, onVisibleCountChange])
@@ -286,6 +528,7 @@ export default function PeopleCircles({
 
     // Drag handlers - use direct DOM manipulation during drag
     const handleDragStart = useCallback((index: number, clientX: number, clientY: number, element: HTMLDivElement) => {
+        if (layoutMode !== "free") return
         if (!containerRef.current) return
         
         const rect = containerRef.current.getBoundingClientRect()
@@ -308,7 +551,7 @@ export default function PeopleCircles({
         // Set initial transform for smooth dragging
         element.style.zIndex = '100'
         element.style.cursor = 'grabbing'
-    }, [circlesData, getCirclePosition])
+    }, [circlesData, getCirclePosition, layoutMode])
 
     const handleDragMove = useCallback((clientX: number, clientY: number) => {
         if (draggingIndex === null || !containerRef.current || !draggingElementRef.current) return
@@ -487,7 +730,97 @@ export default function PeopleCircles({
                 handleMouseLeave()
             }}
         >
-            {visibleCircles.map((circle) => {
+            {organizedLayout.pie && (
+                <div aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+                    <div
+                        style={{
+                            position: "absolute",
+                            left: `${organizedLayout.pie.centerXPercent}%`,
+                            top: `${organizedLayout.pie.centerYPercent}%`,
+                            width: organizedLayout.pie.diameter,
+                            height: organizedLayout.pie.diameter,
+                            borderRadius: "50%",
+                            border: "none",
+                            transform: "translate(-50%, -50%)",
+                        }}
+                    />
+                    {organizedLayout.pie.separators.map((angle, index) => (
+                        <div
+                            key={`pie-separator-${index}`}
+                            style={{
+                                position: "absolute",
+                                left: `${organizedLayout.pie!.centerXPercent}%`,
+                                top: `${organizedLayout.pie!.centerYPercent}%`,
+                                width: organizedLayout.pie!.diameter / 2,
+                                borderTop: "none",
+                                transform: `rotate(${angle}deg)`,
+                                transformOrigin: "left center",
+                            }}
+                        />
+                    ))}
+                    {organizedLayout.pie.labels.map((label) => (
+                        <span
+                            key={`pie-label-${label.key}`}
+                            style={{
+                                position: "absolute",
+                                left: `${label.xPercent}%`,
+                                top: `${label.yPercent}%`,
+                                transform: "translate(-50%, -50%)",
+                                padding: "3px 7px",
+                                borderRadius: 999,
+                                background: "rgba(255,255,255,0.72)",
+                                color: "rgba(35,35,35,0.72)",
+                                fontSize: 11,
+                                fontWeight: 600,
+                                whiteSpace: "nowrap",
+                                backdropFilter: "blur(8px)",
+                            }}
+                        >
+                            {label.label}
+                        </span>
+                    ))}
+                </div>
+            )}
+
+            {organizedLayout.guides.map((guide) => (
+                <div
+                    key={`guide-${guide.key}`}
+                    aria-hidden="true"
+                    style={{
+                        position: "absolute",
+                        left: guide.orientation === "horizontal" ? "15%" : `${guide.xPercent}%`,
+                        right: guide.orientation === "horizontal" ? "5%" : undefined,
+                        top: guide.orientation === "horizontal" ? `${guide.yPercent}%` : "7%",
+                        bottom: guide.orientation === "horizontal" ? undefined : "9%",
+                        width: guide.orientation === "horizontal" ? undefined : 1,
+                        height: guide.orientation === "horizontal" ? 1 : undefined,
+                        borderLeft: "none",
+                        borderTop: "none",
+                        transform: guide.orientation === "horizontal" ? "translateY(-0.5px)" : "translateX(-0.5px)",
+                        pointerEvents: "none",
+                    }}
+                >
+                    <span
+                        style={{
+                            position: "absolute",
+                            left: guide.orientation === "horizontal" ? -10 : "50%",
+                            top: guide.orientation === "horizontal" ? "50%" : undefined,
+                            bottom: guide.orientation === "horizontal" ? undefined : -24,
+                            width: guide.orientation === "horizontal" ? 105 : undefined,
+                            transform: guide.orientation === "horizontal" ? "translate(-100%, -50%)" : "translateX(-50%)",
+                            color: "rgba(35, 35, 35, 0.68)",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            whiteSpace: "nowrap",
+                            textAlign: guide.orientation === "horizontal" ? "right" : "center",
+                        }}
+                    >
+                        {guide.label}
+                    </span>
+                </div>
+            ))}
+
+            {organizedLayout.circles.map((circle) => {
                 const hasPerson = circle.index < effectivePeople.length
                 const person = hasPerson ? effectivePeople[circle.index] : undefined
                 const isHovered = hoveredIndex === circle.index && draggingIndex === null
@@ -498,23 +831,28 @@ export default function PeopleCircles({
 
                 const pos = getCirclePosition(circle)
 
-                const baseColor = person?.circleColor
-                    ? person.circleColor
+                const genderOutlineColor = person?.gender === "male"
+                    ? "#A1CDFF"
                     : person?.gender === "female"
-                      ? "#A1CDFF"
-                      : person?.gender === "male"
                         ? "#FFB8D8"
                         : circleColor
+                const baseColor = person?.circleColor || genderOutlineColor
 
-                // Check if any icon is hovered (but not this one)
+                const hasPersonHighlight = Boolean(highlightPerson)
+                const matchesPersonHighlight = person ? highlightPerson?.(person) !== false : false
+
+                // Check if any icon or chart group is hovered.
                 const isAnyHovered = hoveredIndex !== null && draggingIndex === null
-                const isGreyedOut = isAnyHovered && !isHovered
+                const isGreyedOut = (isAnyHovered && !isHovered) || (hasPersonHighlight && !matchesPersonHighlight)
 
-                // Apply greyed out color if another icon is hovered
+                // Apply greyed out color if another icon or chart group is hovered.
                 let genderColor = isVisited ? lightenColor(baseColor, 0.4) : baseColor
                 if (isGreyedOut) {
-                    genderColor = "#D1D5DB" // Grey color for non-hovered icons
+                    genderColor = "#D1D5DB"
                 }
+                const outlineColor = isGreyedOut
+                    ? "#D1D5DB"
+                    : isVisited ? lightenColor(genderOutlineColor, 0.3) : genderOutlineColor
 
                 // Determine scale based on state
                 const targetScale = isDragging ? 1.2 : isHovered ? hoverScale : 1
@@ -525,10 +863,66 @@ export default function PeopleCircles({
                 const personUrl = person?.id
                     ? `/people/${person.id}`
                     : null
+                const profileImageSrc = resolveProfileImage(
+                    person?.profileImage?.src || person?.image?.src || person?.imageFile
+                )
+                const displayName = person
+                    ? language === "zh"
+                        ? person.nicknameCn || person.nickname || person.name
+                        : person.nickname || person.name
+                    : ""
+                const occupationLabel = person
+                    ? language === "zh"
+                        ? person.occupationCn || person.occupation
+                        : person.occupation || person.occupationCn
+                    : ""
+                const originLabel = person
+                    ? person.shenzhenBorn
+                        ? language === "zh" ? "深圳出生" : "Shenzhen born"
+                        : typeof person.yearOfResidence === "number"
+                            ? language === "zh" ? `${person.yearOfResidence} 年来深` : `Arrived in Shenzhen in ${person.yearOfResidence}`
+                            : ""
+                    : ""
+                const birthLabel = person && typeof person.yearOfBirth === "number"
+                    ? language === "zh" ? `${person.yearOfBirth} 年出生` : `Born ${person.yearOfBirth}`
+                    : ""
+                const briefIntro = [occupationLabel, originLabel, birthLabel].filter(Boolean).join(" · ")
+                const hoverCard = person ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 6, scale: 0.94 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.16, ease: "easeOut" }}
+                        style={{
+                            position: "absolute",
+                            left: "50%",
+                            bottom: "calc(100% + 12px)",
+                            width: 210,
+                            marginLeft: -105,
+                            padding: 12,
+                            borderRadius: 14,
+                            border: "1px solid rgba(35,35,35,0.12)",
+                            background: "rgba(255,255,255,0.94)",
+                            color: "#232323",
+                            textAlign: "left",
+                            boxShadow: "0 14px 34px rgba(15,23,42,0.18)",
+                            backdropFilter: "blur(18px)",
+                            pointerEvents: "none",
+                        }}
+                        aria-hidden="true"
+                    >
+                        <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>{displayName}</div>
+                        {briefIntro && (
+                            <div style={{ marginTop: 5, color: "#626C67", fontSize: 11, lineHeight: 1.55 }}>
+                                {briefIntro}
+                            </div>
+                        )}
+                    </motion.div>
+                ) : null
 
                 return (
                     personUrl ? (
                         <button
+                            key={`person-${circle.index}`}
                             type="button"
                             onClick={(e) => handlePersonNavigate(circle.index, personUrl, e)}
                             style={{
@@ -546,6 +940,7 @@ export default function PeopleCircles({
                                 padding: 0,
                                 border: "none",
                                 background: "transparent",
+                                transition: "left 420ms cubic-bezier(0.22, 1, 0.36, 1), top 420ms cubic-bezier(0.22, 1, 0.36, 1)",
                             }}
                         >
                             <motion.div
@@ -561,7 +956,7 @@ export default function PeopleCircles({
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
-                                    cursor: isDragging ? "grabbing" : "grab",
+                                    cursor: layoutMode === "free" ? (isDragging ? "grabbing" : "grab") : "pointer",
                                     filter: isHovered 
                                         ? "drop-shadow(0 4px 8px rgba(0,0,0,0.2))" 
                                         : isGreyedOut 
@@ -599,13 +994,21 @@ export default function PeopleCircles({
                                         height: size,
                                         borderRadius: "50%",
                                         backgroundColor: genderColor,
-                                        border: "none",
+                                        backgroundImage: profileImageSrc ? `url(${profileImageSrc})` : "none",
+                                        backgroundPosition: "center",
+                                        backgroundSize: "cover",
+                                        backgroundRepeat: "no-repeat",
+                                        border: "2px solid rgba(255,255,255,0.92)",
+                                        outline: `3px solid ${outlineColor}`,
+                                        outlineOffset: 1,
+                                        boxSizing: "border-box",
                                         boxShadow: isHovered
                                             ? "0 8px 18px rgba(0,0,0,0.16)"
                                             : "0 2px 8px rgba(0,0,0,0.10)",
                                         transition: "all 0.2s ease",
                                     }}
                                 />
+                                {isHovered && hoverCard}
                             </motion.div>
                         </button>
                     ) : (
@@ -628,7 +1031,7 @@ export default function PeopleCircles({
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                cursor: isDragging ? "grabbing" : "grab",
+                                cursor: layoutMode === "free" ? (isDragging ? "grabbing" : "grab") : "pointer",
                                 filter: isHovered 
                                     ? "drop-shadow(0 4px 8px rgba(0,0,0,0.2))" 
                                     : isGreyedOut 
@@ -637,6 +1040,7 @@ export default function PeopleCircles({
                                 zIndex: isDragging ? 100 : isHovered ? 50 : 1,
                                 userSelect: "none",
                                 touchAction: "none",
+                                transition: "left 420ms cubic-bezier(0.22, 1, 0.36, 1), top 420ms cubic-bezier(0.22, 1, 0.36, 1)",
                             }}
                             initial={initialAnimationComplete ? false : { scale: 0, opacity: 0 }}
                             animate={{ 
@@ -667,13 +1071,21 @@ export default function PeopleCircles({
                                     height: size,
                                     borderRadius: "50%",
                                     backgroundColor: genderColor,
-                                    border: "none",
+                                    backgroundImage: profileImageSrc ? `url(${profileImageSrc})` : "none",
+                                    backgroundPosition: "center",
+                                    backgroundSize: "cover",
+                                    backgroundRepeat: "no-repeat",
+                                    border: "2px solid rgba(255,255,255,0.92)",
+                                    outline: `3px solid ${outlineColor}`,
+                                    outlineOffset: 1,
+                                    boxSizing: "border-box",
                                     boxShadow: isHovered
                                         ? "0 8px 18px rgba(0,0,0,0.16)"
                                         : "0 2px 8px rgba(0,0,0,0.10)",
                                     transition: "all 0.2s ease",
                                 }}
                             />
+                            {isHovered && hoverCard}
                         </motion.div>
                     )
                 )

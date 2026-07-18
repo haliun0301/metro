@@ -12,11 +12,24 @@ export const PERSON_STORY_SECTIONS = [
 
 export type PersonStorySectionId = (typeof PERSON_STORY_SECTIONS)[number]['id'];
 
+export type PersonStoryMomentItem = {
+  text: string;
+  image?: string;
+  alt?: string;
+};
+
+export type PersonStoryTimelineItem = {
+  period: string;
+  text: string;
+};
+
 export type PersonStory = {
   personId: string;
   sections: Array<{
     id: PersonStorySectionId;
     paragraphs: string[];
+    items?: PersonStoryMomentItem[];
+    timeline?: PersonStoryTimelineItem[];
   }>;
 };
 

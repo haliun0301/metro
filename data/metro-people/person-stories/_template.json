@@ -5,6 +5,12 @@
       "id": "life-trajectory",
       "paragraphs": [
         "Add the participant's life trajectory paragraph here."
+      ],
+      "timeline": [
+        {
+          "period": "Add timeline period here, e.g. 1996-2000",
+          "text": "Add the participant life event here."
+        }
       ]
     },
     {

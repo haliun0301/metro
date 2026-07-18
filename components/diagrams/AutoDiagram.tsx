@@ -76,7 +76,7 @@ function TimelineDiagram({ events, theme = 'light', compact = false, renderConte
                   fontSize: compact ? 9 : 11,
                   fontWeight: 700,
                   color: markerTextColor,
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontFamily: 'var(--font-sans)',
                   lineHeight: 1,
                   letterSpacing: '0.02em',
                 }}
@@ -92,7 +92,7 @@ function TimelineDiagram({ events, theme = 'light', compact = false, renderConte
                   fontSize: compact ? 11 : 13,
                   lineHeight: compact ? 1.5 : 1.65,
                   color: textColor,
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontFamily: 'var(--font-sans)',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
                 }}
@@ -111,7 +111,7 @@ function TimelineDiagram({ events, theme = 'light', compact = false, renderConte
             textAlign: 'center',
             color: mutedColor,
             fontSize: compact ? 11 : 13,
-            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontFamily: 'var(--font-sans)',
           }}
         >
           No timeline events found in this text.

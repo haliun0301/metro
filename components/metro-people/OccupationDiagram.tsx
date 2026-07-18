@@ -28,8 +28,6 @@ export interface OccupationDiagramProps {
 const uiCopy = {
     person: { en: "person", zh: "人" },
     people: { en: "people", zh: "人" },
-    hoverHint: { en: "Hover for details • Size = frequency", zh: "悬停查看详情 • 大小代表频率" },
-    wordCloud: { en: "Occupation Word Cloud", zh: "职业词云" },
     totalPeople: { en: "Total People", zh: "总人数" },
     categories: { en: "Categories", zh: "类别数" },
     occupations: { en: "Occupations", zh: "职业数" },
@@ -212,163 +210,6 @@ function darkenColor(hex: string, percent: number): string {
     return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`
 }
 
-// Word Cloud Component - now showing English occupation names
-function WordCloud({ 
-    occupations,
-    hoveredOccupation, 
-    onHover,
-    language,
-}: { 
-    occupations: Array<{ label: string; value: number; labelCN: string; category: string }>
-    hoveredOccupation: string | null
-    onHover: (label: string | null) => void 
-    language: Language
-}) {
-    const maxValue = Math.max(...occupations.map(o => o.value), 1)
-    
-    // Generate stable positions for word cloud effect using seeded randomness
-    const wordPositions = useMemo(() => {
-        const positions: { x: number; y: number; rotation: number }[] = []
-        
-        // Seeded pseudo-random function for consistent positioning
-        const seededRandom = (seed: number) => {
-            const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453
-            return x - Math.floor(x)
-        }
-        
-        for (let i = 0; i < occupations.length; i++) {
-            const angle = (i * 137.508) * (Math.PI / 180) // Golden angle
-            const radius = 15 + (i % 6) * 12
-            const randomX = seededRandom(i * 7 + 1)
-            const randomY = seededRandom(i * 13 + 5)
-            const x = 50 + Math.cos(angle) * radius * (0.6 + randomX * 0.4)
-            const y = 50 + Math.sin(angle) * radius * (0.4 + randomY * 0.3)
-            const rotation = (seededRandom(i * 3) - 0.5) * 20 // -10 to +10 degrees
-            
-            positions.push({ 
-                x: Math.max(8, Math.min(92, x)), 
-                y: Math.max(12, Math.min(88, y)),
-                rotation
-            })
-        }
-        return positions
-    }, [occupations.length])
-
-    const isAnyHovered = hoveredOccupation !== null
-
-    return (
-        <div
-            style={{
-                position: "relative",
-                width: "100%",
-                height: 320,
-                background: "linear-gradient(135deg, #fafafa 0%, #f5f5f5 50%, #f0f0f0 100%)",
-                borderRadius: 12,
-                overflow: "hidden",
-                marginTop: 16,
-            }}
-        >
-            {occupations.map((occupation, index) => {
-                const pos = wordPositions[index]
-                const isHighlighted = hoveredOccupation === occupation.label
-                const isGreyedOut = isAnyHovered && !isHighlighted
-                
-                const minSize = 9
-                const maxSize = 36
-                const sizeRatio = Math.log(occupation.value + 1) / Math.log(maxValue + 1)
-                const fontSize = minSize + (maxSize - minSize) * sizeRatio
-                
-                // Get color from category
-                const baseColor = categoryColorMap[occupation.category] || "#666"
-                const opacity = 0.6 + (sizeRatio * 0.4)
-                
-                return (
-                    <div
-                        key={occupation.label}
-                        style={{
-                            position: "absolute",
-                            left: `${pos.x}%`,
-                            top: `${pos.y}%`,
-                            transform: `translate(-50%, -50%) rotate(${pos.rotation}deg) scale(${isHighlighted ? 1.15 : 1})`,
-                            fontSize: fontSize,
-                            fontWeight: occupation.value > 5 ? 700 : occupation.value > 2 ? 600 : 500,
-                            color: isGreyedOut ? "#ccc" : baseColor,
-                            opacity: isGreyedOut ? 0.3 : opacity,
-                            whiteSpace: "nowrap",
-                            cursor: "pointer",
-                            transition: "all 0.3s ease",
-                            textShadow: isHighlighted ? `0 2px 8px ${lightenColor(baseColor, 0.5)}` : "none",
-                            zIndex: isHighlighted ? 10 : occupation.value,
-                            letterSpacing: fontSize > 20 ? "-0.5px" : "0",
-                        }}
-                        onMouseEnter={() => onHover(occupation.label)}
-                        onMouseLeave={() => onHover(null)}
-                        title={`${language === "zh" ? occupation.labelCN : occupation.label}: ${occupation.value} ${occupation.value === 1 ? uiCopy.person[language] : uiCopy.people[language]}`}
-                    >
-                        {language === "zh" ? occupation.labelCN : occupation.label}
-                    </div>
-                )
-            })}
-            
-            {/* Hover tooltip */}
-            {hoveredOccupation && (() => {
-                const occ = occupations.find(o => o.label === hoveredOccupation)
-                if (!occ) return null
-                const color = categoryColorMap[occ.category] || "#666"
-                return (
-                    <div
-                        style={{
-                            position: "absolute",
-                            bottom: 12,
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            background: "rgba(255,255,255,0.95)",
-                            padding: "8px 16px",
-                            borderRadius: 8,
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                            zIndex: 20,
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: 12,
-                                height: 12,
-                                borderRadius: 3,
-                                backgroundColor: color,
-                            }}
-                        />
-                        <div>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: "#333" }}>
-                                {language === "zh" ? occ.labelCN : occ.label}
-                            </div>
-                            <div style={{ fontSize: 11, color: "#666" }}>
-                                {(language === "zh" ? categoryTranslations[occ.category] : occ.category) || occ.category} • {occ.value} {occ.value === 1 ? uiCopy.person[language] : uiCopy.people[language]}
-                            </div>
-                        </div>
-                    </div>
-                )
-            })()}
-            
-            {/* Legend hint */}
-            {!hoveredOccupation && (
-                <div style={{
-                    position: "absolute",
-                    bottom: 8,
-                    right: 12,
-                    fontSize: 10,
-                    color: "#999",
-                    fontStyle: "italic",
-                }}>
-                    {uiCopy.hoverHint[language]}
-                </div>
-            )}
-        </div>
-    )
-}
-
 export default function OccupationDiagram({
     data = defaultOccupationData,
     backgroundColor = "transparent",
@@ -378,7 +219,6 @@ export default function OccupationDiagram({
     style,
 }: OccupationDiagramProps) {
     const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
-    const [wordCloudHover, setWordCloudHover] = useState<string | null>(null)
     
     const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data])
     const maxValue = useMemo(() => Math.max(...data.map((d) => d.value), 1), [data])
@@ -396,7 +236,7 @@ export default function OccupationDiagram({
         return derived.length > 0 ? derived : defaultAllOccupations
     }, [data])
 
-    const effectiveHighlight = highlightedLabel || wordCloudHover
+    const effectiveHighlight = highlightedLabel
     const isAnyHighlighted = effectiveHighlight !== null
 
     const handleMouseEnter = (label: string) => {
@@ -407,19 +247,6 @@ export default function OccupationDiagram({
     const handleMouseLeave = () => {
         setExpandedCategory(null)
         onHoverOccupation?.(null)
-    }
-
-    const handleWordCloudHover = (label: string | null) => {
-        setWordCloudHover(label)
-        // Find parent category for this occupation
-        if (label) {
-            const parentCategory = data.find(cat => 
-                cat.subCategories?.some(sub => sub.label === label)
-            )
-            if (parentCategory) {
-                setExpandedCategory(parentCategory.label)
-            }
-        }
     }
 
     return (
@@ -507,7 +334,6 @@ export default function OccupationDiagram({
                                         >
                                             {item.subCategories.map((sub, subIndex) => {
                                                 const subWidth = (sub.value / item.value) * 100
-                                                const isSubHighlighted = wordCloudHover === sub.label
                                                 const shade = subIndex % 2 === 0 
                                                     ? item.color 
                                                     : lightenColor(item.color, 0.3)
@@ -518,18 +344,14 @@ export default function OccupationDiagram({
                                                         style={{
                                                             width: `${subWidth}%`,
                                                             height: "100%",
-                                                            backgroundColor: isSubHighlighted 
-                                                                ? darkenColor(item.color, 0.2) 
-                                                                : shade,
+                                                            backgroundColor: shade,
                                                             borderRight: subIndex < item.subCategories!.length - 1 
                                                                 ? "1px solid rgba(255,255,255,0.3)" 
                                                                 : "none",
                                                             display: "flex",
                                                             alignItems: "center",
                                                             justifyContent: "center",
-                                                            overflow: "hidden",
-                                                            transform: isSubHighlighted ? "scaleY(1.1)" : "scaleY(1)",
-                                                            transition: "all 0.2s ease",
+                                                            overflow: "hidden",                                                            transition: "all 0.2s ease",
                                                         }}
                                                         title={`${language === "zh" ? (sub.labelCn || sub.label) : sub.label}: ${sub.value}`}
                                                     >
@@ -606,7 +428,6 @@ export default function OccupationDiagram({
                                     }}
                                 >
                                     {item.subCategories.map((sub, subIndex) => {
-                                        const isSubHighlighted = wordCloudHover === sub.label
                                         return (
                                             <div
                                                 key={subIndex}
@@ -615,14 +436,9 @@ export default function OccupationDiagram({
                                                     alignItems: "center",
                                                     gap: 6,
                                                     padding: "4px 8px",
-                                                    background: isSubHighlighted 
-                                                        ? lightenColor(item.color, 0.7)
-                                                        : lightenColor(item.color, 0.85),
+                                                    background: lightenColor(item.color, 0.85),
                                                     borderRadius: 4,
-                                                    border: `1px solid ${isSubHighlighted 
-                                                        ? item.color 
-                                                        : lightenColor(item.color, 0.6)}`,
-                                                    transform: isSubHighlighted ? "scale(1.05)" : "scale(1)",
+                                                    border: `1px solid ${lightenColor(item.color, 0.6)}`,
                                                     transition: "all 0.2s ease",
                                                 }}
                                             >
@@ -654,26 +470,6 @@ export default function OccupationDiagram({
                         </div>
                     )
                 })}
-            </div>
-
-            {/* Word Cloud Infographic */}
-            <div style={{ marginTop: 16 }}>
-                <h4 style={{ 
-                    fontSize: 13, 
-                    fontWeight: 600, 
-                    color: "#666", 
-                    marginBottom: 8,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px"
-                }}>
-                    {uiCopy.wordCloud[language]}
-                </h4>
-                <WordCloud 
-                    occupations={allOccupations}
-                    hoveredOccupation={wordCloudHover} 
-                    onHover={handleWordCloudHover}
-                    language={language}
-                />
             </div>
 
             {/* Summary stats */}

@@ -604,7 +604,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                     }`}
                     onMouseEnter={() => selectMenuItem(item.key)}
                     onFocus={() => selectMenuItem(item.key)}
-                    onClick={() => selectMenuItem(item.key)}
+                    onClick={() => goToMenuRoute(item.route)}
                   >
                     {item.label}
                   </button>
