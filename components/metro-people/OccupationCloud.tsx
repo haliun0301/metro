@@ -1,4 +1,5 @@
-import { useMemo, useState, type CSSProperties } from "react"
+import { startTransition, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
+import { motion, useInView } from "framer-motion"
 
 type Language = "en" | "zh"
 
@@ -112,6 +113,17 @@ export default function OccupationCloud({
     style,
 }: OccupationCloudProps) {
     const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+    const [animateIn, setAnimateIn] = useState(false)
+    const containerRef = useRef<HTMLDivElement | null>(null)
+    const isInView = useInView(containerRef, { margin: "0px 0px -10% 0px", once: true })
+
+    useEffect(() => {
+        if (!isInView || animateIn) return
+        const timer = window.setTimeout(() => {
+            startTransition(() => setAnimateIn(true))
+        }, 100)
+        return () => window.clearTimeout(timer)
+    }, [isInView, animateIn])
     
     const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data])
     const maxValue = useMemo(() => Math.max(...data.map((d) => d.value)), [data])
@@ -164,6 +176,7 @@ export default function OccupationCloud({
 
     return (
         <div
+            ref={containerRef}
             style={{
                 width: "100%",
                 backgroundColor,
@@ -198,8 +211,13 @@ export default function OccupationCloud({
                             : lightenColor(color, 0.9)
 
                     return (
-                        <div
+                        <motion.div
                             key={index}
+                            initial={{ opacity: 0, y: 12, scale: 0.92 }}
+                            animate={animateIn
+                                ? { opacity: isGreyedOut ? 0.5 : 1, y: 0, scale: isHighlighted ? 1.1 : 1 }
+                                : { opacity: 0, y: 12, scale: 0.92 }}
+                            transition={{ duration: 0.45, delay: Math.min(index * 0.035, 0.7), ease: "easeOut" }}
                             style={{
                                 fontSize,
                                 fontWeight: item.value >= 5 ? 600 : item.value >= 3 ? 500 : 400,
@@ -212,8 +230,6 @@ export default function OccupationCloud({
                                     : "2px solid transparent",
                                 cursor: "pointer",
                                 transition: "all 0.2s ease",
-                                opacity: isGreyedOut ? 0.5 : 1,
-                                transform: isHighlighted ? "scale(1.1)" : "scale(1)",
                                 boxShadow: isHighlighted 
                                     ? `0 4px 12px ${lightenColor(color, 0.5)}` 
                                     : "none",
@@ -236,7 +252,7 @@ export default function OccupationCloud({
                                     {item.value}
                                 </span>
                             )}
-                        </div>
+                        </motion.div>
                     )
                 })}
             </div>

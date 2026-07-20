@@ -107,6 +107,9 @@ export interface PeopleCirclesProps {
     layoutMode?: "free" | "birthDecade" | "arrivalDecade" | "gender" | "origin" | "occupation"
     language?: "en" | "zh"
     occupationOrder?: string[]
+    getOccupationCategory?: (person: Person) => string
+    pieCenterXPercent?: number
+    centerLayouts?: boolean
 }
 
 const MAX_CIRCLES = 111
@@ -151,6 +154,9 @@ export default function PeopleCircles({
     layoutMode = "free",
     language = "en",
     occupationOrder = [],
+    getOccupationCategory,
+    pieCenterXPercent = 50,
+    centerLayouts = false,
 }: PeopleCirclesProps) {
     const navigate = useNavigate()
     const parsedFromJson: Person[] | null = useMemo(() => {
@@ -355,6 +361,8 @@ export default function PeopleCircles({
             if (layoutMode === "gender") return person.gender ?? "unknown"
             if (layoutMode === "origin") return person.shenzhenBorn === true ? "born" : person.shenzhenBorn === false ? "migrated" : "unknown"
 
+            if (getOccupationCategory) return getOccupationCategory(person)
+
             const occupation = `${person.occupation ?? ""} ${person.occupationCn ?? ""}`.toLowerCase()
             if (/企业|创业|business|entrepreneur|manager|管理/.test(occupation)) return "business"
             if (/金融|银行|finance|bank|account|会计|commerce/.test(occupation)) return "finance"
@@ -423,7 +431,7 @@ export default function PeopleCircles({
         if (layoutMode === "gender" || layoutMode === "origin") {
             const pieKeys = populatedKeys.length > 0 ? populatedKeys : categoryKeys
             const total = Math.max(1, pieKeys.reduce((sum, key) => sum + (groups.get(key)?.length ?? 0), 0))
-            const centerX = containerSize.width * 0.5
+            const centerX = containerSize.width * (pieCenterXPercent / 100)
             const centerY = containerSize.height * 0.47
             const radius = Math.min(containerSize.width, containerSize.height) * 0.34
             let startAngle = -Math.PI / 2
@@ -474,14 +482,17 @@ export default function PeopleCircles({
             const top = 10
             const bottom = 90
             const yStep = activeKeys.length > 1 ? (bottom - top) / (activeKeys.length - 1) : 0
-            const rowLeft = 18
+            const defaultRowLeft = 18
             const rowRight = 93
             const maxRowCount = Math.max(1, ...activeKeys.map((key) => groups.get(key)?.length ?? 0))
-            const sharedXStep = Math.min(5.2, (rowRight - rowLeft) / Math.max(1, maxRowCount - 1))
+            const sharedXStep = Math.min(5.2, (rowRight - defaultRowLeft) / Math.max(1, maxRowCount - 1))
+            const rowWidth = (maxRowCount - 1) * sharedXStep
+            const rowLeft = centerLayouts ? 50 - rowWidth / 2 : defaultRowLeft
             const guides = activeKeys.map((key, index) => ({
                 key,
                 label: labels[key]?.[language] ?? key,
                 xPercent: rowLeft,
+                rightPercent: 100 - (rowLeft + rowWidth),
                 yPercent: top + index * yStep,
                 orientation: "horizontal" as const,
             }))
@@ -512,7 +523,7 @@ export default function PeopleCircles({
         })
 
         return { circles: positionedCircles, guides, pie: null }
-    }, [containerSize, effectivePeople, language, layoutMode, occupationOrder, visibleCircles])
+    }, [centerLayouts, containerSize, effectivePeople, getOccupationCategory, language, layoutMode, occupationOrder, pieCenterXPercent, visibleCircles])
 
     useEffect(() => {
         onVisibleCountChange?.(visibleCircles.length)
@@ -788,8 +799,8 @@ export default function PeopleCircles({
                     aria-hidden="true"
                     style={{
                         position: "absolute",
-                        left: guide.orientation === "horizontal" ? "15%" : `${guide.xPercent}%`,
-                        right: guide.orientation === "horizontal" ? "5%" : undefined,
+                        left: guide.orientation === "horizontal" ? `${guide.xPercent}%` : `${guide.xPercent}%`,
+                        right: guide.orientation === "horizontal" ? `${guide.rightPercent ?? 5}%` : undefined,
                         top: guide.orientation === "horizontal" ? `${guide.yPercent}%` : "7%",
                         bottom: guide.orientation === "horizontal" ? undefined : "9%",
                         width: guide.orientation === "horizontal" ? undefined : 1,

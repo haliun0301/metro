@@ -1,4 +1,5 @@
-import { useMemo, useState, type CSSProperties } from "react"
+import { startTransition, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
+import { motion, useInView } from "framer-motion"
 
 type Language = "en" | "zh"
 
@@ -219,6 +220,17 @@ export default function OccupationDiagram({
     style,
 }: OccupationDiagramProps) {
     const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
+    const [animateIn, setAnimateIn] = useState(false)
+    const containerRef = useRef<HTMLDivElement | null>(null)
+    const isInView = useInView(containerRef, { margin: "0px 0px -10% 0px", once: true })
+
+    useEffect(() => {
+        if (!isInView || animateIn) return
+        const timer = window.setTimeout(() => {
+            startTransition(() => setAnimateIn(true))
+        }, 100)
+        return () => window.clearTimeout(timer)
+    }, [isInView, animateIn])
     
     const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data])
     const maxValue = useMemo(() => Math.max(...data.map((d) => d.value), 1), [data])
@@ -251,6 +263,7 @@ export default function OccupationDiagram({
 
     return (
         <div
+            ref={containerRef}
             style={{
                 width: "100%",
                 backgroundColor,
@@ -370,7 +383,10 @@ export default function OccupationDiagram({
                                             })}
                                         </div>
                                     ) : (
-                                        <div
+                                        <motion.div
+                                            initial={{ scaleX: 0, opacity: 0 }}
+                                            animate={animateIn ? { scaleX: 1, opacity: 1 } : { scaleX: 0, opacity: 0 }}
+                                            transition={{ duration: 0.65, delay: index * 0.08, ease: "easeOut" }}
                                             style={{
                                                 width: `${barWidth}%`,
                                                 height: "100%",
@@ -382,6 +398,7 @@ export default function OccupationDiagram({
                                                 justifyContent: "flex-end",
                                                 paddingRight: 8,
                                                 minWidth: item.value >= 5 ? 40 : 0,
+                                                transformOrigin: "left center",
                                             }}
                                         >
                                             {item.value >= 5 && (
@@ -394,7 +411,7 @@ export default function OccupationDiagram({
                                                     {item.value}
                                                 </span>
                                             )}
-                                        </div>
+                                        </motion.div>
                                     )}
                                 </div>
 
