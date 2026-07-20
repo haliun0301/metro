@@ -6,6 +6,7 @@ import { useAppLanguage } from '../../hooks/useAppLanguage';
 import { STATIONS } from '../../data/metro-stations/stations';
 import { METRO_IMPACT_PLACES, type MetroImpactPlace } from '../../data/metro-city/metroImpactPlaces';
 import { THEMATIC_TOPICS } from '../../data/metro-city/thematicTopics';
+import EntryCurtain from '../EntryCurtain';
 
 const customPlaceTranslations: Record<string, string> = {
   '东门/老街': 'Dongmen / Laojie',
@@ -118,6 +119,8 @@ function getNotes(place: MetroImpactPlace, language: 'en' | 'zh') {
 
 export default function ThematicMap() {
   const { language } = useAppLanguage('en');
+  const showEntry = new URLSearchParams(window.location.search).get('enter') !== '1';
+  const [entryProgress, setEntryProgress] = useState(showEntry ? 0 : 1);
   const [selectedThemeIndex, setSelectedThemeIndex] = useState(2);
   const themeButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const selectedTheme = THEMATIC_TOPICS[selectedThemeIndex];
@@ -132,7 +135,27 @@ export default function ThematicMap() {
   }, [selectedThemeIndex]);
 
   return (
-    <main className="relative h-screen w-full overflow-hidden bg-[#e9efec] text-[#23332d]">
+    <div
+      className="relative h-screen w-full overflow-hidden bg-[#e9efec]"
+      onWheel={(event) => {
+        if (!showEntry) return;
+        if ((entryProgress <= 0 && event.deltaY < 0) || (entryProgress >= 1 && event.deltaY > 0)) return;
+        event.preventDefault();
+        setEntryProgress((progress) => Math.max(0, Math.min(1, progress + event.deltaY / 900)));
+      }}
+    >
+      {showEntry ? (
+        <EntryCurtain
+          language={language}
+          title={{ en: 'Metro & City', zh: '地铁与城市' }}
+          progress={entryProgress}
+          variant="city"
+        />
+      ) : null}
+
+    <main
+      className="relative h-screen w-full overflow-hidden bg-[#e9efec] text-[#23332d]"
+    >
       <MapContainer
         center={[22.58, 114.05]}
         zoom={11}
@@ -262,5 +285,6 @@ export default function ThematicMap() {
         .metro-city-popup .leaflet-popup-tip { box-shadow: none; }
       `}</style>
     </main>
+    </div>
   );
 }

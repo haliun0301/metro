@@ -1,354 +1,180 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAppLanguage } from '../hooks/useAppLanguage';
+import backgroundImage from '../assets/bg1.jpg';
 
-const metroCityTopics = [
-  {
-    zh: '深圳居民移动性范式的跨时代变迁',
-    en: 'The Epochal Shift in Mobility Paradigms among Shenzhen Residents',
-  },
-  {
-    zh: '深圳城市格局的演化：增长的空间叙事',
-    en: 'The Evolution of Shenzhen’s Urban Fabric: A Spatial Narrative of Growth',
-  },
-  {
-    zh: '因地铁建设与开通而转变的地方',
-    en: 'Places Transformed by the Advent of the Metro',
-  },
-  {
-    zh: '深圳地铁网络的核心节点',
-    en: 'Key Nodes in the Shenzhen Metro Network',
-  },
-  {
-    zh: '在地铁上：公共空间中的日常生活',
-    en: 'On the Metro: Everyday Life in a Public Space',
-  },
-  {
-    zh: '第一次乘坐地铁！',
-    en: 'My First Metro Ride!',
-  },
-  {
-    zh: '地铁与其他交通方式的比较',
-    en: 'The Metro vs. Other Modes of Transport',
-  },
-  {
-    zh: '不同人群与地铁的关系',
-    en: 'Diverse Interactions between Social Groups and the Metro',
-  },
-  {
-    zh: '不只是交通！：地铁对个人生活的影响',
-    en: 'More than Transportation: The Metro’s Impact on Individual Lives',
-  },
-  {
-    zh: '不只是交通！：地铁对深圳城市的整体影响',
-    en: 'More than Transportation: The Metro’s Overall Impact on Shenzhen as a City',
-  },
-  {
-    zh: '深圳地铁与其他城市地铁的比较',
-    en: 'Shenzhen Metro in Comparison with Metro Systems in Other Cities',
-  },
-  {
-    zh: '深圳地铁存在的问题与改进建议',
-    en: 'Existing Issues within the Shenzhen Metro and Recommendations for Improvement',
-  },
-];
-
-const pageCopy = {
-  heroTitle: {
-    en: 'RAPID TRANSIT IN SHENZHEN',
-    zh: '深圳快速轨道交通',
-  },
-  menu: {
-    open: {
-      en: 'Open menu',
-      zh: '打开菜单',
-    },
-    close: {
-      en: 'Close menu',
-      zh: '关闭菜单',
-    },
-    title: {
-      en: 'Menu',
-      zh: '菜单',
+const copy = {
+  en: {
+    kicker: 'An interactive urban portrait',
+    title: ['RAPID TRANSIT', 'IN SHENZHEN'],
+    prompt: 'Explore the atlas',
+    chapters: {
+      stations: { label: 'Metro Stations', title: 'Read the city through its stations.', description: 'Navigate the full network, locate key nodes, and discover how neighbourhoods changed around them.' },
+      people: { label: 'Metro & People', title: 'Meet the lives moving through the network.', description: "Explore the people behind Shenzhen's metro—where they come from, when they arrived, and how occupation and generation shape urban life." },
+      city: { label: 'Metro & City', title: 'See how mobility remakes a metropolis.', description: 'Follow visual themes connecting rapid transit with growth, public space, and identity.' },
     },
   },
-  sectionLabels: {
-    stations: {
-      en: 'METRO STATIONS',
-      zh: '地铁站点',
-    },
-    people: {
-      en: 'METRO & PEOPLE',
-      zh: '地铁与人',
-    },
-    city: {
-      en: 'METRO & CITY',
-      zh: '地铁与城市',
-    },
-  },
-  footerTitle: {
-    en: 'Rapid Transit in Shenzhen city',
-    zh: '深圳城市快速轨道交通',
-  },
-  footerCredit: {
-    en: '© 2026 Powered by React, Vite and Framer',
-    zh: '© 2026 由 React、Vite 和 Framer 提供支持',
-  },
-  cityHeader: {
-    en: {
-      eyebrow: 'Metro & City',
-      title: 'Thematic Topics',
-    },
-    zh: {
-      eyebrow: '地铁与城市',
-      title: '主题列表',
+  zh: {
+    kicker: '一幅互动式城市肖像',
+    title: ['深圳', '快速轨道交通'],
+    prompt: '探索互动图集',
+    chapters: {
+      stations: { label: '地铁站点', title: '从站点出发，阅读城市。', description: '浏览完整地铁网络，寻找重要枢纽，观察轨道交通如何改变周边街区。' },
+      people: { label: '地铁与人', title: '遇见穿行于网络中的生活。', description: '探索深圳地铁背后的人群——他们来自哪里、何时来到深圳，以及职业和世代如何塑造城市生活。' },
+      city: { label: '地铁与城市', title: '看见流动如何重塑都市。', description: '通过视觉主题连接轨道交通与城市增长、公共空间及城市身份。' },
     },
   },
 } as const;
 
-const sectionOverviews = {
-  stations: {
-    eyebrow: {
-      en: 'Metro Stations',
-      zh: '地铁站点',
-    },
-    title: {
-      en: 'Route and station explorer',
-      zh: '线路与站点总览',
-    },
-    description: {
-      en: 'Browse the interactive Shenzhen Metro map, inspect station locations, and follow the full network across the city.',
-      zh: '浏览深圳地铁交互地图，查看站点位置，并追踪覆盖全市的轨道网络。',
-    },
-    bullets: {
-      en: ['Interactive GIS-based metro map', 'Station and route visualization', 'City-wide network navigation'],
-      zh: ['交互式 GIS 地铁地图', '站点与线路可视化', '全市地铁网络导览'],
-    },
-  },
-  people: {
-    eyebrow: {
-      en: 'Metro & People',
-      zh: '地铁与人',
-    },
-    title: {
-      en: 'People, migration, and everyday mobility',
-      zh: '人群、迁移与日常流动',
-    },
-    description: {
-      en: 'Explore how different social groups relate to the metro through demographic views, occupation patterns, and lived experience.',
-      zh: '通过人口结构、职业分布与生活经验，探索不同人群与地铁之间的关系。',
-    },
-    bullets: {
-      en: ['Demographic filtering', 'Occupation and migration patterns', 'Visual stories of metro users'],
-      zh: ['人口维度筛选', '职业与迁移模式', '地铁使用者的视觉叙事'],
-    },
-  },
-} as const;
+const chapters = [
+  { key: 'stations', index: '01', color: '#ef9953', route: '/map' },
+  { key: 'people', index: '02', color: '#26383d', route: '/people' },
+  { key: 'city', index: '03', color: '#28a873', route: '/thematicmap' },
+] as const;
 
-type HoveredSection = 'stations' | 'people' | 'city' | null;
+function RailMark() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true" className="h-8 w-8">
+      <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path d="M14 28V17.5L24 13l10 4.5V28M14 23h20M18 34l3-6m9 6-3-6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
+  );
+}
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const { language } = useAppLanguage('en');
-  const [scrollY, setScrollY] = useState(0);
-  const [hoveredSection, setHoveredSection] = useState<HoveredSection>(null);
+  const text = copy[language];
+  const [view, setView] = useState<'landing' | 'chapters'>('landing');
+  const [hoveredChapter, setHoveredChapter] = useState<(typeof chapters)[number]['key'] | null>(null);
+  const [hoverEnabled, setHoverEnabled] = useState(false);
+  const hoverDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
+    if (view === 'chapters') {
+      setHoverEnabled(false);
+      setHoveredChapter(null);
+    }
+
+    return () => {
+      if (hoverDelayRef.current) clearTimeout(hoverDelayRef.current);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [view]);
 
-  const maskProgress = Math.min(scrollY / window.innerHeight, 1);
-  const clipPathValue = `circle(${20 + maskProgress * 80}% at 50% 50%)`;
+  const prepareInitialHover = (chapter: (typeof chapters)[number]['key']) => {
+    if (hoverEnabled) return;
+    if (hoverDelayRef.current) clearTimeout(hoverDelayRef.current);
+    hoverDelayRef.current = setTimeout(() => {
+      setHoverEnabled(true);
+      setHoveredChapter(chapter);
+    }, 150);
+  };
 
-  const globalStyle = `html, body { height: 100%; overflow-y: auto !important; }`;
   return (
-    <>
-      <style>{`
-        ${globalStyle}
-        @keyframes float {
-          0% { transform: translateY(0); }
-          50% { transform: translateY(-24px); }
-          100% { transform: translateY(0); }
-        }
-        .float-animate {
-          animation: float 3s ease-in-out infinite;
-        }
-      `}</style>
-      <div
-        className="w-full min-h-screen flex flex-col"
-        style={{
-          backgroundImage: "url('../assets/bg1.jpg')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
+    <main
+      className="relative h-[100svh] min-h-[560px] overflow-hidden bg-[#02090c]"
+      onWheel={(event) => {
+        if (event.deltaY > 18) setView('chapters');
+        if (event.deltaY < -18) setView('landing');
+      }}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+      {view === 'landing' ? (
+      <motion.section
+        key="landing"
+        className="absolute inset-0 overflow-hidden text-white"
+        initial={{ opacity: 0, scale: 1.025, filter: 'brightness(0)' }}
+        animate={{ opacity: 1, scale: 1, filter: 'brightness(1)' }}
+        exit={{ opacity: 0, scale: 1.035, filter: 'brightness(0)' }}
+        transition={{ duration: 0.72, ease: [0.76, 0, 0.24, 1] }}
       >
-        {/* Hero Section */}
-        <div
-          className="w-full h-screen flex items-center justify-center relative"
-          style={{
-            backgroundImage: "url('../assets/bg1.jpg')",
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-green-300 opacity-30" />
-          <div className="relative z-10 text-center px-4">
-            <h1 className="text-6xl md:text-8xl font-extrabold text-white drop-shadow-2xl mb-4 float-animate">
-              {pageCopy.heroTitle[language]}
-            </h1>
+        <img src={backgroundImage} alt="" className="absolute inset-0 h-full w-full scale-105 object-cover" />
+        <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(3,21,28,.94)_0%,rgba(6,31,38,.68)_53%,rgba(3,26,28,.2)_100%)]" />
+        <div className="relative z-10 grid h-full grid-rows-[auto_1fr_auto] px-6 pb-8 pt-24 md:px-12 md:pb-10 lg:px-20">
+          <motion.header className="flex items-center justify-end pb-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <span className="hidden font-serif text-lg italic sm:block">Shenzhen · 深圳</span>
+          </motion.header>
+          <div className="grid content-center py-8">
+            <div>
+              <motion.h1 className="text-[clamp(3.7rem,9.8vw,10.5rem)] font-black uppercase leading-[0.76] tracking-[-0.065em]" initial={{ opacity: 0, y: 70 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8 }}>
+                <span className="block">{text.title[0]}</span><span className="block text-[#ef9953]">{text.title[1]}</span>
+              </motion.h1>
+            </div>
+          </div>
+          <div className="flex items-center justify-end pt-4">
+            <button type="button" aria-label={language === 'zh' ? '进入章节' : 'Enter sections'} onClick={() => setView('chapters')} className="flex h-11 w-11 items-center justify-center rounded-full text-xl text-white transition hover:bg-white/10"><span aria-hidden="true">↓</span></button>
           </div>
         </div>
+      </motion.section>
+      ) : (
 
-        {/* 3 Columns Section */}
-        <div className="w-full flex flex-row h-screen md:screen">
-          <div
-            className="flex-1 flex flex-col items-center justify-center cursor-pointer transition relative"
-            style={{ backgroundColor: '#EAAF73' }}
-            onClick={() => navigate('/map')}
-            onMouseEnter={() => setHoveredSection('stations')}
-            onMouseLeave={() => setHoveredSection(null)}
-          >
-            <h2
-              className={`text-5xl font-bold text-white uppercase transition-all duration-300 ${
-                hoveredSection === 'stations' ? 'opacity-0' : 'opacity-100'
-              }`}
-              style={{
-                writingMode: 'vertical-rl',
-                textOrientation: 'mixed',
-                position: 'absolute',
-                left: 16,
-                top: 24,
-                margin: 0,
-                letterSpacing: '0.08em',
+      <motion.section
+        key="chapters"
+        id="chapters"
+        className="absolute inset-0 flex flex-col overflow-hidden sm:flex-row"
+        initial={{ opacity: 0, filter: 'brightness(0)' }}
+        animate={{ opacity: 1, filter: 'brightness(1)' }}
+        exit={{ opacity: 0, filter: 'brightness(0)' }}
+        transition={{ duration: 0.62, ease: [0.76, 0, 0.24, 1] }}
+      >
+        {chapters.map((chapter, index) => {
+          const chapterText = text.chapters[chapter.key];
+          return (
+            <motion.button
+              key={chapter.key}
+              type="button"
+              onClick={() => {
+                if (chapter.key === 'people') {
+                  const viewTransitionDocument = document as Document & {
+                    startViewTransition?: (callback: () => void) => unknown;
+                  };
+                  if (viewTransitionDocument.startViewTransition) {
+                    viewTransitionDocument.startViewTransition(() => navigate(chapter.route));
+                  } else {
+                    navigate(chapter.route);
+                  }
+                  return;
+                }
+                navigate(chapter.route);
+              }}
+              onMouseEnter={() => {
+                if (hoverEnabled) setHoveredChapter(chapter.key);
+              }}
+              onMouseMove={() => prepareInitialHover(chapter.key)}
+              onMouseLeave={() => {
+                if (hoverDelayRef.current) clearTimeout(hoverDelayRef.current);
+                if (hoverEnabled) setHoveredChapter(null);
+              }}
+              onFocus={() => setHoveredChapter(chapter.key)}
+              onBlur={() => setHoveredChapter(null)}
+              className="chapter-panel group relative flex min-h-0 min-w-0 basis-0 items-center justify-center overflow-hidden px-6 py-6 text-center text-white focus-visible:z-10 focus-visible:outline focus-visible:outline-4 focus-visible:outline-inset focus-visible:outline-white"
+              style={{ backgroundColor: chapter.color }}
+              initial={{ y: '100%' }}
+              animate={{
+                y: 0,
+                flexGrow: hoveredChapter === null ? 1 : hoveredChapter === chapter.key ? 3.2 : 0.48,
+              }}
+              transition={{
+                y: { delay: index * .11, duration: .72, ease: [0.22, 1, 0.36, 1] },
+                flexGrow: { duration: .62, ease: [0.22, 1, 0.36, 1] },
               }}
             >
-              {pageCopy.sectionLabels.stations[language]}
-            </h2>
-            <div
-              className={`absolute inset-0 z-10 flex flex-col justify-center bg-black/35 px-6 py-8 text-white backdrop-blur-[2px] transition-all duration-300 ${
-                hoveredSection === 'stations' ? 'opacity-100' : 'pointer-events-none opacity-0'
-              }`}
-            >
-              <div className="text-xs uppercase tracking-[0.3em] text-white/70">{sectionOverviews.stations.eyebrow[language]}</div>
-              <div className="mt-4 text-2xl font-bold leading-tight md:text-3xl">{sectionOverviews.stations.title[language]}</div>
-              <p className="mt-4 text-sm leading-6 text-white/85 md:text-base">{sectionOverviews.stations.description[language]}</p>
-              <div className="mt-6 space-y-3">
-                {sectionOverviews.stations.bullets[language].map((bullet) => (
-                  <div key={bullet} className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium md:text-base">
-                    {bullet}
-                  </div>
-                ))}
+              <div className="pointer-events-none absolute inset-0 z-10 flex h-full w-full items-center justify-center px-6">
+                <h2 className={`inline-flex max-w-full origin-center items-center justify-center text-balance text-center text-[clamp(1.6rem,4.2vw,5rem)] font-black uppercase leading-none tracking-[-0.045em] transition-all duration-500 ${chapter.key === 'people' ? 'metro-people-shared-title' : ''} ${
+                  hoveredChapter !== null && hoveredChapter !== chapter.key
+                    ? 'sm:-rotate-90 sm:scale-[.72] sm:whitespace-nowrap'
+                    : 'group-hover:scale-105'
+                }`}>
+                  {chapterText.label}
+                </h2>
               </div>
-            </div>
-          </div>
-          <div
-            className="flex-1 flex flex-col items-center justify-center cursor-pointer transition relative"
-            style={{ backgroundColor: '#2A383E' }}
-            onClick={() => navigate('/people')}
-            onMouseEnter={() => setHoveredSection('people')}
-            onMouseLeave={() => setHoveredSection(null)}
-          >
-            <h2
-              className={`text-5xl font-bold text-white uppercase transition-all duration-300 ${
-                hoveredSection === 'people' ? 'opacity-0' : 'opacity-100'
-              }`}
-              style={{
-                writingMode: 'vertical-rl',
-                textOrientation: 'mixed',
-                position: 'absolute',
-                left: 16,
-                top: 24,
-                margin: 0,
-                letterSpacing: '0.08em',
-              }}
-            >
-              {pageCopy.sectionLabels.people[language]}
-            </h2>
-            <div
-              className={`absolute inset-0 z-10 flex flex-col justify-center bg-black/35 px-6 py-8 text-white backdrop-blur-[2px] transition-all duration-300 ${
-                hoveredSection === 'people' ? 'opacity-100' : 'pointer-events-none opacity-0'
-              }`}
-            >
-              <div className="text-xs uppercase tracking-[0.3em] text-white/70">{sectionOverviews.people.eyebrow[language]}</div>
-              <div className="mt-4 text-2xl font-bold leading-tight md:text-3xl">{sectionOverviews.people.title[language]}</div>
-              <p className="mt-4 text-sm leading-6 text-white/85 md:text-base">{sectionOverviews.people.description[language]}</p>
-              <div className="mt-6 space-y-3">
-                {sectionOverviews.people.bullets[language].map((bullet) => (
-                  <div key={bullet} className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-medium md:text-base">
-                    {bullet}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div
-            className="flex-1 flex flex-col items-center justify-center cursor-pointer transition relative"
-            style={{ backgroundColor: '#3EB181' }}
-            onClick={() => navigate('/thematicmap')}
-            onMouseEnter={() => setHoveredSection('city')}
-            onMouseLeave={() => setHoveredSection(null)}
-          >
-            <h2
-              className={`text-5xl font-bold text-white uppercase transition-all duration-300 ${
-                hoveredSection === 'city' ? 'opacity-0' : 'opacity-100'
-              }`}
-              style={{
-                writingMode: 'vertical-rl',
-                textOrientation: 'mixed',
-                position: 'absolute',
-                left: 16,
-                top: 24,
-                margin: 0,
-                letterSpacing: '0.08em',
-              }}
-            >
-              {pageCopy.sectionLabels.city[language]}
-            </h2>
-            <div
-              className={`absolute inset-0 z-10 flex flex-col justify-start bg-black/45 px-6 py-8 text-white backdrop-blur-[2px] transition-all duration-300 ${
-                hoveredSection === 'city' ? 'opacity-100' : 'pointer-events-none opacity-0'
-              }`}
-            >
-              <div className="mb-4 border-b border-white/30 pb-3">
-                <div className="text-xs uppercase tracking-[0.3em] text-white/70">{pageCopy.cityHeader[language].eyebrow}</div>
-                <div className="mt-2 text-xl font-bold leading-tight">{pageCopy.cityHeader[language].title}</div>
-              </div>
-
-              <div className="space-y-2 overflow-y-auto pr-2">
-                {metroCityTopics.map((topic, index) => (
-                  <button
-                    key={topic.zh}
-                    type="button"
-                    className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-left transition hover:bg-white/20"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      navigate('/thematicmap');
-                    }}
-                  >
-                    <div className="text-sm font-semibold text-white/80">{index + 1}</div>
-                    <div className="mt-1 text-sm font-semibold leading-snug md:text-base">{topic[language]}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-                {/* No embedded Impact Map, handled by /map route */}
-        </div>
-
-        {/* Footer */}
-        <footer className="w-full bg-black text-white py-8 mt-auto h-48 md:h-64 flex items-center">
-          <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-col items-center justify-between">
-            <div className="text-lg">{pageCopy.footerTitle[language]}</div>
-            <div className="text-sm text-gray-400">{pageCopy.footerCredit[language]}</div>
-          </div>
-        </footer>
-      </div>
-    </>
+            </motion.button>
+          );
+        })}
+      </motion.section>
+      )}
+      </AnimatePresence>
+    </main>
   );
 }

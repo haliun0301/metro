@@ -109,13 +109,29 @@ export interface PeopleCirclesProps {
     occupationOrder?: string[]
     getOccupationCategory?: (person: Person) => string
     pieCenterXPercent?: number
+    pieScale?: number
     centerLayouts?: boolean
+    journeyProgress?: number
+    /** 1 keeps decade groups as columns; 2 gathers each decade into its own region. */
+    yearLayoutVariant?: 1 | 2
 }
 
 const MAX_CIRCLES = 111
 
 function clamp(value: number, min: number, max: number) {
     return Math.max(min, Math.min(max, value))
+}
+
+function seededUnit(seed: number) {
+    const value = Math.sin(seed * 12.9898 + 78.233) * 43758.5453
+    return value - Math.floor(value)
+}
+
+function getEntryNetworkPosition(index: number) {
+    // Stable, irregular coordinates keep the entry nodes scattered between renders.
+    const x = 5 + seededUnit(index + 11) * 90
+    const y = 58 + seededUnit(index * 2.17 + 47) * 34
+    return { x, y }
 }
 
 function getResidenceYears(person: Person): number | null {
@@ -156,7 +172,10 @@ export default function PeopleCircles({
     occupationOrder = [],
     getOccupationCategory,
     pieCenterXPercent = 50,
+    pieScale = 1,
     centerLayouts = false,
+    journeyProgress = 1,
+    yearLayoutVariant = 1,
 }: PeopleCirclesProps) {
     const navigate = useNavigate()
     const parsedFromJson: Person[] | null = useMemo(() => {
@@ -326,7 +345,7 @@ export default function PeopleCircles({
         if (layoutMode === "free") {
             return {
                 circles: visibleCircles,
-                guides: [] as Array<{ key: string; label: string; xPercent: number; yPercent?: number; orientation?: "vertical" | "horizontal" }>,
+                guides: [] as Array<{ key: string; label: string; xPercent: number; yPercent?: number; rightPercent?: number; orientation?: "vertical" | "horizontal" | "region" }>,
                 pie: null as null | {
                     centerXPercent: number
                     centerYPercent: number
@@ -433,7 +452,7 @@ export default function PeopleCircles({
             const total = Math.max(1, pieKeys.reduce((sum, key) => sum + (groups.get(key)?.length ?? 0), 0))
             const centerX = containerSize.width * (pieCenterXPercent / 100)
             const centerY = containerSize.height * 0.47
-            const radius = Math.min(containerSize.width, containerSize.height) * 0.34
+            const radius = Math.min(containerSize.width, containerSize.height) * 0.34 * pieScale
             let startAngle = -Math.PI / 2
             const separators: number[] = []
             const pieLabels: Array<{ key: string; label: string; xPercent: number; yPercent: number }> = []
@@ -506,6 +525,119 @@ export default function PeopleCircles({
             return { circles: positionedCircles, guides, pie: null }
         }
 
+        if (isVerticalBarLayout && yearLayoutVariant === 2) {
+            // Variant 2: collision-aware circle packing. The same edge-to-edge
+            // gap is used in every decade, regardless of group or circle size.
+            const regionKeys = populatedKeys.length > 0 ? populatedKeys : activeKeys
+            const circleGap = 9
+            const packedByKey = new Map(regionKeys.map((key) => {
+                const group = groups.get(key) ?? []
+                const placed: Array<{ circle: typeof group[number]; x: number; y: number; radius: number }> = []
+
+                group.forEach((circle, index) => {
+                    const radius = getCircleSize(effectivePeople[circle.index]) / 2
+                    if (index === 0) {
+                        placed.push({ circle, x: 0, y: 0, radius })
+                        return
+                    }
+
+                    let selected = { x: 0, y: 0 }
+                    for (let attempt = 1; attempt <= 5000; attempt += 1) {
+                        const searchRadius = 4 * Math.sqrt(attempt)
+                        const angle = attempt * 2.399963229728653
+                        const candidate = {
+                            x: Math.cos(angle) * searchRadius,
+                            y: Math.sin(angle) * searchRadius,
+                        }
+                        const hasClearance = placed.every((existing) => (
+                            Math.hypot(candidate.x - existing.x, candidate.y - existing.y)
+                            >= radius + existing.radius + circleGap
+                        ))
+                        if (hasClearance) {
+                            selected = candidate
+                            break
+                        }
+                    }
+                    placed.push({ circle, ...selected, radius })
+                })
+
+                const minX = Math.min(0, ...placed.map((item) => item.x - item.radius))
+                const maxX = Math.max(0, ...placed.map((item) => item.x + item.radius))
+                const minY = Math.min(0, ...placed.map((item) => item.y - item.radius))
+                const maxY = Math.max(0, ...placed.map((item) => item.y + item.radius))
+                const centerX = (minX + maxX) / 2
+                const centerY = (minY + maxY) / 2
+
+                return [key, {
+                    points: placed.map((item) => ({ ...item, x: item.x - centerX, y: item.y - centerY })),
+                    width: Math.max(48, maxX - minX),
+                    height: Math.max(48, maxY - minY),
+                }] as const
+            }))
+
+            const splitIndex = Math.ceil(regionKeys.length / 2)
+            const rowKeys = [regionKeys.slice(0, splitIndex), regionKeys.slice(splitIndex)].filter((row) => row.length > 0)
+            const regionTitleBand = 38
+            const regionRowGap = 18
+            const rowRequirements = rowKeys.map((row) => (
+                Math.max(...row.map((key) => packedByKey.get(key)?.height ?? 48)) + regionTitleBand
+            ))
+            const requiredRegionHeight = rowRequirements.reduce((sum, height) => sum + height, 0)
+                + regionRowGap * Math.max(0, rowKeys.length - 1)
+            const desiredTopInset = clamp(containerSize.height * 0.14, 64, 120)
+            const regionTopInset = Math.min(
+                desiredTopInset,
+                Math.max(12, containerSize.height - requiredRegionHeight - 12),
+            )
+            let rowTop = regionTopInset
+            const regions = rowKeys.flatMap((row, rowIndex) => {
+                if (rowIndex === 1) {
+                    rowTop = Math.max(rowTop, containerSize.height * 0.56)
+                }
+                const rowHeight = rowRequirements[rowIndex]
+                const weights = row.map((key) => (packedByKey.get(key)?.width ?? 48) + 28)
+                const totalWeight = weights.reduce((sum, weight) => sum + weight, 0)
+                let columnLeft = 0
+                const rowRegions = row.map((key, columnIndex) => {
+                    const width = containerSize.width * (weights[columnIndex] / totalWeight)
+                    const packedHeight = packedByKey.get(key)?.height ?? 48
+                    const region = {
+                        key,
+                        label: labels[key]?.[language] ?? (language === "zh" ? key.replace("s", "年代") : key),
+                        xPercent: ((columnLeft + width / 2) / containerSize.width) * 100,
+                        yPercent: ((rowTop + regionTitleBand + packedHeight / 2) / containerSize.height) * 100,
+                        titleYPercent: ((rowTop + 13) / containerSize.height) * 100,
+                        width,
+                        height: rowHeight,
+                        orientation: "region" as const,
+                    }
+                    columnLeft += width
+                    return region
+                })
+                rowTop += rowHeight + regionRowGap
+                return rowRegions
+            })
+            const guides = regions.map((region) => {
+                return {
+                    key: region.key,
+                    label: region.label,
+                    xPercent: region.xPercent,
+                    yPercent: region.titleYPercent,
+                    orientation: "region" as const,
+                }
+            })
+            const positionedCircles = regions.flatMap((region) => {
+                const packed = packedByKey.get(region.key)
+                return (packed?.points ?? []).map((point) => ({
+                    ...point.circle,
+                    xPercent: region.xPercent + (point.x / containerSize.width) * 100,
+                    yPercent: region.yPercent + (point.y / containerSize.height) * 100,
+                }))
+            })
+
+            return { circles: positionedCircles, guides, pie: null }
+        }
+
         const guides = activeKeys.map((key, index) => ({
             key,
             label: labels[key]?.[language] ?? (language === "zh" ? key.replace("s", "年代") : key),
@@ -523,7 +655,7 @@ export default function PeopleCircles({
         })
 
         return { circles: positionedCircles, guides, pie: null }
-    }, [centerLayouts, containerSize, effectivePeople, getOccupationCategory, language, layoutMode, occupationOrder, pieCenterXPercent, visibleCircles])
+    }, [centerLayouts, containerSize, effectivePeople, getCircleSize, getOccupationCategory, language, layoutMode, occupationOrder, pieCenterXPercent, pieScale, visibleCircles, yearLayoutVariant])
 
     useEffect(() => {
         onVisibleCountChange?.(visibleCircles.length)
@@ -732,7 +864,7 @@ export default function PeopleCircles({
                 left: 0,
                 right: 0,
                 bottom: 0,
-                overflow: "hidden",
+                overflow: "visible",
                 backgroundColor,
                 touchAction: "none",
                 ...(style || {}),
@@ -799,29 +931,43 @@ export default function PeopleCircles({
                     aria-hidden="true"
                     style={{
                         position: "absolute",
-                        left: guide.orientation === "horizontal" ? `${guide.xPercent}%` : `${guide.xPercent}%`,
+                        left: `${guide.xPercent}%`,
                         right: guide.orientation === "horizontal" ? `${guide.rightPercent ?? 5}%` : undefined,
-                        top: guide.orientation === "horizontal" ? `${guide.yPercent}%` : "7%",
-                        bottom: guide.orientation === "horizontal" ? undefined : "9%",
+                        top: guide.orientation === "horizontal" || guide.orientation === "region" ? `${guide.yPercent}%` : "7%",
+                        bottom: guide.orientation === "horizontal" || guide.orientation === "region" ? undefined : "9%",
                         width: guide.orientation === "horizontal" ? undefined : 1,
                         height: guide.orientation === "horizontal" ? 1 : undefined,
                         borderLeft: "none",
                         borderTop: "none",
-                        transform: guide.orientation === "horizontal" ? "translateY(-0.5px)" : "translateX(-0.5px)",
+                        transform: guide.orientation === "horizontal"
+                            ? "translateY(-0.5px)"
+                            : guide.orientation === "region"
+                                ? "translate(-50%, -50%)"
+                                : "translateX(-0.5px)",
                         pointerEvents: "none",
+                        opacity: journeyProgress,
+                        zIndex: guide.orientation === "region" ? 20 : undefined,
                     }}
                 >
                     <span
                         style={{
                             position: "absolute",
                             left: guide.orientation === "horizontal" ? -10 : "50%",
-                            top: guide.orientation === "horizontal" ? "50%" : undefined,
-                            bottom: guide.orientation === "horizontal" ? undefined : -24,
+                            top: guide.orientation === "horizontal" ? "50%" : guide.orientation === "region" ? 0 : undefined,
+                            bottom: guide.orientation === "horizontal" || guide.orientation === "region" ? undefined : -24,
                             width: guide.orientation === "horizontal" ? 105 : undefined,
-                            transform: guide.orientation === "horizontal" ? "translate(-100%, -50%)" : "translateX(-50%)",
-                            color: "rgba(35, 35, 35, 0.68)",
-                            fontSize: 11,
-                            fontWeight: 600,
+                            transform: guide.orientation === "horizontal"
+                                ? "translate(-100%, -50%)"
+                                : guide.orientation === "region"
+                                    ? "translate(-50%, -50%)"
+                                    : "translateX(-50%)",
+                            padding: guide.orientation === "region" ? "5px 10px" : undefined,
+                            borderRadius: guide.orientation === "region" ? 999 : undefined,
+                            background: guide.orientation === "region" ? "rgba(255,255,255,0.96)" : undefined,
+                            color: guide.orientation === "region" ? "rgba(35, 35, 35, 0.88)" : "rgba(35, 35, 35, 0.68)",
+                            fontSize: guide.orientation === "region" ? 12 : 11,
+                            fontWeight: guide.orientation === "region" ? 700 : 600,
+                            letterSpacing: guide.orientation === "region" ? "0.04em" : undefined,
                             whiteSpace: "nowrap",
                             textAlign: guide.orientation === "horizontal" ? "right" : "center",
                         }}
@@ -840,7 +986,13 @@ export default function PeopleCircles({
                 const size = getCircleSize(person)
                 const halfSize = size / 2
 
-                const pos = getCirclePosition(circle)
+                const graphPos = getCirclePosition(circle)
+                const progress = clamp(journeyProgress, 0, 1)
+                const entryPosition = getEntryNetworkPosition(circle.index)
+                const pos = {
+                    xPercent: entryPosition.x + (graphPos.xPercent - entryPosition.x) * progress,
+                    yPercent: entryPosition.y + (graphPos.yPercent - entryPosition.y) * progress,
+                }
 
                 const genderOutlineColor = person?.gender === "male"
                     ? "#A1CDFF"
@@ -875,7 +1027,7 @@ export default function PeopleCircles({
                     ? `/people/${person.id}`
                     : null
                 const profileImageSrc = resolveProfileImage(
-                    person?.profileImage?.src || person?.image?.src || person?.imageFile
+                    person?.profileImage?.src || person?.imageFile
                 )
                 const displayName = person
                     ? language === "zh"
@@ -900,30 +1052,33 @@ export default function PeopleCircles({
                 const briefIntro = [occupationLabel, originLabel, birthLabel].filter(Boolean).join(" · ")
                 const hoverCard = person ? (
                     <motion.div
-                        initial={{ opacity: 0, y: 6, scale: 0.94 }}
+                        initial={{ opacity: 0, y: 10, scale: 0.97 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ duration: 0.16, ease: "easeOut" }}
+                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                         style={{
                             position: "absolute",
                             left: "50%",
-                            bottom: "calc(100% + 12px)",
-                            width: 210,
-                            marginLeft: -105,
-                            padding: 12,
-                            borderRadius: 14,
+                            bottom: "calc(100% + 10px)",
+                            width: 176,
+                            marginLeft: -88,
+                            padding: "9px 10px",
+                            borderRadius: 10,
                             border: "1px solid rgba(35,35,35,0.12)",
-                            background: "rgba(255,255,255,0.94)",
+                            background: "#FFFFFF",
                             color: "#232323",
                             textAlign: "left",
-                            boxShadow: "0 14px 34px rgba(15,23,42,0.18)",
-                            backdropFilter: "blur(18px)",
+                            boxShadow: "none",
+                            boxSizing: "border-box",
+                            fontFamily: "var(--font-sans)",
+                            fontSize: "var(--text-small)",
+                            fontWeight: "var(--weight-regular)",
                             pointerEvents: "none",
                         }}
                         aria-hidden="true"
                     >
-                        <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>{displayName}</div>
+                        <div style={{ fontSize: "var(--text-small)", fontWeight: "var(--weight-semibold)", lineHeight: 1.35 }}>{displayName}</div>
                         {briefIntro && (
-                            <div style={{ marginTop: 5, color: "#626C67", fontSize: 11, lineHeight: 1.55 }}>
+                            <div style={{ marginTop: 4, color: "#626C67", fontSize: "var(--text-caption)", lineHeight: 1.45 }}>
                                 {briefIntro}
                             </div>
                         )}
@@ -968,11 +1123,7 @@ export default function PeopleCircles({
                                     alignItems: "center",
                                     justifyContent: "center",
                                     cursor: layoutMode === "free" ? (isDragging ? "grabbing" : "grab") : "pointer",
-                                    filter: isHovered 
-                                        ? "drop-shadow(0 4px 8px rgba(0,0,0,0.2))" 
-                                        : isGreyedOut 
-                                            ? "none"
-                                            : "drop-shadow(0 1px 2px rgba(0,0,0,0.1))",
+                                    filter: "none",
                                     userSelect: "none",
                                     touchAction: "none",
                                 }}
@@ -983,7 +1134,7 @@ export default function PeopleCircles({
                                 }}
                                 transition={
                                     initialAnimationComplete
-                                        ? { type: "spring", stiffness: 400, damping: 30, duration: 0.15 }
+                                        ? { type: "spring", stiffness: 230, damping: 24, mass: 0.75 }
                                         : {
                                             type: "spring",
                                             stiffness: 260,
@@ -1004,19 +1155,17 @@ export default function PeopleCircles({
                                         width: size,
                                         height: size,
                                         borderRadius: "50%",
-                                        backgroundColor: genderColor,
+                                        backgroundColor: profileImageSrc ? genderColor : "#FFFFFF",
                                         backgroundImage: profileImageSrc ? `url(${profileImageSrc})` : "none",
                                         backgroundPosition: "center",
                                         backgroundSize: "cover",
                                         backgroundRepeat: "no-repeat",
-                                        border: "2px solid rgba(255,255,255,0.92)",
+                                        border: "none",
                                         outline: `3px solid ${outlineColor}`,
-                                        outlineOffset: 1,
+                                        outlineOffset: 0,
                                         boxSizing: "border-box",
-                                        boxShadow: isHovered
-                                            ? "0 8px 18px rgba(0,0,0,0.16)"
-                                            : "0 2px 8px rgba(0,0,0,0.10)",
-                                        transition: "all 0.2s ease",
+                                        boxShadow: "none",
+                                        transition: "outline-color 280ms ease, background-color 280ms ease",
                                     }}
                                 />
                                 {isHovered && hoverCard}
@@ -1043,11 +1192,7 @@ export default function PeopleCircles({
                                 alignItems: "center",
                                 justifyContent: "center",
                                 cursor: layoutMode === "free" ? (isDragging ? "grabbing" : "grab") : "pointer",
-                                filter: isHovered 
-                                    ? "drop-shadow(0 4px 8px rgba(0,0,0,0.2))" 
-                                    : isGreyedOut 
-                                        ? "none"
-                                        : "drop-shadow(0 1px 2px rgba(0,0,0,0.1))",
+                                filter: "none",
                                 zIndex: isDragging ? 100 : isHovered ? 50 : 1,
                                 userSelect: "none",
                                 touchAction: "none",
@@ -1060,7 +1205,7 @@ export default function PeopleCircles({
                             }}
                             transition={
                                 initialAnimationComplete
-                                    ? { type: "spring", stiffness: 400, damping: 30, duration: 0.15 }
+                                    ? { type: "spring", stiffness: 230, damping: 24, mass: 0.75 }
                                     : {
                                         type: "spring",
                                         stiffness: 260,
@@ -1081,19 +1226,17 @@ export default function PeopleCircles({
                                     width: size,
                                     height: size,
                                     borderRadius: "50%",
-                                    backgroundColor: genderColor,
+                                    backgroundColor: profileImageSrc ? genderColor : "#FFFFFF",
                                     backgroundImage: profileImageSrc ? `url(${profileImageSrc})` : "none",
                                     backgroundPosition: "center",
                                     backgroundSize: "cover",
                                     backgroundRepeat: "no-repeat",
-                                    border: "2px solid rgba(255,255,255,0.92)",
+                                    border: "none",
                                     outline: `3px solid ${outlineColor}`,
-                                    outlineOffset: 1,
+                                    outlineOffset: 0,
                                     boxSizing: "border-box",
-                                    boxShadow: isHovered
-                                        ? "0 8px 18px rgba(0,0,0,0.16)"
-                                        : "0 2px 8px rgba(0,0,0,0.10)",
-                                    transition: "all 0.2s ease",
+                                    boxShadow: "none",
+                                    transition: "outline-color 280ms ease, background-color 280ms ease",
                                 }}
                             />
                             {isHovered && hoverCard}

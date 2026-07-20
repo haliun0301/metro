@@ -2486,36 +2486,6 @@ function GisMap(props: GisMapProps) {
                 </div>
             </div>
 
-            {/* ========== COMPONENT: METRO SYSTEM Title ========== */}
-            <div
-    style={{
-        position: "absolute",
-        bottom: 150,
-        left: 50,
-        fontSize: 96,
-        fontWeight: 900,
-        fontFamily: "var(--font-sans)",
-        color: selectedArea ? "#FFFFFF" : "#2A383E",
-        letterSpacing: "0.05em",
-        pointerEvents: "none",
-        zIndex: 3200,
-        lineHeight: language === "zh" ? "1em" : "0.85em",
-        textRendering: "optimizeLegibility",
-        backdropFilter: "blur(0.5px)", // Optional: adds subtle blur effect
-        WebkitBackdropFilter: "blur(0.5px)", // For Safari
-        textShadow: selectedArea ? "0 6px 20px rgba(0,0,0,0.45)" : "0 1px 6px rgba(0,0,0,0.06)",
-    }}
->
-    {language === "zh" ? (
-        <div>地铁系统</div>
-    ) : (
-        <>
-            <div>Shenzhen</div>
-            <div>Subway</div>
-        </>
-    )}
-</div>
-
             {/* ========== COMPONENT: Legend Window ========== */}
             {showLegend && showMetroStations && uniqueLines.length > 0 && showLegendWindow && (
                 <div className="absolute bg-white rounded-xl p-5 shadow-xl min-w-[200px] max-w-sm" style={{ top: 150, right: 50, zIndex: 3300 }}>

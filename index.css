@@ -37,6 +37,117 @@ body {
   overflow: hidden;
 }
 
+.landing-scroll {
+  overscroll-behavior-y: contain;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.landing-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.landing-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
+  background-size: 8.333vw 8.333vw;
+}
+
+.metro-people-shared-title {
+  view-transition-name: metro-people-title;
+}
+
+.metro-people-sidebar,
+.metro-people-sidebar * {
+  box-shadow: none !important;
+}
+
+::view-transition-group(metro-people-title) {
+  animation-duration: 780ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(metro-people-title),
+::view-transition-new(metro-people-title) {
+  height: 100%;
+  mix-blend-mode: normal;
+}
+
+.scroll-pill {
+  position: relative;
+  display: inline-flex;
+  width: 22px;
+  height: 38px;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 999px;
+}
+
+.scroll-pill span {
+  position: absolute;
+  top: 8px;
+  width: 3px;
+  height: 7px;
+  border-radius: 999px;
+  background: white;
+  animation: landing-scroll-cue 1.8s ease-in-out infinite;
+}
+
+@keyframes landing-scroll-cue {
+  0% { opacity: 0; transform: translateY(-2px); }
+  30% { opacity: 1; }
+  80%, 100% { opacity: 0; transform: translateY(12px); }
+}
+
+.atlas-menu {
+  background: transparent;
+  animation: atlas-menu-fade 320ms ease-out both;
+}
+
+.atlas-menu-panel {
+  background: rgba(7, 27, 35, 0.92);
+  animation: atlas-menu-panel-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.atlas-menu-content {
+  animation: atlas-menu-content-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.atlas-menu-content::-webkit-scrollbar,
+.atlas-menu-panel::-webkit-scrollbar {
+  width: 5px;
+}
+
+.atlas-menu-content::-webkit-scrollbar-thumb,
+.atlas-menu-panel::-webkit-scrollbar-thumb {
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--menu-accent) 55%, transparent);
+}
+
+@keyframes atlas-menu-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes atlas-menu-panel-in {
+  from { opacity: 0; transform: scale(1.018); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes atlas-menu-content-in {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-scroll { scroll-behavior: auto; }
+  .scroll-pill span { animation: none; }
+  .atlas-menu,
+  .atlas-menu-panel,
+  .atlas-menu-content { animation: none; }
+}
+
 button,
 input,
 select,

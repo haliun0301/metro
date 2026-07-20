@@ -3,8 +3,9 @@
   - Page wrapper that renders the `GisMap` component with default data.
   - Uses `useAppLanguage` to let the user switch language and passes `STATIONS`/`METRO_ROUTES` into the map.
 */
-import React from 'react';
+import React, { useState } from 'react';
 import GisMap from './GisMap';
+import EntryCurtain from '../EntryCurtain';
 import { useAppLanguage } from '../../hooks/useAppLanguage';
 import { METRO_ROUTES } from '../../data/metro-stations/metroRoutes';
 import { STATIONS } from '../../data/metro-stations/stations';
@@ -27,9 +28,28 @@ const pageCopy = {
 export default function MetroMapPage() {
   // Hook controlling app-level language. Passed down to `GisMap`.
   const { language } = useAppLanguage('en');
+  const showEntry = new URLSearchParams(window.location.search).get('enter') !== '1';
+  const [entryProgress, setEntryProgress] = useState(showEntry ? 0 : 1);
 
   return (
-    <div className="relative w-full min-h-screen bg-gray-50 flex flex-col">
+    <div
+      className="relative h-screen w-full overflow-hidden bg-gray-50"
+      onWheel={(event) => {
+        if (!showEntry) return;
+        if ((entryProgress <= 0 && event.deltaY < 0) || (entryProgress >= 1 && event.deltaY > 0)) return;
+        event.preventDefault();
+        setEntryProgress((progress) => Math.max(0, Math.min(1, progress + event.deltaY / 900)));
+      }}
+    >
+      {showEntry ? (
+        <EntryCurtain
+          language={language}
+          title={{ en: 'Metro Stations', zh: '地铁站点' }}
+          progress={entryProgress}
+          variant="stations"
+        />
+      ) : null}
+      <div className="relative flex h-full w-full flex-col overflow-y-auto bg-gray-50">
       <div className="w-full max-w-7xl mx-auto py-12 px-4">
         <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">{pageCopy.title[language]}</h2>
         <div className="w-full h-[70vh] rounded-2xl overflow-hidden shadow-xl relative">
@@ -63,6 +83,7 @@ export default function MetroMapPage() {
           <div className="text-sm text-gray-400">{pageCopy.footerCredit[language]}</div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }

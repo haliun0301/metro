@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import LanguageToggle from './LanguageToggle';
@@ -211,7 +211,6 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
   const [activeStationArea, setActiveStationArea] = useState('');
   const [activeStationLine, setActiveStationLine] = useState('');
   const [hoveredStationCircleArea, setHoveredStationCircleArea] = useState('');
-  const [areStationCircleFillsTransparent, setAreStationCircleFillsTransparent] = useState(false);
   const [activePeopleSection, setActivePeopleSection] = useState<PeopleMenuKey>('introduction');
   const stationMapLayerRef = useRef<HTMLDivElement>(null);
   const [stationMapLayerSize, setStationMapLayerSize] = useState<{ width: number; height: number }>({
@@ -246,14 +245,20 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
     }
   }, [menuOpen]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (!menuOpen || activeMenuItem !== 'stations') return;
+
     const mapLayer = stationMapLayerRef.current;
     if (!mapLayer) return;
 
     const updateSize = () => {
+      const width = mapLayer.clientWidth;
+      const height = mapLayer.clientHeight;
+      if (width <= 0 || height <= 0) return;
+
       setStationMapLayerSize({
-        width: mapLayer.clientWidth,
-        height: mapLayer.clientHeight,
+        width,
+        height,
       });
     };
 
@@ -262,7 +267,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
     resizeObserver.observe(mapLayer);
 
     return () => resizeObserver.disconnect();
-  }, [menuOpen]);
+  }, [menuOpen, activeMenuItem]);
 
   const stationAreaGroups = useMemo(() => {
     return METRO_AREAS.map((area) => {
@@ -375,6 +380,11 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
   ), [language]);
 
   const activeMenuContent = menuItems.find((item) => item.key === activeMenuItem) ?? menuItems[0];
+  const activeMenuAccent = activeMenuItem === 'stations'
+    ? '#ef9953'
+    : activeMenuItem === 'people'
+      ? '#9bb2b5'
+      : '#65dfac';
   const activeStationGroup = stationAreaGroups.find((group) => group.area === activeStationArea) ?? stationAreaGroups[0];
   const activeLineGroup = stationLineGroups.find((group) => group.line === activeStationLine) ?? stationLineGroups[0];
   const stationCircleGroups = useMemo(() => {
@@ -568,10 +578,11 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
 
       {menuOpen && (
         <div
-          className="fixed inset-0 z-[3500] flex justify-start bg-black/35 text-white backdrop-blur-md"
+          className="atlas-menu fixed inset-0 z-[3500] flex justify-start text-white"
           role="dialog"
           aria-modal="true"
           aria-label={copy.menu.title[language]}
+          style={{ '--menu-accent': activeMenuAccent } as CSSProperties}
         >
           <button
             type="button"
@@ -579,40 +590,53 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
             aria-label={copy.menu.close[language]}
             onClick={() => setMenuOpen(false)}
           />
-          <div className="relative flex h-full w-full flex-col overflow-y-auto bg-[#2A383E]/50 px-6 py-20 shadow-2xl md:px-8">
+          <div className="atlas-menu-panel relative flex h-full w-full flex-col overflow-x-hidden overflow-y-auto px-6 pb-8 pt-24 md:px-12 md:pb-10 lg:px-20">
             <button
               type="button"
-              className="absolute right-8 top-8 text-4xl font-light leading-none text-white/80 transition hover:text-white focus:outline-none focus:ring-2 focus:ring-white/80"
+              className="absolute right-6 top-6 z-20 flex h-12 w-12 items-center justify-center rounded-full border border-white/40 text-3xl font-light leading-none text-white/80 transition hover:rotate-90 hover:border-white hover:bg-white hover:text-[#071b23] focus:outline-none focus:ring-2 focus:ring-white/80 md:right-10 md:top-8"
               aria-label={copy.menu.close[language]}
               onClick={() => setMenuOpen(false)}
             >
               ×
             </button>
+            <header className="relative z-10 mb-7 flex items-end justify-between pb-4">
+              <div>
+                <div className="text-xl font-black uppercase tracking-[-0.03em] md:text-2xl">
+                  {language === 'zh' ? '深圳快速轨道交通' : 'Rapid Transit in Shenzhen'}
+                </div>
+              </div>
+            </header>
             <nav
-              className="grid min-h-0 w-full flex-1 content-start gap-8 md:grid-cols-[9.5rem_minmax(0,1fr)]"
+              className="relative z-10 grid min-h-0 w-full flex-1 content-start gap-8 md:grid-cols-[15rem_minmax(0,1fr)] lg:gap-14"
               aria-label={copy.menu.title[language]}
             >
-              <div className="flex h-full flex-col items-start gap-8 pt-2">
+              <div className="flex h-full flex-col items-stretch pt-1 md:pr-8">
                 {menuItems.map((item) => (
                   <button
                     key={item.key}
                     type="button"
-                    className={`origin-left text-left text-xl font-semibold uppercase leading-tight tracking-wide transition duration-200 ease-out focus:outline-none md:text-2xl ${
+                    className={`group flex items-baseline py-6 text-left uppercase leading-[0.9] transition duration-300 ease-out focus:outline-none ${
                       activeMenuItem === item.key
-                        ? 'scale-105 text-[#3EB181]'
-                        : 'text-white/78 hover:scale-105 hover:text-[#3EB181] focus:scale-105 focus:text-[#3EB181]'
+                        ? 'text-[var(--menu-accent)]'
+                        : 'text-white/48 hover:text-white focus:text-white'
                     }`}
                     onMouseEnter={() => selectMenuItem(item.key)}
                     onFocus={() => selectMenuItem(item.key)}
                     onClick={() => goToMenuRoute(item.route)}
                   >
-                    {item.label}
+                    <span className={`font-black tracking-[-0.045em] transition-transform duration-300 ${activeMenuItem === item.key ? 'translate-x-2 text-2xl md:text-3xl' : 'text-xl md:text-2xl'}`}>
+                      {item.label}
+                    </span>
                   </button>
                 ))}
+                <div className="mt-auto hidden pt-5 text-[10px] font-semibold uppercase leading-5 tracking-[0.18em] text-white/35 md:block">
+                  {language === 'zh' ? '选择章节 · 浏览研究内容' : 'Select a chapter · Browse the study'}
+                </div>
               </div>
 
               <div
-                className="h-full min-h-0 overflow-hidden text-left"
+                key={activeMenuItem}
+                className="atlas-menu-content h-full min-h-0 overflow-hidden text-left"
                 aria-live="polite"
               >
                 {activeMenuItem === 'stations' ? (
@@ -623,22 +647,6 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                           <div className="text-xs font-black uppercase tracking-[0.24em] text-[#3EB181]">
                             {language === 'zh' ? '地铁站点片区' : 'Metro Station Areas'}
                           </div>
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={areStationCircleFillsTransparent}
-                            className="flex items-center gap-2 text-xs font-bold text-white/64 transition hover:text-white focus:outline-none focus:ring-2 focus:ring-[#3EB181]/70"
-                            onClick={() => setAreStationCircleFillsTransparent((currentValue) => !currentValue)}
-                          >
-                            <span>{language === 'zh' ? '透明填充' : 'Transparent fills'}</span>
-                            <span className={`relative h-5 w-9 rounded-full transition ${
-                              areStationCircleFillsTransparent ? 'bg-[#3EB181]' : 'bg-white/20'
-                            }`}>
-                              <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${
-                                areStationCircleFillsTransparent ? 'left-4.5' : 'left-0.5'
-                              }`} />
-                            </span>
-                          </button>
                         </div>
                         <div className="mt-2 w-full max-w-none text-sm font-semibold leading-6 text-white/58">
                           {language === 'zh'
@@ -710,10 +718,8 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                                       : 'shadow-[0_14px_38px_rgba(36,49,54,0.12)] hover:scale-105 focus:scale-105'
                                   }`}
                                   style={{
-                                    backgroundColor: areStationCircleFillsTransparent
-                                      ? `${group.color}${isDimmed ? '4D' : '80'}`
-                                      : isDimmed ? 'rgba(100,112,112,0.72)' : group.color,
-                                    filter: areStationCircleFillsTransparent ? 'none' : isDimmed ? 'grayscale(0.72) saturate(0.55)' : 'none',
+                                    backgroundColor: isDimmed ? 'rgba(100,112,112,0.72)' : group.color,
+                                    filter: isDimmed ? 'grayscale(0.72) saturate(0.55)' : 'none',
                                   }}
                                   onMouseEnter={() => {
                                     setHoveredStationCircleArea(group.area);

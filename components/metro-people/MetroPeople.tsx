@@ -9,6 +9,11 @@ import OccupationDiagram from "./OccupationDiagram"
 import OccupationCloud from "./OccupationCloud"
 import { useAppLanguage } from "../../hooks/useAppLanguage"
 
+// Left-panel year layout:
+// 1 = columns that mirror the bar chart
+// 2 = one compact circle region per decade
+const LEFT_PANEL_YEAR_LAYOUT_VARIANT: 1 | 2 = 2
+
 type OccupationCategoryName =
     | "Business & Enterprise"
     | "Non-Working / Other Status"
@@ -52,7 +57,7 @@ const occupationLayoutKeys: Record<OccupationCategoryName, string> = {
 
 const uiCopy = {
     title: {
-        en: "Metro People",
+        en: "Metro&People",
         zh: "地铁与人",
     },
     filters: {
@@ -106,10 +111,6 @@ const uiCopy = {
     arrivalYear: { en: "Year of Arrival", zh: "来深年份" },
     occupationDistribution: { en: "Occupation Distribution", zh: "职业分布" },
     occupationCloud: { en: "Occupation Word Cloud", zh: "职业词云" },
-    visualizationExplanation: {
-        en: "Each circle represents one participant. Select a decade to explore its demographic profile.",
-        zh: "每个圆圈代表一位参与者。选择一个年代以查看其人口特征。",
-    },
     landingDescription: {
         en: "Explore the people behind Shenzhen's metro—where they come from, when they arrived, and how occupation and generation shape urban life.",
         zh: "探索深圳地铁背后的人群——他们来自哪里、何时来到深圳，以及职业和世代如何塑造城市生活。",
@@ -263,10 +264,26 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
     const [visiblePeopleCount, setVisiblePeopleCount] = useState<number>(0)
     const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false)
     const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true)
-    const [showLanding, setShowLanding] = useState<boolean>(true)
-    const [isLandingOpening, setIsLandingOpening] = useState<boolean>(false)
+    const [showLanding] = useState<boolean>(() => new URLSearchParams(window.location.search).get("enter") !== "1")
+    const [landingSlideProgress, setLandingSlideProgress] = useState(() => showLanding ? 0 : 1)
+    const [isMainContentReady, setIsMainContentReady] = useState(!showLanding)
     const [circleLayoutMode, setCircleLayoutMode] = useState<"free" | "birthDecade" | "arrivalDecade" | "gender" | "origin" | "occupation">("birthDecade")
+
+    useEffect(() => {
+        if (!showLanding) {
+            setIsMainContentReady(true)
+            return
+        }
+        if (landingSlideProgress < 0.999) {
+            setIsMainContentReady(false)
+            return
+        }
+
+        const settleTimer = window.setTimeout(() => setIsMainContentReady(true), 480)
+        return () => window.clearTimeout(settleTimer)
+    }, [landingSlideProgress, showLanding])
     const [selectedGraphId, setSelectedGraphId] = useState<"gender" | "origin" | "birthDecade" | "arrivalDecade" | "occupationDistribution" | "occupationCloud">("birthDecade")
+    const [hoveredGraphId, setHoveredGraphId] = useState<"gender" | "origin" | "birthDecade" | "arrivalDecade" | "occupationDistribution" | "occupationCloud" | null>(null)
     const [viewportSize, setViewportSize] = useState(() => ({
         width: typeof window === "undefined" ? 1440 : window.innerWidth,
         height: typeof window === "undefined" ? 900 : window.innerHeight,
@@ -281,12 +298,6 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
         window.addEventListener("resize", updateViewportSize)
         return () => window.removeEventListener("resize", updateViewportSize)
     }, [])
-
-    useEffect(() => {
-        if (!isLandingOpening) return
-        const timer = window.setTimeout(() => setShowLanding(false), 720)
-        return () => window.clearTimeout(timer)
-    }, [isLandingOpening])
 
     const demographicChartSize = Math.max(82, Math.min(
         220,
@@ -512,11 +523,12 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
         faded: "#6B7280",
     }
     const graphGlassStyle: CSSProperties = {
-        border: "none",
+        border: "1px solid rgba(35, 35, 35, 0.16)",
         background: "rgba(255, 255, 255, 0.58)",
         backdropFilter: "blur(18px) saturate(120%)",
         WebkitBackdropFilter: "blur(18px) saturate(120%)",
-        boxShadow: "0 12px 32px rgba(34, 52, 46, 0.09)",
+        boxShadow: "none",
+        boxSizing: "border-box",
     }
 
     const graphOptions = [
@@ -528,24 +540,34 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
         { id: "occupationCloud" as const, label: uiCopy.occupationCloud[language], mode: "occupation" as const, tab: "occupation" as const },
     ]
     const selectedGraphTitle = graphOptions.find((option) => option.id === selectedGraphId)?.label
+    const graphColorState = (graphId: typeof selectedGraphId): CSSProperties => {
+        const isColorActive = selectedGraphId === graphId || hoveredGraphId === graphId
+        return {
+            filter: isColorActive ? "grayscale(0) saturate(1)" : "grayscale(1) saturate(0)",
+            opacity: isColorActive ? 1 : 0.48,
+            borderColor: isColorActive ? "rgba(35, 35, 35, 0.34)" : "rgba(35, 35, 35, 0.16)",
+            transition: "filter 220ms ease, opacity 220ms ease",
+        }
+    }
 
-    if (showLanding) {
-        return (
-            <button
-                type="button"
-                onClick={() => setIsLandingOpening(true)}
+    const landingOverlay = showLanding ? (
+            <div
                 aria-label={uiCopy.landingAction[language]}
                 style={{
-                    position: "relative",
+                    position: "absolute",
+                    inset: 0,
+                    zIndex: 50,
                     display: "block",
                     width: "100%",
                     height: "100vh",
                     padding: 0,
                     overflow: "hidden",
                     border: "none",
-                    background: "#fff",
+                    background: "transparent",
                     color: "#232323",
-                    cursor: isLandingOpening ? "default" : "pointer",
+                    cursor: "ns-resize",
+                    transform: `translateX(-${landingSlideProgress * 100}%)`,
+                    willChange: "transform",
                     ...style,
                 }}
             >
@@ -557,27 +579,10 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                             position: "absolute",
                             inset: side === "left" ? "0 50% 0 0" : "0 0 0 50%",
                             overflow: "hidden",
-                            transform: isLandingOpening
-                                ? `translateX(${side === "left" ? "-100%" : "100%"})`
-                                : "translateX(0)",
-                            transition: "transform 720ms cubic-bezier(0.76, 0, 0.24, 1)",
-                            willChange: "transform",
+                            background: "#fff",
+                            transform: "translateX(0)",
                         }}
                     >
-                        <img
-                            src="/assets/metro-people-skyline.png"
-                            alt=""
-                            style={{
-                                position: "absolute",
-                                top: 0,
-                                bottom: 0,
-                                left: side === "left" ? 0 : "-100%",
-                                width: "200%",
-                                height: "100%",
-                                objectFit: "cover",
-                                maxWidth: "none",
-                            }}
-                        />
                     </span>
                 ))}
 
@@ -590,33 +595,30 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                         height: "100%",
                         boxSizing: "border-box",
                         flexDirection: "column",
-                        alignItems: "center",
+                        alignItems: "flex-start",
                         justifyContent: "center",
                         padding: "clamp(32px, 7vw, 112px)",
-                        opacity: isLandingOpening ? 0 : 1,
-                        transform: isLandingOpening ? "translateY(-12px)" : "translateY(0)",
-                        transition: "opacity 260ms ease, transform 360ms ease",
+                        opacity: 1,
+                        transform: "translateY(-8vh)",
                     }}
                 >
                     <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: "#3E7C64" }}>
                         Shenzhen Metro
                     </span>
-                    <span style={{ marginTop: 12, fontSize: "clamp(38px, 6vw, 84px)", fontWeight: 700, lineHeight: 0.98, letterSpacing: "-0.045em" }}>
+                    <span className="metro-people-shared-title" style={{ marginTop: 12, fontSize: "clamp(38px, 6vw, 84px)", fontWeight: 700, lineHeight: 0.98, letterSpacing: "-0.045em" }}>
                         {uiCopy.title[language]}
                     </span>
-                    <span style={{ maxWidth: 620, marginTop: 22, fontSize: "clamp(15px, 1.4vw, 19px)", lineHeight: 1.65, color: "#4B5651", textAlign: "center" }}>
-                        {uiCopy.landingDescription[language]}
-                    </span>
-                    <span style={{ marginTop: 30, padding: "12px 20px", borderRadius: 999, background: "rgba(255,255,255,0.76)", boxShadow: "0 10px 30px rgba(34,52,46,0.1)", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                        {uiCopy.landingAction[language]} <span aria-hidden="true">→</span>
-                    </span>
                 </span>
-            </button>
-        )
-    }
+            </div>
+        ) : null
 
     return (
         <div
+            onWheel={(event) => {
+                if (!showLanding) return
+                event.preventDefault()
+                setLandingSlideProgress((progress) => Math.max(0, Math.min(1, progress + event.deltaY / 900)))
+            }}
             style={{
                 display: "flex",
                 flexDirection: "column",
@@ -624,12 +626,138 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                 height: "100vh",
                 maxHeight: "100vh",
                 overflow: "hidden",
+                position: "relative",
                 backgroundColor: colors.bg,
                 ...style,
             }}
         >
+            {landingOverlay}
+            <div
+                style={{
+                    position: "absolute",
+                    zIndex: 55,
+                    left: `${landingSlideProgress * 28}px`,
+                    top: `${landingSlideProgress * 22}px`,
+                    bottom: `${landingSlideProgress * 36}px`,
+                    width: isSidebarOpen
+                        ? `calc(${100 - 38 * landingSlideProgress}% - ${56 * landingSlideProgress}px)`
+                        : `calc(100% - ${224 * landingSlideProgress}px)`,
+                    overflow: "visible",
+                    pointerEvents: landingSlideProgress >= 0.98 ? "auto" : "none",
+                }}
+            >
+                <PeopleCircles
+                    people={people}
+                    jsonData={jsonData}
+                    selectedGender={selectedGender}
+                    selectedShenzhenBorn={selectedShenzhenBorn}
+                    sizeMode={circleSizeMode}
+                    backgroundColor="transparent"
+                    density={density}
+                    layoutMode={circleLayoutMode}
+                    language={language}
+                    occupationOrder={occupationDiagramData.map((item) => occupationLayoutKeys[item.label as OccupationCategoryName])}
+                    getOccupationCategory={(person) => occupationLayoutKeys[normalizeOccupation(person).category]}
+                    pieCenterXPercent={isSidebarOpen ? 62 : 50}
+                    pieScale={isSidebarOpen ? 0.85 : 1}
+                    centerLayouts={!isSidebarOpen}
+                    journeyProgress={showLanding ? landingSlideProgress : 1}
+                    yearLayoutVariant={LEFT_PANEL_YEAR_LAYOUT_VARIANT}
+                    onHoverPerson={handleHoverPerson}
+                    highlightPerson={highlightPersonFromGraph}
+                    onVisibleCountChange={setVisiblePeopleCount}
+                />
+            </div>
+            {showLanding ? (
+                <div
+                    style={{
+                        position: "absolute",
+                        right: "clamp(24px, 5vw, 80px)",
+                        bottom: "clamp(28px, 8vh, 80px)",
+                        zIndex: 70,
+                        padding: "12px 20px",
+                        borderRadius: 999,
+                        background: "rgba(255,255,255,0.9)",
+                        boxShadow: "0 10px 30px rgba(34,52,46,0.14)",
+                        color: "#232323",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        pointerEvents: "none",
+                        opacity: Math.max(0, 1 - landingSlideProgress * 1.7),
+                        transform: `translateX(-${landingSlideProgress * 100}vw)`,
+                        willChange: "transform, opacity",
+                    }}
+                >
+                    {language === "zh" ? "滚动进入可视化" : "Scroll to enter the visualization"} <span aria-hidden="true">→</span>
+                </div>
+            ) : null}
+            {showLanding ? (
+                <div
+                    aria-label={language === "zh" ? "访谈分析流程" : "Interview analysis process"}
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        zIndex: 60,
+                        width: "200%",
+                        height: "100%",
+                        pointerEvents: "none",
+                        transform: `translateX(-${landingSlideProgress * 50}%)`,
+                        opacity: Math.max(0, 1 - landingSlideProgress * 1.7),
+                        willChange: "transform",
+                    }}
+                >
+                    {(
+                        language === "zh"
+                            ? [
+                                { label: "访谈", note: "倾听经历", x: 23, y: 24.5 },
+                                { label: "编码", note: "标记主题", x: 30, y: 16.8 },
+                                { label: "归类", note: "聚合模式", x: 37.2, y: 28.2 },
+                                { label: "比较", note: "跨群体阅读", x: 44.3, y: 19.4 },
+                                { label: "洞察", note: "形成城市叙事", x: 51.5, y: 24.6 },
+                              ]
+                            : [
+                                { label: "Interview", note: "Listen to lived experience", x: 23, y: 24.5 },
+                                { label: "Code", note: "Mark recurring themes", x: 30, y: 16.8 },
+                                { label: "Cluster", note: "Group shared patterns", x: 37.2, y: 28.2 },
+                                { label: "Compare", note: "Read across groups", x: 44.3, y: 19.4 },
+                                { label: "Insight", note: "Build the urban story", x: 51.5, y: 24.6 },
+                              ]
+                    ).map((step) => (
+                        <div
+                            key={step.label}
+                            style={{
+                                position: "absolute",
+                                left: `${step.x}%`,
+                                top: `${step.y}%`,
+                                transform: "translate(-50%, -50%)",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                color: "#263a32",
+                            }}
+                        >
+                            <strong style={{ fontSize: 11, lineHeight: 1, letterSpacing: ".14em", textTransform: "uppercase" }}>{step.label}</strong>
+                            <span style={{ marginTop: 5, maxWidth: 132, fontSize: 10, lineHeight: 1.3, color: "#65736d", textAlign: "center" }}>{step.note}</span>
+                        </div>
+                    ))}
+                </div>
+            ) : null}
             {/* Main content area */}
-            <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0, position: "relative" }}>
+            <div style={{
+                display: "flex",
+                flex: 1,
+                overflow: "hidden",
+                minHeight: 0,
+                position: "relative",
+                width: "100%",
+                opacity: isMainContentReady ? 1 : 0,
+                pointerEvents: isMainContentReady ? "auto" : "none",
+                transform: isMainContentReady ? "translateY(0)" : "translateY(10px)",
+                transition: "opacity 220ms ease, transform 220ms ease",
+                willChange: "opacity, transform",
+            }}>
                 {/* People circles - main area */}
                 <div
                     style={{
@@ -648,7 +776,7 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                         transition: "flex 240ms ease",
                     }}
                 >
-                    {isSidebarOpen && <div style={{ position: "absolute", top: "43%", left: 52, zIndex: 10, width: "min(42%, 390px)", transform: "translateY(-50%)", textAlign: "left", pointerEvents: "none" }}>
+                    <div style={{ position: "absolute", top: "50%", left: 52, zIndex: 10, width: "min(42%, 390px)", transform: "translateY(-50%)", textAlign: "left", pointerEvents: "none" }}>
                         <div
                             aria-live="polite"
                             style={{
@@ -661,30 +789,8 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                         >
                             {selectedGraphTitle}
                         </div>
-                        <p style={{ maxWidth: 390, margin: "6px 0 0", color: colors.faded, fontSize: 13, fontWeight: 500, lineHeight: 1.5 }}>
-                            {uiCopy.visualizationExplanation[language]}
-                        </p>
-                    </div>}
-                    <div style={{ position: "relative", width: isSidebarOpen ? "calc(100% - 48px)" : "100%", maxWidth: isSidebarOpen ? 920 : "none", alignSelf: "center", flex: 1, minHeight: 0, overflow: "hidden" }}>
-                        <PeopleCircles
-                            people={people}
-                            jsonData={jsonData}
-                            selectedGender={selectedGender}
-                            selectedShenzhenBorn={selectedShenzhenBorn}
-                            sizeMode={circleSizeMode}
-                            backgroundColor="transparent"
-                            density={density}
-                            layoutMode={circleLayoutMode}
-                            language={language}
-                            occupationOrder={occupationDiagramData.map((item) => occupationLayoutKeys[item.label as OccupationCategoryName])}
-                            getOccupationCategory={(person) => occupationLayoutKeys[normalizeOccupation(person).category]}
-                            pieCenterXPercent={isSidebarOpen ? 58 : 50}
-                            centerLayouts={!isSidebarOpen}
-                            onHoverPerson={handleHoverPerson}
-                            highlightPerson={highlightPersonFromGraph}
-                            onVisibleCountChange={setVisiblePeopleCount}
-                        />
                     </div>
+                    <div style={{ position: "relative", width: isSidebarOpen ? "calc(100% - 48px)" : "100%", maxWidth: isSidebarOpen ? 920 : "none", alignSelf: "center", flex: 1, minHeight: 0, overflow: "hidden" }} />
                 </div>
 
                 <button
@@ -719,6 +825,7 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                 {/* Sidebar with filters and diagrams */}
                 {isSidebarOpen ? (
                 <div
+                    className="metro-people-sidebar"
                     style={{
                         flex: "0 0 38%",
                         padding: "24px 36px 68px",
@@ -1005,6 +1112,8 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                                 }}
                             >
                                 <div
+                                    onMouseEnter={() => setHoveredGraphId("gender")}
+                                    onMouseLeave={() => setHoveredGraphId(null)}
                                     onClick={() => {
                                         setCircleLayoutMode("gender")
                                         setSelectedGraphId("gender")
@@ -1019,6 +1128,7 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                                         padding: demographicCardPadding,
                                         borderRadius: 12,
                                         ...graphGlassStyle,
+                                        ...graphColorState("gender"),
                                         cursor: "pointer",
                                         transition: "border-color 180ms ease",
                                     }}
@@ -1046,6 +1156,8 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                                 </div>
 
                                 <div
+                                    onMouseEnter={() => setHoveredGraphId("origin")}
+                                    onMouseLeave={() => setHoveredGraphId(null)}
                                     onClick={() => {
                                         setCircleLayoutMode("origin")
                                         setSelectedGraphId("origin")
@@ -1060,6 +1172,7 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                                         padding: demographicCardPadding,
                                         borderRadius: 12,
                                         ...graphGlassStyle,
+                                        ...graphColorState("origin"),
                                         cursor: "pointer",
                                         transition: "border-color 180ms ease",
                                     }}
@@ -1099,6 +1212,8 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                                 }}
                             >
                                 <div
+                                    onMouseEnter={() => setHoveredGraphId("birthDecade")}
+                                    onMouseLeave={() => setHoveredGraphId(null)}
                                     onClick={() => {
                                         setCircleLayoutMode("birthDecade")
                                         setSelectedGraphId("birthDecade")
@@ -1113,6 +1228,7 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                                         padding: demographicCardPadding,
                                         borderRadius: 12,
                                         ...graphGlassStyle,
+                                        ...graphColorState("birthDecade"),
                                         cursor: "pointer",
                                         transition: "border-color 180ms ease",
                                     }}
@@ -1141,6 +1257,8 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                                 </div>
 
                                 <div
+                                    onMouseEnter={() => setHoveredGraphId("arrivalDecade")}
+                                    onMouseLeave={() => setHoveredGraphId(null)}
                                     onClick={() => {
                                         setCircleLayoutMode("arrivalDecade")
                                         setSelectedGraphId("arrivalDecade")
@@ -1155,6 +1273,7 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                                         padding: demographicCardPadding,
                                         borderRadius: 12,
                                         ...graphGlassStyle,
+                                        ...graphColorState("arrivalDecade"),
                                         cursor: "pointer",
                                         transition: "border-color 180ms ease",
                                     }}
@@ -1187,6 +1306,8 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                         /* Occupation Tab Content */
                         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                             <div
+                                onMouseEnter={() => setHoveredGraphId("occupationDistribution")}
+                                onMouseLeave={() => setHoveredGraphId(null)}
                                 onClick={() => {
                                     setCircleLayoutMode("occupation")
                                     setSelectedGraphId("occupationDistribution")
@@ -1199,6 +1320,7 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                                     padding: 20,
                                     borderRadius: 12,
                                     ...graphGlassStyle,
+                                    ...graphColorState("occupationDistribution"),
                                     cursor: "pointer",
                                     transition: "border-color 180ms ease",
                                 }}
@@ -1215,6 +1337,8 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                             </div>
 
                             <div
+                                onMouseEnter={() => setHoveredGraphId("occupationCloud")}
+                                onMouseLeave={() => setHoveredGraphId(null)}
                                 onClick={() => {
                                     setCircleLayoutMode("occupation")
                                     setSelectedGraphId("occupationCloud")
@@ -1227,6 +1351,7 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                                     padding: 20,
                                     borderRadius: 12,
                                     ...graphGlassStyle,
+                                    ...graphColorState("occupationCloud"),
                                     cursor: "pointer",
                                     transition: "border-color 180ms ease",
                                 }}
