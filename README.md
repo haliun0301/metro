@@ -5,7 +5,12 @@
 1. Install dependencies:
    `npm install`
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+3. Generate portrait prompts:
+   `npm run generate:prompts`
+4. Generate portrait images from the prompt list:
+   `npm run generate:portraits`
+5. Run the app:
    `npm run dev`
+
 # metro
 # metro

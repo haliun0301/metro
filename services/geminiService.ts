@@ -10,8 +10,9 @@ let ai: GoogleGenAI | null = null;
 
 // Lazily initialize the Gemini client using the environment API key
 const initializeAI = () => {
-    if (!ai && process.env.API_KEY) {
-        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    if (!ai && apiKey) {
+        ai = new GoogleGenAI({ apiKey });
     }
     return ai;
 };
@@ -34,7 +35,7 @@ export const sendMessageToGemini = async (
     const aiInstance = initializeAI();
     if (!aiInstance) {
         // Return a friendly error string that the UI can display when the API key is missing
-        return "Error: API Key not configured. Please set process.env.API_KEY.";
+        return "Error: API Key not configured. Please set GEMINI_API_KEY in your environment.";
     }
 
     try {

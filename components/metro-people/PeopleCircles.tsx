@@ -37,6 +37,7 @@ const profileImageModules = import.meta.glob('../../assets/person-stories/**/*.{
     import: 'default',
     query: '?url',
 }) as Record<string, string>
+const temporaryProfileImages = Object.values(profileImageModules)
 
 function resolveProfileImage(src?: string) {
     if (!src) return undefined
@@ -112,6 +113,7 @@ export interface PeopleCirclesProps {
     pieScale?: number
     centerLayouts?: boolean
     journeyProgress?: number
+    showLayoutLabels?: boolean
     /** 1 keeps decade groups as columns; 2 gathers each decade into its own region. */
     yearLayoutVariant?: 1 | 2
 }
@@ -127,11 +129,33 @@ function seededUnit(seed: number) {
     return value - Math.floor(value)
 }
 
-function getEntryNetworkPosition(index: number) {
-    // Stable, irregular coordinates keep the entry nodes scattered between renders.
-    const x = 5 + seededUnit(index + 11) * 90
-    const y = 58 + seededUnit(index * 2.17 + 47) * 34
-    return { x, y }
+function getTemporaryProfileImage(index: number) {
+    if (temporaryProfileImages.length === 0) return undefined
+    const imageIndex = Math.floor(seededUnit(index + 313) * temporaryProfileImages.length)
+    return temporaryProfileImages[imageIndex]
+}
+
+function getEntryNetworkPosition(index: number, total: number, width: number, height: number) {
+    // Fit the collage to the lower canvas. Size and jitter share the same
+    // cell budget so neighboring images retain a visible gap on any viewport.
+    const availableWidth = Math.max(1, width * 0.88)
+    const availableHeight = Math.max(1, height * 0.42)
+    const columns = clamp(Math.ceil(Math.sqrt(Math.max(1, total) * availableWidth / availableHeight)), 1, Math.max(1, total))
+    const rows = Math.max(1, Math.ceil(total / columns))
+    const cellWidth = availableWidth / columns
+    const cellHeight = availableHeight / rows
+    const column = index % columns
+    const row = Math.floor(index / columns)
+    const jitterX = (seededUnit(index + 11) - 0.5) * cellWidth * 0.2
+    const jitterY = (seededUnit(index * 2.17 + 47) - 0.5) * cellHeight * 0.2
+    const maxSize = Math.min(112, Math.min(cellWidth, cellHeight) * 0.66)
+    const imageSize = maxSize * (0.78 + seededUnit(index + 97) * 0.22)
+
+    return {
+        x: 6 + ((column + 0.5) * cellWidth + jitterX) / Math.max(1, width) * 100,
+        y: 48 + ((row + 0.5) * cellHeight + jitterY) / Math.max(1, height) * 100,
+        size: imageSize,
+    }
 }
 
 function getResidenceYears(person: Person): number | null {
@@ -175,6 +199,7 @@ export default function PeopleCircles({
     pieScale = 1,
     centerLayouts = false,
     journeyProgress = 1,
+    showLayoutLabels = true,
     yearLayoutVariant = 1,
 }: PeopleCirclesProps) {
     const navigate = useNavigate()
@@ -498,27 +523,27 @@ export default function PeopleCircles({
         }
 
         if (layoutMode === "occupation") {
-            const top = 10
-            const bottom = 90
+            const top = 18
+            const bottom = 82
             const yStep = activeKeys.length > 1 ? (bottom - top) / (activeKeys.length - 1) : 0
-            const defaultRowLeft = 18
-            const rowRight = 93
+            const labelAnchor = centerLayouts ? 42 : 58
+            const circleRowLeft = centerLayouts ? 51 : 64
+            const rowRight = 95
             const maxRowCount = Math.max(1, ...activeKeys.map((key) => groups.get(key)?.length ?? 0))
-            const sharedXStep = Math.min(5.2, (rowRight - defaultRowLeft) / Math.max(1, maxRowCount - 1))
+            const sharedXStep = Math.min(5.2, (rowRight - circleRowLeft) / Math.max(1, maxRowCount - 1))
             const rowWidth = (maxRowCount - 1) * sharedXStep
-            const rowLeft = centerLayouts ? 50 - rowWidth / 2 : defaultRowLeft
             const guides = activeKeys.map((key, index) => ({
                 key,
                 label: labels[key]?.[language] ?? key,
-                xPercent: rowLeft,
-                rightPercent: 100 - (rowLeft + rowWidth),
+                xPercent: labelAnchor,
+                rightPercent: 100 - (circleRowLeft + rowWidth),
                 yPercent: top + index * yStep,
                 orientation: "horizontal" as const,
             }))
             const positionedCircles = guides.flatMap((guide) => (
                 (groups.get(guide.key) ?? []).map((circle, index) => ({
                     ...circle,
-                    xPercent: rowLeft + index * sharedXStep,
+                    xPercent: circleRowLeft + index * sharedXStep,
                     yPercent: guide.yPercent,
                 }))
             ))
@@ -874,7 +899,16 @@ export default function PeopleCircles({
             }}
         >
             {organizedLayout.pie && (
-                <div aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+                <div
+                    aria-hidden="true"
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        pointerEvents: "none",
+                        opacity: showLayoutLabels ? 1 : 0,
+                        transition: "opacity 220ms ease",
+                    }}
+                >
                     <div
                         style={{
                             position: "absolute",
@@ -945,7 +979,8 @@ export default function PeopleCircles({
                                 ? "translate(-50%, -50%)"
                                 : "translateX(-0.5px)",
                         pointerEvents: "none",
-                        opacity: journeyProgress,
+                        opacity: showLayoutLabels ? 1 : 0,
+                        transition: "opacity 220ms ease",
                         zIndex: guide.orientation === "region" ? 20 : undefined,
                     }}
                 >
@@ -983,16 +1018,18 @@ export default function PeopleCircles({
                 const isHovered = hoveredIndex === circle.index && draggingIndex === null
                 const isDragging = draggingIndex === circle.index
                 const isVisited = visitedIndices.has(circle.index)
-                const size = getCircleSize(person)
+                const layoutCircleScale = layoutMode === "occupation" ? (centerLayouts ? 0.96 : 0.82) : 1
+                const size = Math.max(14, Math.round(getCircleSize(person) * layoutCircleScale))
                 const halfSize = size / 2
 
                 const graphPos = getCirclePosition(circle)
                 const progress = clamp(journeyProgress, 0, 1)
-                const entryPosition = getEntryNetworkPosition(circle.index)
+                const entryPosition = getEntryNetworkPosition(circle.index, circleCount, containerSize.width, containerSize.height)
                 const pos = {
                     xPercent: entryPosition.x + (graphPos.xPercent - entryPosition.x) * progress,
                     yPercent: entryPosition.y + (graphPos.yPercent - entryPosition.y) * progress,
                 }
+                const entryBorderRadius = `${Math.round(progress * 50)}%`
 
                 const genderOutlineColor = person?.gender === "male"
                     ? "#A1CDFF"
@@ -1016,9 +1053,13 @@ export default function PeopleCircles({
                 const outlineColor = isGreyedOut
                     ? "#D1D5DB"
                     : isVisited ? lightenColor(genderOutlineColor, 0.3) : genderOutlineColor
+                const entryOutline = progress >= 0.999 ? `3px solid ${outlineColor}` : "none"
 
-                // Determine scale based on state
-                const targetScale = isDragging ? 1.2 : isHovered ? hoverScale : 1
+                // Fit each entry image to its cell, then ease into the graph size.
+                const initialScale = entryPosition.size / size
+                const entryScale = initialScale + (1 - initialScale) * progress
+                const interactionScale = isDragging ? 1.2 : isHovered ? hoverScale : 1
+                const targetScale = entryScale * interactionScale
                 
                 // Determine opacity based on hover state
                 const targetOpacity = isGreyedOut ? 0.4 : 1
@@ -1028,7 +1069,7 @@ export default function PeopleCircles({
                     : null
                 const profileImageSrc = resolveProfileImage(
                     person?.profileImage?.src || person?.imageFile
-                )
+                ) || getTemporaryProfileImage(circle.index)
                 const displayName = person
                     ? language === "zh"
                         ? person.nicknameCn || person.nickname || person.name
@@ -1154,18 +1195,18 @@ export default function PeopleCircles({
                                     style={{
                                         width: size,
                                         height: size,
-                                        borderRadius: "50%",
+                                        borderRadius: entryBorderRadius,
                                         backgroundColor: profileImageSrc ? genderColor : "#FFFFFF",
                                         backgroundImage: profileImageSrc ? `url(${profileImageSrc})` : "none",
                                         backgroundPosition: "center",
                                         backgroundSize: "cover",
                                         backgroundRepeat: "no-repeat",
                                         border: "none",
-                                        outline: `3px solid ${outlineColor}`,
+                                        outline: entryOutline,
                                         outlineOffset: 0,
                                         boxSizing: "border-box",
                                         boxShadow: "none",
-                                        transition: "outline-color 280ms ease, background-color 280ms ease",
+                                        transition: "border-radius 120ms linear, outline-color 280ms ease, background-color 280ms ease",
                                     }}
                                 />
                                 {isHovered && hoverCard}
@@ -1225,18 +1266,18 @@ export default function PeopleCircles({
                                 style={{
                                     width: size,
                                     height: size,
-                                    borderRadius: "50%",
+                                    borderRadius: entryBorderRadius,
                                     backgroundColor: profileImageSrc ? genderColor : "#FFFFFF",
                                     backgroundImage: profileImageSrc ? `url(${profileImageSrc})` : "none",
                                     backgroundPosition: "center",
                                     backgroundSize: "cover",
                                     backgroundRepeat: "no-repeat",
                                     border: "none",
-                                    outline: `3px solid ${outlineColor}`,
+                                    outline: entryOutline,
                                     outlineOffset: 0,
                                     boxSizing: "border-box",
                                     boxShadow: "none",
-                                    transition: "outline-color 280ms ease, background-color 280ms ease",
+                                    transition: "border-radius 120ms linear, outline-color 280ms ease, background-color 280ms ease",
                                 }}
                             />
                             {isHovered && hoverCard}

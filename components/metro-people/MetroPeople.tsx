@@ -588,25 +588,45 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
 
                 <span
                     style={{
-                        position: "relative",
+                        position: "absolute",
+                        left: "2.55vw",
+                        top: "19.1vh",
                         zIndex: 2,
                         display: "flex",
-                        width: "100%",
-                        height: "100%",
-                        boxSizing: "border-box",
                         flexDirection: "column",
                         alignItems: "flex-start",
-                        justifyContent: "center",
-                        padding: "clamp(32px, 7vw, 112px)",
+                        boxSizing: "border-box",
                         opacity: 1,
-                        transform: "translateY(-8vh)",
                     }}
                 >
-                    <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase", color: "#3E7C64" }}>
+                    <span style={{ fontSize: "clamp(11px, 0.72vw, 15px)", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "#3E7C64" }}>
                         Shenzhen Metro
                     </span>
-                    <span className="metro-people-shared-title" style={{ marginTop: 12, fontSize: "clamp(38px, 6vw, 84px)", fontWeight: 700, lineHeight: 0.98, letterSpacing: "-0.045em" }}>
-                        {uiCopy.title[language]}
+                    <span
+                        className="metro-people-shared-title"
+                        style={{
+                            position: "relative",
+                            zIndex: 0,
+                            marginTop: "clamp(24px, 2.4vh, 30px)",
+                            fontSize: "clamp(58px, 5.15vw, 106px)",
+                            fontWeight: 800,
+                            lineHeight: 0.9,
+                            letterSpacing: "-0.055em",
+                        }}
+                    >
+                        <span
+                            aria-hidden="true"
+                            style={{
+                                position: "absolute",
+                                zIndex: -1,
+                                left: "0.4%",
+                                right: "-5%",
+                                bottom: "-1px",
+                                height: "clamp(20px, 2.15vw, 44px)",
+                                background: "#FF9142",
+                            }}
+                        />
+                        <span style={{ position: "relative", zIndex: 1 }}>{uiCopy.title[language]}</span>
                     </span>
                 </span>
             </div>
@@ -662,37 +682,13 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                     pieScale={isSidebarOpen ? 0.85 : 1}
                     centerLayouts={!isSidebarOpen}
                     journeyProgress={showLanding ? landingSlideProgress : 1}
+                    showLayoutLabels={isMainContentReady}
                     yearLayoutVariant={LEFT_PANEL_YEAR_LAYOUT_VARIANT}
                     onHoverPerson={handleHoverPerson}
                     highlightPerson={highlightPersonFromGraph}
                     onVisibleCountChange={setVisiblePeopleCount}
                 />
             </div>
-            {showLanding ? (
-                <div
-                    style={{
-                        position: "absolute",
-                        right: "clamp(24px, 5vw, 80px)",
-                        bottom: "clamp(28px, 8vh, 80px)",
-                        zIndex: 70,
-                        padding: "12px 20px",
-                        borderRadius: 999,
-                        background: "rgba(255,255,255,0.9)",
-                        boxShadow: "0 10px 30px rgba(34,52,46,0.14)",
-                        color: "#232323",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                        pointerEvents: "none",
-                        opacity: Math.max(0, 1 - landingSlideProgress * 1.7),
-                        transform: `translateX(-${landingSlideProgress * 100}vw)`,
-                        willChange: "transform, opacity",
-                    }}
-                >
-                    {language === "zh" ? "滚动进入可视化" : "Scroll to enter the visualization"} <span aria-hidden="true">→</span>
-                </div>
-            ) : null}
             {showLanding ? (
                 <div
                     aria-label={language === "zh" ? "访谈分析流程" : "Interview analysis process"}
@@ -704,25 +700,25 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                         height: "100%",
                         pointerEvents: "none",
                         transform: `translateX(-${landingSlideProgress * 50}%)`,
-                        opacity: Math.max(0, 1 - landingSlideProgress * 1.7),
+                        opacity: Math.max(0, Math.min(1, (1 - landingSlideProgress) / (1 - 0.46))),
                         willChange: "transform",
                     }}
                 >
                     {(
                         language === "zh"
                             ? [
-                                { label: "访谈", note: "倾听经历", x: 23, y: 24.5 },
-                                { label: "编码", note: "标记主题", x: 30, y: 16.8 },
-                                { label: "归类", note: "聚合模式", x: 37.2, y: 28.2 },
-                                { label: "比较", note: "跨群体阅读", x: 44.3, y: 19.4 },
-                                { label: "洞察", note: "形成城市叙事", x: 51.5, y: 24.6 },
+                                { label: "访谈", note: "倾听经历", x: 23, y: 24.5, barWidth: 120 },
+                                { label: "编码", note: "标记主题", x: 30, y: 16.8, barWidth: 120 },
+                                { label: "归类", note: "聚合模式", x: 37.2, y: 28.2, barWidth: 120 },
+                                { label: "比较", note: "跨群体阅读", x: 44.3, y: 19.4, barWidth: 120 },
+                                { label: "洞察", note: "形成城市叙事", x: 51.5, y: 24.6, barWidth: 120 },
                               ]
                             : [
-                                { label: "Interview", note: "Listen to lived experience", x: 23, y: 24.5 },
-                                { label: "Code", note: "Mark recurring themes", x: 30, y: 16.8 },
-                                { label: "Cluster", note: "Group shared patterns", x: 37.2, y: 28.2 },
-                                { label: "Compare", note: "Read across groups", x: 44.3, y: 19.4 },
-                                { label: "Insight", note: "Build the urban story", x: 51.5, y: 24.6 },
+                                { label: "INTERVIEW STAGE", note: "Shenzhen’s long term Resident\nstudents interviewed 58 long-term\nResidents of Shenzhen", x: 23.5, y: 15.8, barWidth: 304 },
+                                { label: "INTERVIEW TRANSCRIPTION", note: "Shenzhen’s long term Resident students\ninterviewed 58 long-term Residents of Shenzhen", x: 33.5, y: 30.6, barWidth: 428 },
+                                { label: "CODING", note: "Shenzhen’s long term Resident\nstudents interviewed 58 long-term\nResidents of Shenzhen", x: 48.2, y: 15.8, barWidth: 210 },
+                                { label: "CLUSTERING", note: "Group shared patterns", x: 58.5, y: 30.6, barWidth: 250 },
+                                { label: "INSIGHT", note: "Build the urban story", x: 71.5, y: 15.8, barWidth: 170 },
                               ]
                     ).map((step) => (
                         <div
@@ -738,8 +734,32 @@ export default function MetroPeople({ people, jsonData, style }: MetroPeopleProp
                                 color: "#263a32",
                             }}
                         >
-                            <strong style={{ fontSize: 11, lineHeight: 1, letterSpacing: ".14em", textTransform: "uppercase" }}>{step.label}</strong>
-                            <span style={{ marginTop: 5, maxWidth: 132, fontSize: 10, lineHeight: 1.3, color: "#65736d", textAlign: "center" }}>{step.note}</span>
+                            <strong
+                                style={{
+                                    position: "relative",
+                                    zIndex: 1,
+                                    fontSize: "clamp(16px, 1.12vw, 23px)",
+                                    lineHeight: 1,
+                                    letterSpacing: ".12em",
+                                    whiteSpace: "nowrap",
+                                }}
+                            >
+                                {step.label}
+                                <span
+                                    aria-hidden="true"
+                                    style={{
+                                        position: "absolute",
+                                        zIndex: -1,
+                                        left: "8%",
+                                        right: "-8%",
+                                        bottom: "-5px",
+                                        height: "18px",
+                                        width: step.barWidth,
+                                        background: "#00B884",
+                                    }}
+                                />
+                            </strong>
+                            <span style={{ marginTop: 12, maxWidth: 420, whiteSpace: "pre-line", fontSize: "clamp(13px, 0.94vw, 19px)", lineHeight: 1.25, color: "#232323", textAlign: "center" }}>{step.note}</span>
                         </div>
                     ))}
                 </div>
