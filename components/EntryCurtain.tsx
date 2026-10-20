@@ -12,13 +12,13 @@ export default function EntryCurtain({ language, title, progress, variant }: Ent
 
   return (
     <section
-      className="absolute inset-0 z-[1000] overflow-hidden text-[#232323]"
+      className="absolute inset-0 z-[1000] overflow-hidden text-[#26383D]"
       style={{ pointerEvents: progress >= 0.999 ? 'none' : 'auto' }}
     >
       {(['left', 'right'] as const).map((side) => (
         <div
           key={side}
-          className="absolute inset-y-0 overflow-hidden bg-white"
+          className="absolute inset-y-0 overflow-hidden bg-[#FFFFFF]"
           style={{
             left: side === 'left' ? 0 : '50%',
             right: side === 'left' ? '50%' : 0,
@@ -26,17 +26,7 @@ export default function EntryCurtain({ language, title, progress, variant }: Ent
             willChange: 'transform',
           }}
         >
-          <div
-            className="pointer-events-none absolute inset-y-0 max-w-none"
-            style={{ left: side === 'left' ? 0 : '-100%', width: '200%' }}
-          >
-            {isCity ? (
-              <img src="/assets/metro-city-entry-skyline.png" alt="" className="h-full w-full translate-y-[8vh] object-cover object-center" />
-            ) : (
-              <img src="/assets/metro-entry-train.png" alt="" className="h-full w-full translate-y-[8vh] object-cover object-center" />
-            )}
-          </div>
-          <div className={`pointer-events-none absolute inset-0 ${isCity ? 'bg-white/6' : 'bg-white/8'}`} />
+          <div className={`pointer-events-none absolute inset-0 ${isCity ? 'bg-[#26383D]/6' : 'bg-[#EF9953]/8'}`} />
         </div>
       ))}
 
@@ -48,7 +38,7 @@ export default function EntryCurtain({ language, title, progress, variant }: Ent
           willChange: 'opacity, transform',
         }}
       >
-        <span className={`text-xs font-bold uppercase tracking-[0.24em] ${isCity ? 'text-[#b44f3b]' : 'text-[#3e7c64]'}`}>
+        <span className={`text-xs font-bold uppercase tracking-[0.24em] ${isCity ? 'text-[#26383D]' : 'text-[#EF9953]'}`}>
           {isCity
             ? language === 'zh' ? '城市变迁图集' : 'Urban transformation atlas'
             : 'Shenzhen Metro'}

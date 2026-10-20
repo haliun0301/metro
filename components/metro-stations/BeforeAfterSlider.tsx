@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useHistoryLayer } from '../../utils/navigation';
 
 type LocalizedLabel = {
   en: string;
@@ -51,6 +52,9 @@ function BeforeAfterSlider({
 }: BeforeAfterSliderProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
+  const sliderId = useId();
+  const fullscreenLayer = useHistoryLayer(`beforeAfterFullscreen-${sliderId}`);
+  const isFullscreen = fullscreenLayer.isOpen;
   const [position, setPosition] = useState(clamp(initialPosition, 0, 100));
   const [isHovering, setIsHovering] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -62,7 +66,6 @@ function BeforeAfterSlider({
   const [frameWidth, setFrameWidth] = useState(0);
   const [beforeAspectRatio, setBeforeAspectRatio] = useState<number | null>(null);
   const [afterAspectRatio, setAfterAspectRatio] = useState<number | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const defaultBefore = useMemo(
     () => beforeOptions.find((option) => option.id === initialBeforeId) ?? beforeOptions[0],
@@ -168,13 +171,13 @@ function BeforeAfterSlider({
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsFullscreen(false);
+        fullscreenLayer.close();
       }
     };
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [isFullscreen]);
+  }, [fullscreenLayer.close, isFullscreen]);
 
   useEffect(() => {
     if (!isFullscreen) return;
@@ -389,7 +392,7 @@ function BeforeAfterSlider({
 
         <button
           type="button"
-          onClick={() => setIsFullscreen((prev) => !prev)}
+          onClick={isFullscreen ? fullscreenLayer.close : fullscreenLayer.open}
           className="absolute right-4 bottom-14 z-20 rounded-full border border-white/45 bg-white/95 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#2A383E] shadow-lg backdrop-blur-sm transition-colors hover:border-transparent hover:bg-[#3EB181] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3EB181]"
         >
           {isFullscreen ? copy.exit : copy.expand}
@@ -415,7 +418,7 @@ function BeforeAfterSlider({
       {isFullscreen && typeof document !== 'undefined' && createPortal(
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/92 backdrop-blur-sm [background:radial-gradient(circle_at_center,rgba(0,0,0,0.58)_0%,rgba(0,0,0,0.9)_62%,rgba(0,0,0,0.96)_100%)] p-4 md:p-8"
-          onClick={() => setIsFullscreen(false)}
+          onClick={fullscreenLayer.close}
           role="dialog"
           aria-modal="true"
         >

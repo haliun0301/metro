@@ -21,6 +21,9 @@ import type { GisMapProps, MetroStation } from "../../types";
 import { createStationSlug } from "../../data/metro-stations/stationDetails";
 import { AREA_PAGE_CONTENT } from "../../data/metro-stations/areaPages/index";
 import { METRO_AREAS, normalizeMetroAreaName } from "../../data/metro-stations/metroAreas";
+import { useHistoryLayer } from "../../utils/navigation";
+import StationSearch from "../ui/StationSearch";
+import MetroLineCheckboxRow from "../ui/MetroLineCheckboxRow";
 
 // UI spacing constants used for popups and pointer arrows
 const GAP_PX = 14 // space between popup and dot
@@ -94,7 +97,7 @@ function GisMap(props: GisMapProps) {
         lineWidth = 4,
         showLegend = true,
         buttonPosition = "bottom-right",
-        buttonColor = "#3EB181",
+        buttonColor = "#EF9953",
         buttonSize = 60,
         mapSaturation = 1.2,
         mapBrightness = 1.05,
@@ -111,6 +114,7 @@ function GisMap(props: GisMapProps) {
     const topControlsRef = useRef<HTMLDivElement>(null)
     const detailIframeClickCleanup = useRef<(() => void) | null>(null)
     const isStatic = useIsStaticRenderer()
+    const detailPanelLayer = useHistoryLayer("stationMapDetailPanel")
 
     const [currentZoom, setCurrentZoom] = useState(zoom)
     const [centerLat, setCenterLat] = useState(initialLat)
@@ -122,7 +126,7 @@ function GisMap(props: GisMapProps) {
         height: 600,
     })
     const [hoveredStation, setHoveredStation] = useState<number | null>(null)
-    const [showDetailPanel, setShowDetailPanel] = useState(false)
+    const showDetailPanel = detailPanelLayer.isOpen
     const [isFullWidth, setIsFullWidth] = useState(false)
     const [cmsUrl, setCmsUrl] = useState<string>("")
     const [detailCoverPassed, setDetailCoverPassed] = useState(false)
@@ -315,13 +319,12 @@ function GisMap(props: GisMapProps) {
 
     const tileUrls = useMemo(
         () => ({
-            // Previous map style:
-            // streets: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-            streets: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+            // CARTO basemaps now return an "API KEY REQUIRED" watermark tile
+            streets: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             satellite:
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
             terrain:
-                "https://stamen-tiles.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg",
+                "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
         }),
         []
     )
@@ -1282,11 +1285,11 @@ function GisMap(props: GisMapProps) {
             startTransition(() => {
                 setCmsUrl(fullUrl)
                 setDetailCoverPassed(false)
-                setShowDetailPanel(true)
+                detailPanelLayer.open()
                 setIsFullWidth(false)
             })
         },
-        [getStationsForArea]
+        [detailPanelLayer.open, getStationsForArea]
     )
 
     // Deduplicated list of service areas (derived from provided areas list)
@@ -1316,11 +1319,11 @@ function GisMap(props: GisMapProps) {
             startTransition(() => {
                 setCmsUrl(fullUrl)
                 setDetailCoverPassed(false)
-                setShowDetailPanel(true)
+                detailPanelLayer.open()
                 setIsFullWidth(false)
             })
         },
-        []
+        [detailPanelLayer.open]
     )
 
     // Helper function to position the floating button
@@ -1770,7 +1773,7 @@ function GisMap(props: GisMapProps) {
                                         cy={circleCy}
                                         r={circleRadius}
                                         fill="transparent"
-                                        stroke="#3EB181"
+                                        stroke="#EF9953"
                                         strokeWidth={2}
                                         pointerEvents="none"
                                     />
@@ -2328,7 +2331,7 @@ function GisMap(props: GisMapProps) {
                                     setShowLegendWindow((isOpen) => !isOpen)
                                 })}
                                 className={`h-12 w-12 rounded-full shadow-lg flex items-center justify-center text-[10px] font-semibold hover:scale-105 transition-transform p-2 text-center ${
-                                    showLegendWindow ? "bg-[#3EB181] text-white" : "bg-white/92 text-gray-800"
+                                    showLegendWindow ? "bg-[#EF9953] text-[#26383D]" : "bg-[#FFFFFF]/95 text-[#26383D]"
                                 }`}
                                 title={language === "en" ? "Show Metro Lines" : "显示地铁线路"}
                             >
@@ -2347,7 +2350,7 @@ function GisMap(props: GisMapProps) {
                                     })
                                 })}
                                 className={`h-12 w-12 rounded-full shadow-lg flex items-center justify-center text-[10px] font-semibold hover:scale-105 transition-transform p-2 text-center ${
-                                    showAreaMenu ? "bg-[#3EB181] text-white" : "bg-white/92 text-gray-800"
+                                    showAreaMenu ? "bg-[#EF9953] text-[#26383D]" : "bg-[#FFFFFF]/95 text-[#26383D]"
                                 }`}
                                 title={language === "en" ? "Show Metro Areas" : "显示地铁片区"}
                             >
@@ -2364,7 +2367,7 @@ function GisMap(props: GisMapProps) {
                             padding: 4,
                             height: 48,
                             borderRadius: 999,
-                            background: "rgba(255,255,255,0.92)",
+                            background: "rgba(255,255,255,0.95)",
                             boxShadow: "0 6px 18px rgba(15,23,42,0.10)",
                             backdropFilter: "blur(8px)",
                             WebkitBackdropFilter: "blur(8px)",
@@ -2383,9 +2386,9 @@ function GisMap(props: GisMapProps) {
                                     height: hoveredMapStyle === style ? 34 : 32,
                                     borderRadius: 999,
                                     border: currentMapStyle === style
-                                        ? "3px solid #3EB181"
-                                        : "2px solid rgba(0,0,0,0.06)",
-                                    background: 'rgba(255,255,255,0.92)',
+                                        ? "3px solid #EF9953"
+                                        : "2px solid rgba(38,56,61,0.12)",
+                                    background: 'rgba(255,255,255,0.95)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -2438,62 +2441,36 @@ function GisMap(props: GisMapProps) {
                         pointerEvents: "auto",
                     }}
                 >
-                    <input
-                        type="text"
+                    <StationSearch
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={setSearchQuery}
                         placeholder={language === "en" ? "Search metro stations..." : "搜索地铁站..."}
-                        style={{
-                            width: "100%",
-                            height: 48,
-                            padding: "0 44px 0 16px",
-                            borderRadius: 999,
-                            border: "1px solid rgba(42,56,62,0.06)",
-                            backgroundColor: "rgba(255,255,255,0.78)",
-                            color: "#2A383E",
-                            fontSize: 15,
-                            fontWeight: 600,
-                            outline: "none",
-                            backdropFilter: "blur(8px)",
-                            WebkitBackdropFilter: "blur(8px)",
-                        }}
+                        results={showSearchResults ? searchResults : []}
+                        onSelect={moveToStation}
+                        getResultKey={(station, index) => `${station.name}-${index}`}
+                        renderResult={(station) => (
+                            <>
+                                <div className="mb-1 font-semibold text-[var(--color-ink)]">
+                                    {language === "zh" && station.nameCn ? station.nameCn : station.name}
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+                                    <span className="h-1 w-5 rounded-full" style={{ backgroundColor: station.lineColor || "#E91E63" }} />
+                                    {station.line}
+                                </div>
+                            </>
+                        )}
                     />
-
-                    {/* Search Results Dropdown */}
-                    {showSearchResults && searchResults.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl max-h-96 overflow-y-auto z-[3300]">
-                            {searchResults.map((station, index) => {
-                                return (
-                                    <div
-                                        key={`search-result-${index}`}
-                                        onClick={() => {
-                                            moveToStation(station)
-                                        }}
-                                        className="p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 cursor-pointer transition-colors"
-                                    >
-                                        <div className="font-semibold text-gray-900 mb-1">
-                                            {language === "zh" && station.nameCn ? station.nameCn : station.name}
-                                        </div>
-                                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                                            <div style={{ width: 20, height: 4, backgroundColor: station.lineColor || "#E91E63", borderRadius: 2 }} />
-                                            {station.line}
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
                 </div>
             </div>
 
             {/* ========== COMPONENT: Legend Window ========== */}
             {showLegend && showMetroStations && uniqueLines.length > 0 && showLegendWindow && (
-                <div className="absolute bg-white rounded-xl p-5 shadow-xl min-w-[200px] max-w-sm" style={{ top: 150, right: 50, zIndex: 3300 }}>
-                    <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
-                        <div className="font-bold text-gray-900">{language === "en" ? "Metro Lines" : "地铁线路"}</div>
+                <div className="absolute bg-[#FFFFFF] rounded-xl p-5 shadow-xl min-w-[200px] max-w-sm" style={{ top: 150, right: 50, zIndex: 3300 }}>
+                    <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#F0F0F0]">
+                        <div className="font-bold text-[#26383D]">{language === "en" ? "Metro Lines" : "地铁线路"}</div>
                         <button 
                             onClick={() => startTransition(() => setShowLegendWindow(false))}
-                            className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                            className="w-6 h-6 flex items-center justify-center rounded-full bg-[#F3F3F3] hover:bg-[#F0F0F0] transition-colors"
                         >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M18 6L6 18M6 6l12 12" />
@@ -2504,22 +2481,12 @@ function GisMap(props: GisMapProps) {
                         {uniqueLines.map((line, index) => {
                             const isVisible = visibleLines.has(line.name)
                             return (
-                                <div
-                                    key={index}
-                                    onClick={() => toggleLineVisibility(line.name)}
-                                    className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-                                >
-                                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${isVisible ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
-                                       {isVisible && <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                                    </div>
-                                    <div
-                                        style={{ backgroundColor: line.color, opacity: isVisible ? 1 : 0.3 }}
-                                        className="w-6 h-1.5 rounded-full transition-opacity"
-                                    />
-                                    <div className={`text-xs font-medium truncate ${isVisible ? 'text-gray-900' : 'text-gray-400'}`}>
-                                        {translateLineName(line.name, language)}
-                                    </div>
-                                </div>
+                                <MetroLineCheckboxRow
+                                    label={translateLineName(line.name, language)}
+                                    lineColor={line.color}
+                                    checked={isVisible}
+                                    onChange={() => toggleLineVisibility(line.name)}
+                                />
                             )
                         })}
                         </div>
@@ -2530,7 +2497,7 @@ function GisMap(props: GisMapProps) {
             {showAreaMenu && (
                 <div
                     ref={areaMenuRef}
-                    className="absolute bg-white rounded-xl p-5 shadow-xl w-[320px] max-w-[calc(100vw-100px)]"
+                    className="absolute bg-[#FFFFFF] rounded-xl p-5 shadow-xl w-[320px] max-w-[calc(100vw-100px)]"
                     style={{ top: 150, right: 50, zIndex: 3300 }}
                     onMouseDown={(e) => e.stopPropagation()}
                     onMouseMove={(e) => e.stopPropagation()}
@@ -2540,11 +2507,11 @@ function GisMap(props: GisMapProps) {
                     onTouchMove={(e) => e.stopPropagation()}
                     onWheel={(e) => e.stopPropagation()}
                 >
-                    <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
-                        <div className="font-bold text-gray-900">{language === "en" ? "Metro Areas" : "地铁片区"}</div>
+                    <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#F0F0F0]">
+                        <div className="font-bold text-[#26383D]">{language === "en" ? "Metro Areas" : "地铁片区"}</div>
                         <button
                             onClick={() => startTransition(() => setShowAreaMenu(false))}
-                            className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                            className="w-6 h-6 flex items-center justify-center rounded-full bg-[#F3F3F3] hover:bg-[#F0F0F0] transition-colors"
                             aria-label={language === "en" ? "Close areas menu" : "关闭片区菜单"}
                         >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -2564,7 +2531,7 @@ function GisMap(props: GisMapProps) {
                                         openAreaDetailPage(area.en)
                                     }}
                                     className={`flex items-center gap-2 rounded-lg p-1.5 text-left transition-colors ${
-                                        isSelected ? "bg-emerald-50" : "hover:bg-gray-50"
+                                        isSelected ? "bg-[#F3F3F3]" : "hover:bg-[#F3F3F3]/70"
                                     }`}
                                 >
                                     <img
@@ -2573,12 +2540,12 @@ function GisMap(props: GisMapProps) {
                                         className="h-8 w-8 shrink-0 rounded-full object-cover"
                                     />
                                     <div className="min-w-0 flex-1">
-                                        <div className={`truncate text-xs font-medium ${isSelected ? "text-emerald-700" : "text-gray-900"}`}>
+                                        <div className={`truncate text-xs font-medium ${isSelected ? "text-[#26383D]" : "text-[#26383D]"}`}>
                                             {area[language]}
                                         </div>
                                     </div>
                                     {isSelected && (
-                                        <svg className="h-3 w-3 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                        <svg className="h-3 w-3 shrink-0 text-[#EF9953]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
                                             <polyline points="20 6 9 17 4 12"></polyline>
                                         </svg>
                                     )}
@@ -2612,7 +2579,7 @@ function GisMap(props: GisMapProps) {
                 >
                     <div
                         style={{
-                            background: '#3EB181',
+                            background: '#EF9953',
                             backdropFilter: 'blur(6px)',
                             WebkitBackdropFilter: 'blur(6px)',
                             height: 48,
@@ -2629,7 +2596,7 @@ function GisMap(props: GisMapProps) {
                             onClick={() => startTransition(() => setIsFullWidth((s) => !s))}
                             aria-label={language === 'en' ? (isFullWidth ? 'Collapse details' : 'Expand details') : (isFullWidth ? '收起详情' : '展开详情')}
                             title={language === 'en' ? (isFullWidth ? 'Collapse' : 'Expand') : (isFullWidth ? '收起' : '展开')}
-                            className="border border-white/45 bg-white/95 text-[#2A383E] shadow-sm backdrop-blur-sm transition-colors hover:border-transparent hover:bg-[#3EB181] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3EB181]"
+                            className="border border-[#FFFFFF]/45 bg-[#FFFFFF]/95 text-[#26383D] shadow-sm backdrop-blur-sm transition-colors hover:border-transparent hover:bg-[#FFFFFF] hover:text-[#26383D] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D67AB1]"
                             style={{
                                 width: 40,
                                 height: 40,
@@ -2644,10 +2611,10 @@ function GisMap(props: GisMapProps) {
                         </button>
 
                         <button
-                            onClick={() => startTransition(() => { setShowDetailPanel(false); setIsFullWidth(false); setCmsUrl(''); setDetailCoverPassed(false) })}
+                            onClick={() => startTransition(() => { detailPanelLayer.close() })}
                             aria-label={language === 'en' ? 'Close details' : '关闭详情'}
                             title={language === 'en' ? 'Close' : '关闭'}
-                            className="border border-white/45 bg-white/95 text-[#2A383E] shadow-sm backdrop-blur-sm transition-colors hover:border-transparent hover:bg-[#3EB181] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3EB181]"
+                            className="border border-[#FFFFFF]/45 bg-[#FFFFFF]/95 text-[#26383D] shadow-sm backdrop-blur-sm transition-colors hover:border-transparent hover:bg-[#FFFFFF] hover:text-[#26383D] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D67AB1]"
                             style={{
                                 width: 40,
                                 height: 40,
@@ -2667,7 +2634,7 @@ function GisMap(props: GisMapProps) {
             {showDetailPanel && (
                 <div
                     style={{ width: isFullWidth ? "100%" : "33.3333333%" }}
-                    className="absolute top-0 right-0 h-full overflow-hidden bg-white shadow-2xl z-[5000] flex flex-col transition-[width] duration-300 ease-in-out"
+                    className="absolute top-0 right-0 h-full overflow-hidden bg-[#FFFFFF] shadow-2xl z-[5000] flex flex-col transition-[width] duration-300 ease-in-out"
                     onWheelCapture={(e) => e.stopPropagation()}
                     onTouchStartCapture={(e) => e.stopPropagation()}
                     onTouchMoveCapture={(e) => e.stopPropagation()}

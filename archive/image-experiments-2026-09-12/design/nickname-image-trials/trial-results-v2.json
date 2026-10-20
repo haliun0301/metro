@@ -1,0 +1,24 @@
+{
+  "status": "generated_trial_v2",
+  "generatedAt": "2026-09-08T12:01:21.072Z",
+  "source": "design/nickname-image-trials/trial-prompts-v2.json",
+  "outputDir": "public/images/nickname-trials",
+  "provider": "openai",
+  "sharedStyle": "Editorial still-life and landscape photography with natural material textures, restrained saturation, warm cream highlights, muted blue and sage accents, gentle contrast, and subtle fine film grain. Soft daylight, simple composition, one dominant focal subject, generous negative space. Quiet observational mood matching a photographic magazine collage. Square image with the main subject within the central 60 percent, legible as a small thumbnail and suitable for a circular crop. No text, letters, logos, watermark, collage, borders, illustration, or 3D-rendered appearance.",
+  "count": 1,
+  "success": 0,
+  "failed": 1,
+  "skipped": 0,
+  "trials": [
+    {
+      "id": "person001",
+      "nickname": "爱欣",
+      "englishLabel": "Nickname motif person001",
+      "interpretation": "Structured symbolic interpretation of nickname \"爱欣\" guided by occupation (student) and life stage (young adult).",
+      "subjectPrompt": "Photograph one worn notebook, one transit card, and one small pen arranged in a clean triangle on warm ivory matte paper. Keep all objects centered and clearly separated, with gentle late-afternoon light. The scene should suggest focused study and daily commuting for a young adult resident. No readable text on items; keep branding removed.",
+      "imagePrompt": "",
+      "imageFile": "person001-v2.png",
+      "error": "Request timed out."
+    }
+  ]
+}

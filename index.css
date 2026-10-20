@@ -1,18 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap');
 @import "tailwindcss";
+@import "./styles/tokens.css";
 
 :root {
-  --font-sans: Inter, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --text-caption: 11px;
-  --text-small: 12px;
-  --text-body: 16px;
-  --text-label: 13px;
-  --text-subtitle: 16px;
-  --text-title: 20px;
-  --text-display: 28px;
-  --weight-regular: 400;
-  --weight-medium: 500;
-  --weight-semibold: 600;
-  --weight-bold: 700;
   font-family: var(--font-sans);
   font-size: var(--text-body);
   font-synthesis: none;
@@ -35,10 +25,41 @@ body {
   font-weight: var(--weight-regular);
   line-height: 1.5;
   overflow: hidden;
+  color: var(--color-ink);
+  background: var(--color-canvas);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+input,
+select,
+textarea,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 3px;
+}
+
+::selection {
+  color: var(--color-on-primary);
+  background: var(--color-primary);
 }
 
 .landing-scroll {
-  overscroll-behavior-y: contain;
+  overscroll-behavior: none;
   scroll-behavior: smooth;
   scrollbar-width: none;
 }
@@ -106,7 +127,7 @@ body {
 }
 
 .atlas-menu-panel {
-  background: rgba(7, 27, 35, 0.92);
+  background: color-mix(in srgb, var(--color-people) 97%, #10262A 3%);
   animation: atlas-menu-panel-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -149,13 +170,6 @@ body {
 }
 
 button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-button,
 label,
 small {
   font-family: var(--font-sans);
@@ -166,6 +180,16 @@ svg text,
 .leaflet-tooltip,
 .leaflet-popup-content {
   font-family: var(--font-sans) !important;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-tooltip {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+.leaflet-popup-tip {
+  background: var(--color-canvas);
 }
 
 h1,

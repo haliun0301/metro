@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAppLanguage } from '../hooks/useAppLanguage';
-import backgroundImage from '../assets/bg1.jpg';
+import PageShell from './ui/PageShell';
 
 const copy = {
   en: {
@@ -10,7 +10,7 @@ const copy = {
     title: ['RAPID TRANSIT', 'IN SHENZHEN'],
     prompt: 'Explore the atlas',
     chapters: {
-      stations: { label: 'Metro Stations', title: 'Read the city through its stations.', description: 'Navigate the full network, locate key nodes, and discover how neighbourhoods changed around them.' },
+      stations: { label: 'Metro & Places', title: 'Read the city through its places.', description: 'Navigate the full network, locate key nodes, and discover how neighbourhoods changed around them.' },
       people: { label: 'Metro & People', title: 'Meet the lives moving through the network.', description: "Explore the people behind Shenzhen's metro—where they come from, when they arrived, and how occupation and generation shape urban life." },
       city: { label: 'Metro & City', title: 'See how mobility remakes a metropolis.', description: 'Follow visual themes connecting rapid transit with growth, public space, and identity.' },
     },
@@ -28,10 +28,115 @@ const copy = {
 } as const;
 
 const chapters = [
-  { key: 'stations', index: '01', color: '#ef9953', route: '/map' },
-  { key: 'people', index: '02', color: '#26383d', route: '/people' },
-  { key: 'city', index: '03', color: '#28a873', route: '/thematicmap' },
+  { key: 'stations', index: '01', color: 'var(--color-stations)', route: '/map' },
+  { key: 'people', index: '02', color: 'var(--color-people)', route: '/people' },
+  { key: 'city', index: '03', color: 'var(--color-city)', route: '/thematicmap' },
 ] as const;
+
+function AboutSection() {
+  return (
+    <section id="about" className="relative z-20 mt-[100svh] bg-[var(--color-people)] px-6 py-20 text-white md:px-12 md:py-28 lg:px-20">
+      <div className="mx-auto grid max-w-[1440px] gap-14 lg:grid-cols-[.9fr_1.1fr] lg:gap-24">
+        <div>
+          <p className="text-[var(--text-label)] font-semibold uppercase tracking-[0.28em] text-white/60">About us · 关于我们</p>
+          <h2 className="mt-6 max-w-xl text-[clamp(3.2rem,8vw,8rem)] font-black uppercase leading-[.82] tracking-[-.06em]">The city<br /><span className="text-[var(--color-primary)]">in motion.</span></h2>
+        </div>
+        <div className="flex flex-col justify-end gap-10 lg:pb-2">
+          <p className="max-w-2xl text-xl leading-relaxed text-white/85 md:text-2xl">Shenzhen Metro Atlas is an interactive portrait of a city that never stands still. We connect stations, people, and urban change to make the everyday journeys shaping Shenzhen visible.</p>
+          <div className="grid max-w-xl grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-md)] bg-white/20 text-sm">
+            <div className="bg-white/10 p-5"><span className="block text-3xl font-bold text-[var(--color-primary)]">3</span><span className="mt-2 block text-white/60">ways to read the city</span></div>
+            <div className="bg-white/10 p-5"><span className="block text-3xl font-bold text-[var(--color-primary)]">∞</span><span className="mt-2 block text-white/60">stories in motion</span></div>
+          </div>
+          <Link to="/about" className="self-start text-sm font-semibold uppercase tracking-[0.16em] underline-offset-8 hover:underline">Read more about us →</Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ImageSection() {
+  const [imagePosition, setImagePosition] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const dragStart = useRef<{ y: number; position: number } | null>(null);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    const scrollContainer = section?.closest('.landing-scroll');
+    if (!section || !scrollContainer) return;
+
+    const updateParallax = () => {
+      const bounds = section.getBoundingClientRect();
+      const viewportHeight = scrollContainer.clientHeight;
+      const scrollDistance = Math.max(1, bounds.height - viewportHeight);
+      const progress = -bounds.top / scrollDistance;
+      setScrollProgress(Math.max(0, Math.min(1, progress)));
+    };
+
+    updateParallax();
+    scrollContainer.addEventListener('scroll', updateParallax, { passive: true });
+    window.addEventListener('resize', updateParallax);
+    return () => {
+      scrollContainer.removeEventListener('scroll', updateParallax);
+      window.removeEventListener('resize', updateParallax);
+    };
+  }, []);
+
+  return (
+    <section
+      ref={sectionRef}
+      className="group relative z-20 h-[180svh] min-h-[900px] cursor-grab bg-[#15262b] text-white active:cursor-grabbing"
+      onPointerDown={(event) => {
+        dragStart.current = { y: event.clientY, position: imagePosition };
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        if (!dragStart.current) return;
+        const delta = ((event.clientY - dragStart.current.y) / event.currentTarget.clientHeight) * 100;
+        setImagePosition(Math.max(0, Math.min(100, dragStart.current.position + delta)));
+      }}
+      onPointerUp={() => { dragStart.current = null; }}
+      onPointerCancel={() => { dragStart.current = null; }}
+    >
+      <div className="sticky top-0 h-[100svh] min-h-[420px] overflow-hidden">
+      <img
+        src="/images/penan_upscale.png"
+        alt="Shenzhen cityscape between stations"
+        draggable="false"
+        style={{ objectPosition: `center ${Math.min(100, imagePosition + scrollProgress * (100 - imagePosition))}%` }}
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover select-none"
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,9,12,.78)_0%,rgba(2,9,12,.2)_62%,rgba(2,9,12,.08)_100%)]" />
+      <div className="relative flex h-full items-end px-6 pb-8 md:px-12 md:pb-12 lg:px-20">
+        <div className="max-w-xl">
+          <p className="text-[var(--text-label)] font-semibold uppercase tracking-[0.28em] text-white/65">Between stations · 站点之间</p>
+          <p className="mt-4 text-2xl font-medium leading-tight md:text-4xl">Every journey leaves a trace on the city.</p>
+        </div>
+        <span className="ml-auto hidden self-end text-xs uppercase tracking-[0.24em] text-white/55 md:block">Shenzhen, in motion</span>
+      </div>
+      </div>
+    </section>
+  );
+}
+
+function TransitImageSection() {
+  return (
+    <section className="relative z-20 h-[70svh] min-h-[420px] overflow-hidden bg-[#111719] text-white">
+      <img
+        src="/images/shenzhen-transit-architecture.png"
+        alt="Geometric ceiling and concourse inside a Shenzhen transit station"
+        className="absolute inset-0 h-full w-full object-cover object-bottom"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#02090c]/80 via-transparent to-[#02090c]/10" />
+      <div className="relative flex h-full items-end px-6 pb-8 md:px-12 md:pb-12 lg:px-20">
+        <div>
+          <p className="text-[var(--text-label)] font-semibold uppercase tracking-[0.28em] text-white/65">The infrastructure of movement</p>
+          <p className="mt-4 max-w-lg text-2xl font-medium leading-tight md:text-4xl">A city is also shaped by the spaces between destinations.</p>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function RailMark() {
   return (
@@ -49,18 +154,34 @@ export default function LandingPage() {
   const [view, setView] = useState<'landing' | 'chapters'>('landing');
   const [hoveredChapter, setHoveredChapter] = useState<(typeof chapters)[number]['key'] | null>(null);
   const [hoverEnabled, setHoverEnabled] = useState(false);
+  const [heroImagePosition, setHeroImagePosition] = useState(0);
   const hoverDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (view === 'chapters') {
       setHoverEnabled(false);
       setHoveredChapter(null);
+      requestAnimationFrame(() => {
+        document.getElementById('chapters')?.scrollIntoView({ behavior: 'smooth' });
+      });
     }
 
     return () => {
       if (hoverDelayRef.current) clearTimeout(hoverDelayRef.current);
     };
   }, [view]);
+
+  useEffect(() => {
+    const scrollContainer = document.querySelector('.landing-scroll');
+    if (!scrollContainer) return;
+    const updateHeroParallax = () => {
+      const progress = scrollContainer.scrollTop / Math.max(1, scrollContainer.clientHeight);
+      setHeroImagePosition(Math.max(0, Math.min(100, progress * 100)));
+    };
+    updateHeroParallax();
+    scrollContainer.addEventListener('scroll', updateHeroParallax, { passive: true });
+    return () => scrollContainer.removeEventListener('scroll', updateHeroParallax);
+  }, []);
 
   const prepareInitialHover = (chapter: (typeof chapters)[number]['key']) => {
     if (hoverEnabled) return;
@@ -72,15 +193,14 @@ export default function LandingPage() {
   };
 
   return (
-    <main
-      className="relative h-[100svh] min-h-[560px] overflow-hidden bg-[#02090c]"
-      onWheel={(event) => {
-        if (event.deltaY > 18) setView('chapters');
-        if (event.deltaY < -18) setView('landing');
-      }}
+    <PageShell
+      theme={{ chapterColor: 'var(--color-primary)', backgroundColor: '#02090c' }}
+      className="landing-scroll relative h-[100svh] min-h-[560px] overflow-y-auto overflow-x-hidden bg-[#02090c]"
     >
-      <AnimatePresence mode="wait" initial={false}>
-      {view === 'landing' ? (
+      <AboutSection />
+      <ImageSection />
+      <div>
+      <>
       <motion.section
         key="landing"
         className="absolute inset-0 overflow-hidden text-white"
@@ -89,7 +209,7 @@ export default function LandingPage() {
         exit={{ opacity: 0, scale: 1.035, filter: 'brightness(0)' }}
         transition={{ duration: 0.72, ease: [0.76, 0, 0.24, 1] }}
       >
-        <img src={backgroundImage} alt="" className="absolute inset-0 h-full w-full scale-105 object-cover" />
+        <img src="/images/shenzhen-skyline-background.png" alt="" style={{ objectPosition: heroImagePosition === 0 ? 'center top' : `center ${heroImagePosition}%` }} className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(3,21,28,.94)_0%,rgba(6,31,38,.68)_53%,rgba(3,26,28,.2)_100%)]" />
         <div className="relative z-10 grid h-full grid-rows-[auto_1fr_auto] px-6 pb-8 pt-24 md:px-12 md:pb-10 lg:px-20">
           <motion.header className="flex items-center justify-end pb-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -103,16 +223,14 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="flex items-center justify-end pt-4">
-            <button type="button" aria-label={language === 'zh' ? '进入章节' : 'Enter sections'} onClick={() => setView('chapters')} className="flex h-11 w-11 items-center justify-center rounded-full text-xl text-white transition hover:bg-white/10"><span aria-hidden="true">↓</span></button>
+            <button type="button" aria-label={language === 'zh' ? '进入关于我们' : 'Read about us'} onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })} className="flex h-11 w-11 items-center justify-center rounded-full text-xl text-white transition hover:bg-white/10"><span aria-hidden="true">↓</span></button>
           </div>
         </div>
       </motion.section>
-      ) : (
-
       <motion.section
         key="chapters"
         id="chapters"
-        className="absolute inset-0 flex flex-col overflow-hidden sm:flex-row"
+        className="relative h-[60svh] min-h-[320px] w-screen flex flex-col overflow-hidden sm:flex-row"
         initial={{ opacity: 0, filter: 'brightness(0)' }}
         animate={{ opacity: 1, filter: 'brightness(1)' }}
         exit={{ opacity: 0, filter: 'brightness(0)' }}
@@ -148,7 +266,9 @@ export default function LandingPage() {
               }}
               onFocus={() => setHoveredChapter(chapter.key)}
               onBlur={() => setHoveredChapter(null)}
-              className="chapter-panel group relative flex min-h-0 min-w-0 basis-0 items-center justify-center overflow-hidden px-6 py-6 text-center text-white focus-visible:z-10 focus-visible:outline focus-visible:outline-4 focus-visible:outline-inset focus-visible:outline-white"
+              className={`chapter-panel group relative flex min-h-0 min-w-0 basis-0 items-center justify-center overflow-hidden px-6 py-6 text-center focus-visible:z-10 focus-visible:outline focus-visible:outline-4 focus-visible:outline-inset ${
+                chapter.key === 'stations' ? 'text-[#26383D] focus-visible:outline-[#26383D]' : 'text-[#FFFFFF] focus-visible:outline-[#FFFFFF]'
+              }`}
               style={{ backgroundColor: chapter.color }}
               initial={{ y: '100%' }}
               animate={{
@@ -173,8 +293,30 @@ export default function LandingPage() {
           );
         })}
       </motion.section>
-      )}
-      </AnimatePresence>
-    </main>
+      </>
+      </div>
+
+      <TransitImageSection />
+
+      <footer className="relative z-20 bg-[var(--primitive-teal)] px-6 pb-8 pt-12 text-white md:px-12 lg:px-20">
+        <div className="mx-auto max-w-[1440px]">
+          <div className="flex flex-col justify-between gap-10 border-b border-white/20 pb-12 md:flex-row md:items-end">
+            <div>
+              <p className="text-4xl font-black uppercase leading-none tracking-[-.05em] md:text-6xl">Shenzhen · 深圳</p>
+              <p className="mt-4 max-w-sm text-sm leading-6 opacity-70">An interactive atlas of rapid transit, urban life, and the city between the stations.</p>
+            </div>
+            <nav aria-label="Footer navigation" className="grid grid-cols-2 gap-x-12 gap-y-3 text-sm font-semibold md:grid-cols-3">
+              <Link to="/" className="transition hover:opacity-60">Home</Link>
+              <Link to="/map" className="transition hover:opacity-60">Places</Link>
+              <Link to="/people" className="transition hover:opacity-60">People</Link>
+              <Link to="/thematicmap" className="transition hover:opacity-60">City</Link>
+              <Link to="/about" className="transition hover:opacity-60">About us</Link>
+              <Link to="/contact" className="transition hover:opacity-60">Contact</Link>
+            </nav>
+          </div>
+          <div className="flex flex-col justify-between gap-3 pt-6 text-xs opacity-60 sm:flex-row"><span>© 2026 Shenzhen Metro Atlas</span><span>Made for the moving city</span></div>
+        </div>
+      </footer>
+    </PageShell>
   );
 }

@@ -32,21 +32,10 @@ export interface Person {
 
 export const defaultPeople: Person[] = PeopleData as Person[]
 
-const profileImageModules = import.meta.glob('../../assets/person-stories/**/*.{png,jpg,jpeg,webp,avif,gif}', {
-    eager: true,
-    import: 'default',
-    query: '?url',
-}) as Record<string, string>
-const temporaryProfileImages = Object.values(profileImageModules)
-
-function resolveProfileImage(src?: string) {
-    if (!src) return undefined
-    if (/^(https?:)?\/\//.test(src) || src.startsWith('data:')) return src
-
-    const normalizedSrc = src.startsWith('/') ? src : '/' + src
-    const moduleKey = '../..' + normalizedSrc
-    return profileImageModules[moduleKey] || src
-}
+export const PEOPLE_GENDER_COLORS = {
+    male: "#167C9A",
+    female: "#D96578",
+} as const
 
 // Minimal person icon - filled style
 function PersonIcon({ color, size }: { color: string; size: number }) {
@@ -85,6 +74,37 @@ function lightenColor(hex: string, percent: number): string {
     return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`
 }
 
+function darkenColor(hex: string, percent: number): string {
+    const cleanHex = hex.replace('#', '')
+    const r = parseInt(cleanHex.substring(0, 2), 16)
+    const g = parseInt(cleanHex.substring(2, 4), 16)
+    const b = parseInt(cleanHex.substring(4, 6), 16)
+
+    const newR = Math.max(0, Math.round(r * (1 - percent)))
+    const newG = Math.max(0, Math.round(g * (1 - percent)))
+    const newB = Math.max(0, Math.round(b * (1 - percent)))
+
+    return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`
+}
+
+function getPersonAgeTintColor(person: Person | undefined, baseColor: string): string {
+    if (!person || typeof person.yearOfBirth !== "number") {
+        return baseColor
+    }
+
+    const age = Math.max(0, CURRENT_YEAR - person.yearOfBirth)
+    if (age < 25) {
+        return lightenColor(baseColor, 0.14)
+    }
+    if (age < 40) {
+        return baseColor
+    }
+    if (age < 60) {
+        return darkenColor(baseColor, 0.12)
+    }
+    return darkenColor(baseColor, 0.2)
+}
+
 export interface PeopleCirclesProps {
     people?: Person[]
     backgroundColor?: string
@@ -119,25 +139,31 @@ export interface PeopleCirclesProps {
 }
 
 const MAX_CIRCLES = 111
+const OPENING_LAYOUT_VERSION: 1 | 2 = 2
 
 function clamp(value: number, min: number, max: number) {
     return Math.max(min, Math.min(max, value))
 }
 
-function seededUnit(seed: number) {
-    const value = Math.sin(seed * 12.9898 + 78.233) * 43758.5453
-    return value - Math.floor(value)
-}
-
-function getTemporaryProfileImage(index: number) {
-    if (temporaryProfileImages.length === 0) return undefined
-    const imageIndex = Math.floor(seededUnit(index + 313) * temporaryProfileImages.length)
-    return temporaryProfileImages[imageIndex]
-}
-
 function getEntryNetworkPosition(index: number, total: number, width: number, height: number) {
-    // Fit the collage to the lower canvas. Size and jitter share the same
-    // cell budget so neighboring images retain a visible gap on any viewport.
+    if (OPENING_LAYOUT_VERSION === 2) {
+        const columns = 16
+        const column = index % columns
+        const row = Math.floor(index / columns)
+        const rows = Math.max(1, Math.ceil(total / columns))
+        const columnProgress = column / Math.max(1, columns - 1)
+        const rowProgress = row / Math.max(1, rows - 1)
+        const tileSize = Math.min(38, Math.max(32, Math.min(width, height) * 0.047))
+        return {
+            x: 36 + (tileSize / Math.max(1, width)) * 50 + columnProgress * 58,
+            y: 41 + rowProgress * 40,
+            size: tileSize,
+        }
+    }
+
+    // The opening frame is a calm, ordered index of the interview accounts.
+    // Keep every tile the same size and remove jitter so the grid reads as a
+    // designed collection rather than a collage.
     const availableWidth = Math.max(1, width * 0.88)
     const availableHeight = Math.max(1, height * 0.42)
     const columns = clamp(Math.ceil(Math.sqrt(Math.max(1, total) * availableWidth / availableHeight)), 1, Math.max(1, total))
@@ -146,15 +172,12 @@ function getEntryNetworkPosition(index: number, total: number, width: number, he
     const cellHeight = availableHeight / rows
     const column = index % columns
     const row = Math.floor(index / columns)
-    const jitterX = (seededUnit(index + 11) - 0.5) * cellWidth * 0.2
-    const jitterY = (seededUnit(index * 2.17 + 47) - 0.5) * cellHeight * 0.2
-    const maxSize = Math.min(112, Math.min(cellWidth, cellHeight) * 0.66)
-    const imageSize = maxSize * (0.78 + seededUnit(index + 97) * 0.22)
+    const tileSize = Math.min(72, Math.max(42, Math.min(cellWidth, cellHeight) * 0.62))
 
     return {
-        x: 6 + ((column + 0.5) * cellWidth + jitterX) / Math.max(1, width) * 100,
-        y: 48 + ((row + 0.5) * cellHeight + jitterY) / Math.max(1, height) * 100,
-        size: imageSize,
+        x: 6 + ((column + 0.5) * cellWidth) / Math.max(1, width) * 100,
+        y: 48 + ((row + 0.5) * cellHeight) / Math.max(1, height) * 100,
+        size: tileSize,
     }
 }
 
@@ -476,7 +499,7 @@ export default function PeopleCircles({
             const pieKeys = populatedKeys.length > 0 ? populatedKeys : categoryKeys
             const total = Math.max(1, pieKeys.reduce((sum, key) => sum + (groups.get(key)?.length ?? 0), 0))
             const centerX = containerSize.width * (pieCenterXPercent / 100)
-            const centerY = containerSize.height * 0.47
+            const centerY = containerSize.height * 0.5
             const radius = Math.min(containerSize.width, containerSize.height) * 0.34 * pieScale
             let startAngle = -Math.PI / 2
             const separators: number[] = []
@@ -1019,24 +1042,35 @@ export default function PeopleCircles({
                 const isDragging = draggingIndex === circle.index
                 const isVisited = visitedIndices.has(circle.index)
                 const layoutCircleScale = layoutMode === "occupation" ? (centerLayouts ? 0.96 : 0.82) : 1
-                const size = Math.max(14, Math.round(getCircleSize(person) * layoutCircleScale))
+                const introFrameSize = 48
+                const progress = clamp(journeyProgress, 0, 1)
+                const isOpeningGrid = progress < 1
+                const openingPalette = circle.index % 4
+                const openingTileColor = ["#0E6670", "#168B97", "#E06A47", "#F08A4B"][openingPalette]
+                const openingTileIsFilled = openingPalette === 0 || openingPalette === 1
+                const size = isOpeningGrid ? introFrameSize : Math.max(14, Math.round(getCircleSize(person) * layoutCircleScale))
                 const halfSize = size / 2
 
                 const graphPos = getCirclePosition(circle)
-                const progress = clamp(journeyProgress, 0, 1)
                 const entryPosition = getEntryNetworkPosition(circle.index, circleCount, containerSize.width, containerSize.height)
                 const pos = {
                     xPercent: entryPosition.x + (graphPos.xPercent - entryPosition.x) * progress,
                     yPercent: entryPosition.y + (graphPos.yPercent - entryPosition.y) * progress,
                 }
                 const entryBorderRadius = `${Math.round(progress * 50)}%`
+                const profileTileSize = progress < 1 ? introFrameSize : size
 
                 const genderOutlineColor = person?.gender === "male"
-                    ? "#A1CDFF"
+                    ? PEOPLE_GENDER_COLORS.male
                     : person?.gender === "female"
-                        ? "#FFB8D8"
+                        ? PEOPLE_GENDER_COLORS.female
                         : circleColor
-                const baseColor = person?.circleColor || genderOutlineColor
+                const ageTintedGenderColor = getPersonAgeTintColor(person, genderOutlineColor)
+                const baseColor = person?.gender
+                    ? ageTintedGenderColor
+                    : person?.circleColor
+                        ? getPersonAgeTintColor(person, person.circleColor)
+                        : ageTintedGenderColor
 
                 const hasPersonHighlight = Boolean(highlightPerson)
                 const matchesPersonHighlight = person ? highlightPerson?.(person) !== false : false
@@ -1052,7 +1086,8 @@ export default function PeopleCircles({
                 }
                 const outlineColor = isGreyedOut
                     ? "#D1D5DB"
-                    : isVisited ? lightenColor(genderOutlineColor, 0.3) : genderOutlineColor
+                    : isVisited ? lightenColor(ageTintedGenderColor, 0.3) : ageTintedGenderColor
+                const profileFrameColor = isGreyedOut ? "#D1D5DB" : genderOutlineColor
                 const entryOutline = progress >= 0.999 ? `3px solid ${outlineColor}` : "none"
 
                 // Fit each entry image to its cell, then ease into the graph size.
@@ -1067,9 +1102,12 @@ export default function PeopleCircles({
                 const personUrl = person?.id
                     ? `/people/${person.id}`
                     : null
-                const profileImageSrc = resolveProfileImage(
-                    person?.profileImage?.src || person?.imageFile
-                ) || getTemporaryProfileImage(circle.index)
+                const profileImageSrc = person?.profileImage?.src || undefined
+                const initials = person
+                    ? (person.nickname || person.name || "?").trim().slice(0, 1)
+                    : "?"
+                const isIntroAvatar = journeyProgress < 1 && !profileImageSrc
+                const introLetterColor = getPersonAgeTintColor(person, baseColor)
                 const displayName = person
                     ? language === "zh"
                         ? person.nicknameCn || person.nickname || person.name
@@ -1193,22 +1231,36 @@ export default function PeopleCircles({
                             >
                                 <div
                                     style={{
-                                        width: size,
-                                        height: size,
-                                        borderRadius: entryBorderRadius,
-                                        backgroundColor: profileImageSrc ? genderColor : "#FFFFFF",
-                                        backgroundImage: profileImageSrc ? `url(${profileImageSrc})` : "none",
+                                        width: profileTileSize,
+                                        height: profileTileSize,
+                                        borderRadius: isOpeningGrid ? 10 : entryBorderRadius,
+                                        backgroundColor: isOpeningGrid
+                                            ? (openingTileIsFilled ? openingTileColor : "transparent")
+                                            : (profileImageSrc ? genderColor : baseColor),
+                                        backgroundImage: !isOpeningGrid && profileImageSrc ? `url(${profileImageSrc})` : "none",
                                         backgroundPosition: "center",
                                         backgroundSize: "cover",
                                         backgroundRepeat: "no-repeat",
-                                        border: "none",
-                                        outline: entryOutline,
+                                        border: isOpeningGrid
+                                            ? `2px solid ${openingTileColor}`
+                                            : "none",
+                                        outline: "none",
                                         outlineOffset: 0,
                                         boxSizing: "border-box",
                                         boxShadow: "none",
-                                        transition: "border-radius 120ms linear, outline-color 280ms ease, background-color 280ms ease",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        color: isOpeningGrid ? (openingTileIsFilled ? "#FFF9EC" : openingTileColor) : (isIntroAvatar ? introLetterColor : "rgba(255,255,255,0.95)"),
+                                        fontSize: isOpeningGrid ? Math.max(10, profileTileSize * 0.42) : (isIntroAvatar ? Math.max(10, profileTileSize * 0.7) : Math.max(9, profileTileSize * 0.42)),
+                                        fontWeight: 700,
+                                        letterSpacing: isIntroAvatar ? "0" : "0.04em",
+                                        lineHeight: 1,
+                                        transition: "border-radius 120ms linear, border-color 280ms ease, outline-color 280ms ease, background-color 280ms ease",
                                     }}
-                                />
+                                >
+                                    {!profileImageSrc && person && <span>{initials}</span>}
+                                </div>
                                 {isHovered && hoverCard}
                             </motion.div>
                         </button>
@@ -1264,22 +1316,32 @@ export default function PeopleCircles({
                         >
                             <div
                                 style={{
-                                    width: size,
-                                    height: size,
-                                    borderRadius: entryBorderRadius,
-                                    backgroundColor: profileImageSrc ? genderColor : "#FFFFFF",
-                                    backgroundImage: profileImageSrc ? `url(${profileImageSrc})` : "none",
+                                    width: profileTileSize,
+                                    height: profileTileSize,
+                                    borderRadius: isOpeningGrid ? 10 : entryBorderRadius,
+                                    backgroundColor: isOpeningGrid ? (openingTileIsFilled ? openingTileColor : "transparent") : (profileImageSrc ? genderColor : baseColor),
+                                    backgroundImage: !isOpeningGrid && profileImageSrc ? `url(${profileImageSrc})` : "none",
                                     backgroundPosition: "center",
                                     backgroundSize: "cover",
                                     backgroundRepeat: "no-repeat",
-                                    border: "none",
-                                    outline: entryOutline,
+                                    border: isOpeningGrid ? `2px solid ${openingTileColor}` : "none",
+                                    outline: "none",
                                     outlineOffset: 0,
                                     boxSizing: "border-box",
                                     boxShadow: "none",
-                                    transition: "border-radius 120ms linear, outline-color 280ms ease, background-color 280ms ease",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: isOpeningGrid ? (openingTileIsFilled ? "#FFF9EC" : openingTileColor) : (isIntroAvatar ? introLetterColor : "rgba(255,255,255,0.95)"),
+                                    fontSize: isOpeningGrid ? Math.max(10, profileTileSize * 0.42) : (isIntroAvatar ? Math.max(10, profileTileSize * 0.7) : Math.max(9, profileTileSize * 0.42)),
+                                    fontWeight: 700,
+                                    letterSpacing: isIntroAvatar ? "0" : "0.04em",
+                                    lineHeight: 1,
+                                        transition: "border-radius 120ms linear, border-color 280ms ease, background-color 280ms ease, box-shadow 280ms ease",
                                 }}
-                            />
+                            >
+                                {!profileImageSrc && person && <span>{initials}</span>}
+                            </div>
                             {isHovered && hoverCard}
                         </motion.div>
                     )

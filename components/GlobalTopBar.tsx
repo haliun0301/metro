@@ -9,6 +9,7 @@ import { METRO_AREAS, isMetroAreaMatch } from '../data/metro-stations/metroAreas
 import { THEMATIC_TOPICS } from '../data/metro-city/thematicTopics';
 import { PeopleData } from '../data/metro-people/people';
 import shenzhenBoundaryText from '../data/metro-stations/shenzhenBoundary.geojson?raw';
+import { useHistoryLayer } from '../utils/navigation';
 
 const AREA_CIRCLE_COLORS = [
   '#3EB181',
@@ -126,10 +127,6 @@ const shenzhenBoundaryPath = shenzhenBoundaryCoordinates
 
 const copy = {
   menu: {
-    returnHome: {
-      en: 'Return to previous page',
-      zh: '返回上一页',
-    },
     open: {
       en: 'Open menu',
       zh: '打开菜单',
@@ -205,7 +202,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { language, setLanguage } = useAppLanguage('en');
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { isOpen: menuOpen, open: openMenuLayer, close: closeMenuLayer } = useHistoryLayer('globalMenuOpen');
   const [activeMenuItem, setActiveMenuItem] = useState<MenuKey>('stations');
   const [activeStationBrowseMode, setActiveStationBrowseMode] = useState<StationBrowseMode>('areas');
   const [activeStationArea, setActiveStationArea] = useState('');
@@ -217,13 +214,12 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
     width: SHENZHEN_MAP_VIEWBOX.width,
     height: SHENZHEN_MAP_VIEWBOX.height,
   });
-  const isHomePage = location.pathname === '/';
   const isV2 = variant === 'v2';
   const showStationCircleMenu = true;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMenuOpen(false);
+      if (event.key === 'Escape' && menuOpen) closeMenuLayer();
     };
 
     document.body.style.overflow = menuOpen ? 'hidden' : '';
@@ -233,11 +229,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [menuOpen]);
-
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location.pathname]);
+  }, [closeMenuLayer, menuOpen]);
 
   useEffect(() => {
     if (menuOpen) {
@@ -371,6 +363,12 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
     },
   ], [language]);
 
+  const pageLinks = useMemo(() => [
+    { route: '/', label: language === 'zh' ? '首页' : 'Home' },
+    { route: '/about', label: language === 'zh' ? '关于我们' : 'About us' },
+    { route: '/contact', label: language === 'zh' ? '联系我们' : 'Contact' },
+  ], [language]);
+
   const thematicThemeTiles = useMemo(() => (
     THEMATIC_TOPICS.map((topic, index) => ({
       title: topic[language],
@@ -381,10 +379,10 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
 
   const activeMenuContent = menuItems.find((item) => item.key === activeMenuItem) ?? menuItems[0];
   const activeMenuAccent = activeMenuItem === 'stations'
-    ? '#ef9953'
+    ? '#EF9953'
     : activeMenuItem === 'people'
-      ? '#9bb2b5'
-      : '#65dfac';
+      ? '#9ED8C7'
+      : '#28A873';
   const activeStationGroup = stationAreaGroups.find((group) => group.area === activeStationArea) ?? stationAreaGroups[0];
   const activeLineGroup = stationLineGroups.find((group) => group.line === activeStationLine) ?? stationLineGroups[0];
   const stationCircleGroups = useMemo(() => {
@@ -505,18 +503,12 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
   }));
 
   const goToMenuRoute = (route: string) => {
-    setMenuOpen(false);
-    navigate(route);
-  };
-
-  const returnHome = () => {
-    setMenuOpen(false);
-    if (window.history.length > 1) {
-      navigate(-1);
+    if (route === location.pathname) {
+      closeMenuLayer();
       return;
     }
 
-    navigate('/');
+    navigate(route, { replace: menuOpen });
   };
 
   const selectMenuItem = (itemKey: MenuKey) => {
@@ -538,35 +530,17 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
         data-global-top-bar
         className="fixed left-4 top-[50px] z-[3400] flex items-center gap-3 md:left-6 md:top-[50px]"
       >
-        {!isHomePage && (
-          <button
-            type="button"
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/92 shadow-lg backdrop-blur-sm transition hover:bg-white focus:outline-none"
-            aria-label={copy.menu.returnHome[language]}
-            onClick={returnHome}
-          >
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M15 6L9 12L15 18"
-                stroke="rgba(42,56,62,0.72)"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        )}
         <button
           type="button"
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-white/92 shadow-lg backdrop-blur-sm transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-white/80"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F3F3F3]/95 shadow-lg backdrop-blur-sm transition hover:bg-[#FFFFFF] focus:outline-none focus:ring-2 focus:ring-[#D67AB1]/80"
           aria-label={copy.menu.open[language]}
           aria-expanded={menuOpen}
-          onClick={() => setMenuOpen(true)}
+          onClick={openMenuLayer}
         >
           <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-            <rect y="7" width="32" height="3" rx="1.5" fill="rgba(42,56,62,0.72)" />
-            <rect y="14.5" width="32" height="3" rx="1.5" fill="rgba(42,56,62,0.72)" />
-            <rect y="22" width="32" height="3" rx="1.5" fill="rgba(42,56,62,0.72)" />
+            <rect y="7" width="32" height="3" rx="1.5" fill="rgba(38,56,61,0.72)" />
+            <rect y="14.5" width="32" height="3" rx="1.5" fill="rgba(38,56,61,0.72)" />
+            <rect y="22" width="32" height="3" rx="1.5" fill="rgba(38,56,61,0.72)" />
           </svg>
         </button>
         <LanguageToggle
@@ -588,14 +562,14 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
             type="button"
             className="absolute inset-0 cursor-default"
             aria-label={copy.menu.close[language]}
-            onClick={() => setMenuOpen(false)}
+            onClick={closeMenuLayer}
           />
           <div className="atlas-menu-panel relative flex h-full w-full flex-col overflow-x-hidden overflow-y-auto px-6 pb-8 pt-24 md:px-12 md:pb-10 lg:px-20">
             <button
               type="button"
-              className="absolute right-6 top-6 z-20 flex h-12 w-12 items-center justify-center rounded-full border border-white/40 text-3xl font-light leading-none text-white/80 transition hover:rotate-90 hover:border-white hover:bg-white hover:text-[#071b23] focus:outline-none focus:ring-2 focus:ring-white/80 md:right-10 md:top-8"
+              className="absolute right-6 top-6 z-20 flex h-12 w-12 items-center justify-center rounded-full border border-[#FFFFFF]/40 text-3xl font-light leading-none text-[#FFFFFF]/80 transition hover:rotate-90 hover:border-[#FFFFFF] hover:bg-[#FFFFFF] hover:text-[#26383D] focus:outline-none focus:ring-2 focus:ring-[#FFFFFF]/80 md:right-10 md:top-8"
               aria-label={copy.menu.close[language]}
-              onClick={() => setMenuOpen(false)}
+              onClick={closeMenuLayer}
             >
               ×
             </button>
@@ -629,6 +603,20 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                     </span>
                   </button>
                 ))}
+                <div className="mt-6 flex flex-col border-t border-white/20 pt-4">
+                  {pageLinks.map((item) => (
+                    <button
+                      key={item.route}
+                      type="button"
+                      className={`py-2.5 text-left text-sm font-semibold uppercase tracking-[0.18em] transition hover:text-white focus:text-white focus:outline-none ${
+                        location.pathname === item.route ? 'text-white' : 'text-white/55'
+                      }`}
+                      onClick={() => goToMenuRoute(item.route)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
                 <div className="mt-auto hidden pt-5 text-[10px] font-semibold uppercase leading-5 tracking-[0.18em] text-white/35 md:block">
                   {language === 'zh' ? '选择章节 · 浏览研究内容' : 'Select a chapter · Browse the study'}
                 </div>
@@ -644,7 +632,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                     <div className="flex h-full min-h-[700px] flex-col">
                       <div className="shrink-0 pb-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div className="text-xs font-black uppercase tracking-[0.24em] text-[#3EB181]">
+                          <div className="text-xs font-black uppercase tracking-[0.24em] text-[#EF9953]">
                             {language === 'zh' ? '地铁站点片区' : 'Metro Station Areas'}
                           </div>
                         </div>
@@ -672,7 +660,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                             </defs>
                             <path
                               d={shenzhenBoundaryPath}
-                              fill="rgba(62, 177, 129, 0.16)"
+                              fill="rgba(239, 131, 84, 0.16)"
                               fillRule="evenodd"
                               stroke="rgba(236, 255, 247, 0.54)"
                               strokeWidth="2.2"
@@ -681,7 +669,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                             <path
                               d={shenzhenBoundaryPath}
                               fill="none"
-                              stroke="rgba(62, 177, 129, 0.44)"
+                              stroke="rgba(239, 131, 84, 0.44)"
                               strokeWidth="5.5"
                               strokeLinejoin="round"
                               opacity="0.42"
@@ -816,7 +804,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                                     onClick={() => goToMenuRoute(station.route)}
                                   >
                                     <span
-                                      className="h-2 w-2 shrink-0 rounded-full bg-[#3EB181]"
+                                      className="h-2 w-2 shrink-0 rounded-full bg-[#EF9953]"
                                       style={{ backgroundColor: stationHoverColor }}
                                     />
                                     {station.label}
@@ -844,13 +832,13 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                           className={isV2
                             ? `w-full rounded-full px-3 py-2 text-left text-xs font-black uppercase tracking-[0.16em] transition duration-200 ease-out focus:outline-none ${
                                 activeStationBrowseMode === item.key
-                                  ? 'bg-[#3EB181] text-white'
-                                  : 'bg-[#243136]/6 text-[#243136]/58 hover:bg-[#243136]/10 hover:text-[#243136] focus:bg-[#243136]/10 focus:text-[#243136]'
+                                  ? 'bg-[#EF9953] text-[#26383D]'
+                                  : 'bg-[#26383D]/6 text-[#26383D]/70 hover:bg-[#26383D]/10 hover:text-[#26383D] focus:bg-[#26383D]/10 focus:text-[#26383D]'
                               }`
                             : `origin-left text-left text-base font-semibold uppercase tracking-[0.18em] transition duration-200 ease-out focus:outline-none ${
                                 activeStationBrowseMode === item.key
-                                  ? 'scale-105 text-[#3EB181]'
-                                  : 'text-white/62 hover:scale-105 hover:text-[#3EB181] focus:scale-105 focus:text-[#3EB181]'
+                                  ? 'scale-105 text-[#EF9953]'
+                                  : 'text-white/62 hover:scale-105 hover:text-[#EF9953] focus:scale-105 focus:text-[#EF9953]'
                               }`
                           }
                           onMouseEnter={() => setActiveStationBrowseMode(item.key)}
@@ -863,10 +851,10 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                     </div>
 
                     <div className={`min-h-0 overflow-y-auto ${
-                      isV2 ? 'rounded-2xl bg-[#eef5ef] p-4' : 'border-white/12 md:border-r md:pr-6'
+                      isV2 ? 'rounded-2xl bg-[#F3F3F3] p-4' : 'border-white/12 md:border-r md:pr-6'
                     }`}>
                       <div className={`text-xs font-semibold uppercase tracking-[0.26em] ${
-                        isV2 ? 'text-[#243136]/38' : 'text-white/38'
+                        isV2 ? 'text-[#26383D]/55' : 'text-white/38'
                       }`}>
                         {activeStationBrowseMode === 'areas'
                           ? language === 'zh' ? '片区' : 'Areas'
@@ -881,8 +869,8 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                               key={group.area}
                               type="button"
                               className={isV2
-                                ? `w-full rounded-xl px-3 py-2 text-left text-sm font-bold leading-tight transition duration-200 ease-out focus:outline-none ${isActive ? 'bg-white text-[#3EB181] shadow-sm' : 'text-[#243136]/62 hover:bg-white/70 hover:text-[#243136] focus:bg-white/70 focus:text-[#243136]'}`
-                                : `origin-left text-left text-base font-semibold leading-tight transition duration-200 ease-out focus:outline-none ${isActive ? 'scale-105 text-[#3EB181]' : 'text-white/68 hover:scale-105 hover:text-[#3EB181] focus:scale-105 focus:text-[#3EB181]'}`
+                                ? `w-full rounded-xl px-3 py-2 text-left text-sm font-bold leading-tight transition duration-200 ease-out focus:outline-none ${isActive ? 'bg-[#FFFFFF] text-[#EF9953] shadow-sm' : 'text-[#26383D]/70 hover:bg-[#FFFFFF]/70 hover:text-[#26383D] focus:bg-[#FFFFFF]/70 focus:text-[#26383D]'}`
+                                : `origin-left text-left text-base font-semibold leading-tight transition duration-200 ease-out focus:outline-none ${isActive ? 'scale-105 text-[#EF9953]' : 'text-white/68 hover:scale-105 hover:text-[#EF9953] focus:scale-105 focus:text-[#EF9953]'}`
                               }
                               onMouseEnter={() => setActiveStationArea(group.area)}
                               onFocus={() => setActiveStationArea(group.area)}
@@ -899,8 +887,8 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                               key={group.line}
                               type="button"
                               className={isV2
-                                ? `w-full rounded-xl px-3 py-2 text-left text-sm font-bold leading-tight transition duration-200 ease-out focus:outline-none ${isActive ? 'bg-white text-[#3EB181] shadow-sm' : 'text-[#243136]/62 hover:bg-white/70 hover:text-[#243136] focus:bg-white/70 focus:text-[#243136]'}`
-                                : `origin-left text-left text-base font-semibold leading-tight transition duration-200 ease-out focus:outline-none ${isActive ? 'scale-105 text-[#3EB181]' : 'text-white/68 hover:scale-105 hover:text-[#3EB181] focus:scale-105 focus:text-[#3EB181]'}`
+                                ? `w-full rounded-xl px-3 py-2 text-left text-sm font-bold leading-tight transition duration-200 ease-out focus:outline-none ${isActive ? 'bg-[#FFFFFF] text-[#EF9953] shadow-sm' : 'text-[#26383D]/70 hover:bg-[#FFFFFF]/70 hover:text-[#26383D] focus:bg-[#FFFFFF]/70 focus:text-[#26383D]'}`
+                                : `origin-left text-left text-base font-semibold leading-tight transition duration-200 ease-out focus:outline-none ${isActive ? 'scale-105 text-[#EF9953]' : 'text-white/68 hover:scale-105 hover:text-[#EF9953] focus:scale-105 focus:text-[#EF9953]'}`
                               }
                               onMouseEnter={() => setActiveStationLine(group.line)}
                               onFocus={() => setActiveStationLine(group.line)}
@@ -915,27 +903,27 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
 
                     <div className="min-h-0 overflow-y-auto">
                       <div className={`text-xs font-semibold uppercase tracking-[0.26em] ${
-                        isV2 ? 'text-[#243136]/38' : 'text-white/38'
+                        isV2 ? 'text-[#26383D]/55' : 'text-white/38'
                       }`}>
                         {language === 'zh' ? '站点' : 'Stations'}
                       </div>
                       {activeStationBrowseMode === 'areas' && activeStationGroup ? (
                         <>
                           <div className={`mt-4 text-lg font-semibold leading-tight ${
-                            isV2 ? 'text-[#243136]' : 'text-white/82'
+                            isV2 ? 'text-[#26383D]' : 'text-white/82'
                           }`}>
                             {language === 'zh' ? activeStationGroup.areaCn : activeStationGroup.area}
                           </div>
                           <div className="mt-4 flex max-w-3xl flex-wrap gap-x-4 gap-y-2">
                             {activeStationGroup.stations.map((station) => {
-                              const stationHoverColor = station.lineColor || '#3EB181';
+                              const stationHoverColor = station.lineColor || '#EF9953';
 
                               return (
                                 <button
                                   key={station.route}
                                   type="button"
                                   className={isV2
-                                    ? 'rounded-full bg-[#243136]/6 px-3 py-1.5 text-sm font-bold leading-6 text-[#243136]/66 transition duration-200 ease-out hover:bg-[var(--station-hover-color)] hover:text-white focus:bg-[var(--station-hover-color)] focus:text-white focus:outline-none md:text-base'
+                                    ? 'rounded-full bg-[#26383D]/6 px-3 py-1.5 text-sm font-bold leading-6 text-[#26383D]/75 transition duration-200 ease-out hover:bg-[var(--station-hover-color)] hover:text-white focus:bg-[var(--station-hover-color)] focus:text-white focus:outline-none md:text-base'
                                     : 'origin-left rounded-full border border-transparent px-3 py-1.5 text-sm font-medium leading-6 text-white/62 transition duration-200 ease-out hover:scale-105 hover:border-[var(--station-hover-color)] hover:bg-[var(--station-hover-color)] hover:text-white focus:scale-105 focus:border-[var(--station-hover-color)] focus:bg-[var(--station-hover-color)] focus:text-white focus:outline-none md:text-base'
                                   }
                                   style={{ '--station-hover-color': stationHoverColor } as CSSProperties}
@@ -951,20 +939,20 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                       {activeStationBrowseMode === 'lines' && activeLineGroup ? (
                         <>
                           <div className={`mt-4 text-lg font-semibold leading-tight ${
-                            isV2 ? 'text-[#243136]' : 'text-white/82'
+                            isV2 ? 'text-[#26383D]' : 'text-white/82'
                           }`}>
                             {activeLineGroup.label}
                           </div>
                           <div className="mt-4 flex max-w-3xl flex-wrap gap-x-4 gap-y-2">
                             {activeLineGroup.stations.map((station) => {
-                              const stationHoverColor = station.lineColor || '#3EB181';
+                              const stationHoverColor = station.lineColor || '#EF9953';
 
                               return (
                                 <button
                                   key={station.route}
                                   type="button"
                                   className={isV2
-                                    ? 'rounded-full bg-[#243136]/6 px-3 py-1.5 text-sm font-bold leading-6 text-[#243136]/66 transition duration-200 ease-out hover:bg-[var(--station-hover-color)] hover:text-white focus:bg-[var(--station-hover-color)] focus:text-white focus:outline-none md:text-base'
+                                    ? 'rounded-full bg-[#26383D]/6 px-3 py-1.5 text-sm font-bold leading-6 text-[#26383D]/75 transition duration-200 ease-out hover:bg-[var(--station-hover-color)] hover:text-white focus:bg-[var(--station-hover-color)] focus:text-white focus:outline-none md:text-base'
                                     : 'origin-left rounded-full border border-transparent px-3 py-1.5 text-sm font-medium leading-6 text-white/62 transition duration-200 ease-out hover:scale-105 hover:border-[var(--station-hover-color)] hover:bg-[var(--station-hover-color)] hover:text-white focus:scale-105 focus:border-[var(--station-hover-color)] focus:bg-[var(--station-hover-color)] focus:text-white focus:outline-none md:text-base'
                                   }
                                   style={{ '--station-hover-color': stationHoverColor } as CSSProperties}
@@ -992,8 +980,8 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                           type="button"
                             className={`origin-left max-w-full text-left transition duration-200 ease-out focus:outline-none ${
                               isActive
-                                ? 'scale-105 text-[#3EB181]'
-                                : 'text-white/62 hover:scale-105 hover:text-[#3EB181] focus:scale-105 focus:text-[#3EB181]'
+                                ? 'scale-105 text-[#26383D]'
+                                : 'text-white/62 hover:scale-105 hover:text-[#26383D] focus:scale-105 focus:text-[#26383D]'
                             }`}
                             onMouseEnter={() => setActivePeopleSection(item.key)}
                             onFocus={() => setActivePeopleSection(item.key)}
@@ -1019,7 +1007,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                           </p>
                           <button
                             type="button"
-                            className="mt-6 origin-left text-sm font-semibold uppercase tracking-[0.18em] text-[#3EB181] transition duration-200 ease-out hover:scale-105 hover:text-white focus:scale-105 focus:outline-none focus:text-white"
+                            className="mt-6 origin-left text-sm font-semibold uppercase tracking-[0.18em] text-[#26383D] transition duration-200 ease-out hover:scale-105 hover:text-white focus:scale-105 focus:outline-none focus:text-white"
                             onClick={() => goToMenuRoute('/people')}
                           >
                             {language === 'zh' ? '打开地铁与人页面' : 'Open Metro People'}
@@ -1036,7 +1024,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                               className="group origin-left text-left transition duration-200 ease-out hover:scale-[1.02] focus:scale-[1.02] focus:outline-none"
                               onClick={() => goToMenuRoute('/people')}
                             >
-                              <span className="block text-base font-semibold leading-tight text-white/82 transition group-hover:text-[#3EB181] group-focus:text-[#3EB181]">
+                              <span className="block text-base font-semibold leading-tight text-white/82 transition group-hover:text-[#26383D] group-focus:text-[#26383D]">
                                 {item.label}
                               </span>
                               <span className="mt-1 block max-w-2xl text-sm leading-6 text-white/48">
@@ -1059,10 +1047,10 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                               <button
                                 key={item.id}
                                 type="button"
-                                className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left transition duration-200 ease-out hover:border-[#3EB181]/60 hover:bg-[#3EB181]/10 focus:border-[#3EB181]/60 focus:bg-[#3EB181]/10 focus:outline-none"
+                                className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left transition duration-200 ease-out hover:border-[#D67AB1]/60 hover:bg-[#D67AB1]/10 focus:border-[#D67AB1]/60 focus:bg-[#D67AB1]/10 focus:outline-none"
                                 onClick={() => goToMenuRoute('/people')}
                               >
-                                <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-[#3EB181]">
+                                <span className="block text-xs font-semibold uppercase tracking-[0.16em] text-[#D67AB1]">
                                   {item.label}
                                 </span>
                                 <span className="mt-1 block truncate text-sm font-semibold text-white/82">
@@ -1086,7 +1074,7 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                               className="group origin-left text-left transition duration-200 ease-out hover:scale-[1.02] focus:scale-[1.02] focus:outline-none"
                               onClick={() => goToMenuRoute('/people')}
                             >
-                              <span className="block text-base font-semibold leading-tight text-white/82 transition group-hover:text-[#3EB181] group-focus:text-[#3EB181]">
+                              <span className="block text-base font-semibold leading-tight text-white/82 transition group-hover:text-[#D67AB1] group-focus:text-[#D67AB1]">
                                 {item.label}
                               </span>
                               <span className="mt-1 block max-w-2xl text-sm leading-6 text-white/48">
@@ -1105,18 +1093,18 @@ export default function GlobalTopBar({ variant = 'v1' }: GlobalTopBarProps) {
                         <button
                           key={theme.title}
                           type="button"
-                          className="group flex min-h-[230px] overflow-hidden rounded-[8px] bg-white/[0.07] text-left shadow-[0_18px_44px_rgba(8,18,24,0.18)] transition duration-200 ease-out hover:-translate-y-1 hover:bg-white/[0.11] focus:-translate-y-1 focus:bg-white/[0.11] focus:outline-none focus:ring-2 focus:ring-[#3EB181]/70"
+                          className="group flex min-h-[230px] overflow-hidden rounded-[8px] bg-[#FFFFFF]/[0.08] text-left shadow-[0_18px_44px_rgba(38,56,61,0.18)] transition duration-200 ease-out hover:-translate-y-1 hover:bg-[#FFFFFF]/[0.14] focus:-translate-y-1 focus:bg-[#FFFFFF]/[0.14] focus:outline-none focus:ring-2 focus:ring-[#D67AB1]/70"
                           onClick={() => goToMenuRoute(activeMenuContent.route)}
                         >
                           <span className="flex w-full flex-col">
-                            <span className="relative block h-[138px] overflow-hidden bg-[#172126]">
+                            <span className="relative block h-[138px] overflow-hidden bg-[#26383D]">
                               <img
                                 src={theme.imageSrc}
                                 alt=""
                                 className="h-full w-full object-cover opacity-86 transition duration-300 ease-out group-hover:scale-105 group-hover:opacity-100 group-focus:scale-105 group-focus:opacity-100"
                               />
-                              <span className="absolute inset-0 bg-gradient-to-t from-[#172126]/54 via-transparent to-transparent" />
-                              <span className="absolute left-3 top-3 rounded-full bg-[#172126]/76 px-2.5 py-1 text-[11px] font-black leading-none text-white/88 backdrop-blur-md">
+                              <span className="absolute inset-0 bg-gradient-to-t from-[#26383D]/54 via-transparent to-transparent" />
+                              <span className="absolute left-3 top-3 rounded-full bg-[#26383D]/76 px-2.5 py-1 text-[11px] font-black leading-none text-white/88 backdrop-blur-md">
                                 {theme.number}
                               </span>
                             </span>

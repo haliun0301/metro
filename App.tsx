@@ -5,14 +5,16 @@
     quickly find where each major view is rendered.
 */
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, useParams } from 'react-router-dom';
 import GlobalTopBar from './components/GlobalTopBar';
 import LandingPage from './components/LandingPage';
-import MetroMapPage from './components/metro-stations/MetroMapPage';
-import MetroPeople from "./components/metro-people/MetroPeople";
-import ThematicMap from './components/metro-city/ThematicMap';
-import StationDetailPage from './pages/StationDetailPage';
-import PersonDetailPage from './pages/PersonDetailPage';
+import AboutPage from './pages/AboutPage';
+import ContactPage from './pages/ContactPage';
+import MetroMapPage from './pages/metro-stations/MetroMapPage';
+import MetroPeoplePage from './pages/metro-people/MetroPeoplePage';
+import ThematicMapPage from './pages/metro-city/ThematicMapPage';
+import StationDetailPage from './pages/metro-stations/StationDetailPage';
+import PersonDetailPage from './pages/metro-people/PersonDetailPage';
 
 function AppShell() {
   const location = useLocation();
@@ -53,7 +55,7 @@ function AppShell() {
 
         html.map-left-controls-map-surface [data-global-top-bar] > button,
         html.map-left-controls-map-surface [data-global-top-bar] > div {
-          background: rgba(255, 255, 255, 0.95);
+          background: rgba(249, 234, 225, 0.95);
         }
 
         html.station-detail-full-page [data-global-top-bar] > button,
@@ -79,12 +81,24 @@ function AppShell() {
           - "/stations/:stationSlug" -> Station detail page (slug param)
         */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/map" element={<MetroMapPage />} />
-        <Route path="/people" element={<MetroPeople />} />
-        <Route path="/people/:personId" element={<><MetroPeople /><PersonDetailPage /></>} />
-        <Route path="/thematicmap" element={<ThematicMap />} />
+        <Route path="/people/:personId?" element={<MetroPeopleRoute />} />
+        <Route path="/thematicmap" element={<ThematicMapPage />} />
         <Route path="/stations/:stationSlug" element={<StationDetailPage />} />
       </Routes>
+    </>
+  );
+}
+
+function MetroPeopleRoute() {
+  const { personId } = useParams();
+
+  return (
+    <>
+      <MetroPeoplePage />
+      {personId && <PersonDetailPage />}
     </>
   );
 }

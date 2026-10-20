@@ -1,16 +1,13 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Shenzhen Metro
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Generate portrait prompts:
-   `npm run generate:prompts`
-4. Generate portrait images from the prompt list:
-   `npm run generate:portraits`
-5. Run the app:
-   `npm run dev`
+## Development
 
-# metro
-# metro
+1. Install dependencies: `npm install`
+2. Run the app: `npm run dev`
+3. Build: `npm run build`
+
+## People images
+
+The selected direction is **black-and-white doodles**. User style references are pending. See [the image direction and path guide](design/people-images/README.md).
+
+Existing doodles are provisional. Missing images use placeholders. Retired experiments are preserved in `archive/image-experiments-2026-09-12/`; their generation commands have been removed.

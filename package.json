@@ -6,12 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "generate:prompts": "node src/generatePortraitPrompts.js",
-    "generate:portraits": "node scripts/generatePortraitImages.js"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@google/genai": "^1.30.0",
     "@tailwindcss/vite": "^4.2.4",
     "@vitejs/plugin-react": "^4.7.0",
     "framer-motion": "^12.33.0",
