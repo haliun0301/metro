@@ -229,7 +229,7 @@ function SectionHeader({
   return (
     <div className="mb-6">
       <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${eyebrowClass}`}>{eyebrow}</p>
-      <h2 className={`mt-3 text-2xl font-semibold md:text-3xl ${titleClass}`}>{title}</h2>
+      <h2 className={`type-section-heading mt-3 ${titleClass}`}>{title}</h2>
       <p className={`mt-3 max-w-3xl text-sm leading-7 md:text-base ${descriptionClass}`}>{description}</p>
     </div>
   );
@@ -290,7 +290,14 @@ const bandInnerClass = 'mx-auto w-full px-4 md:px-8';
 
 // Color utilities — convert hex to RGB components
 function hexToRgb(hex: string) {
-  const normalized = hex.replace('#', '');
+  const variable = /^var\((--[\w-]+)\)$/.exec(hex.trim());
+  const resolved = variable
+    ? getComputedStyle(document.documentElement).getPropertyValue(variable[1]).trim()
+    : hex.trim();
+  if (!/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(resolved)) {
+    throw new Error(`Expected a hex color for ${hex}, received "${resolved}"`);
+  }
+  const normalized = resolved.slice(1);
   const value = normalized.length === 3
     ? normalized.split('').map((char) => char + char).join('')
     : normalized;
@@ -2183,7 +2190,11 @@ function StationDetailPage() {
         nextState[key] = current[key] ?? defaultExpandedNavIds[key];
       });
 
-      return nextState;
+      const currentKeys = Object.keys(current);
+      const nextKeys = Object.keys(nextState);
+      return currentKeys.length === nextKeys.length && nextKeys.every((key) => current[key] === nextState[key])
+        ? current
+        : nextState;
     });
   }, [defaultExpandedNavIds]);
 
@@ -2408,8 +2419,9 @@ function StationDetailPage() {
     const updateCoverPassedState = () => {
       if (!scrollContainer || !introSectionRef.current) return;
 
-      const coverEnd = introSectionRef.current.offsetTop + introSectionRef.current.offsetHeight;
-      const hasPassedCover = scrollContainer.scrollTop > coverEnd - 96;
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const coverRect = introSectionRef.current.getBoundingClientRect();
+      const hasPassedCover = coverRect.bottom - containerRect.top < 96;
 
       if (hasPassedCover === previousPassedCover) return;
       previousPassedCover = hasPassedCover;
@@ -2545,7 +2557,7 @@ function StationDetailPage() {
               <p className="inline-flex rounded-full border border-white/35 bg-white/14 px-4 py-1 text-xs font-semibold uppercase tracking-[0.34em] text-white/95">
                 {copy.sharedTemplate}
               </p>
-              <h1 className="mt-5 text-4xl font-semibold leading-tight text-white md:text-5xl">
+              <h1 className="type-detail-heading mt-5 text-white">
                 {stationDisplayName}
               </h1>
 
@@ -2588,7 +2600,7 @@ function StationDetailPage() {
             <div className="p-4 md:p-6">
             <div className="mb-2 rounded-2xl px-2 py-2 md:px-3 md:py-3">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-ink)]">Research area map</p>
-              <h2 className="mt-2 text-2xl font-semibold text-[var(--color-ink)] md:text-3xl">{researchSectionTitle}</h2>
+              <h2 className="type-section-heading mt-2 text-[var(--color-ink)]">{researchSectionTitle}</h2>
               <p className="mt-1 max-w-4xl text-sm leading-6 text-zinc-700 md:text-base">{copy.overviewDiagramText}</p>
             </div>
             <div className="grid gap-4">
@@ -2892,7 +2904,7 @@ function StationDetailPage() {
             <div className="w-full">
             <div className="mb-4 rounded-2xl p-5 md:p-6">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-ink)]">{copy.sections[3]}</p>
-              <h2 className="mt-3 text-2xl font-semibold text-[var(--color-ink)] md:text-3xl">{thematicSectionTitle}</h2>
+              <h2 className="type-section-heading mt-3 text-[var(--color-ink)]">{thematicSectionTitle}</h2>
               <p className="max-w-4xl text-sm leading-7 text-zinc-700 md:text-base">{copy.thematicHint}</p>
             </div>
             <div className="grid gap-0">
@@ -3039,7 +3051,7 @@ function StationDetailPage() {
             <div className={`${lightSectionClass} w-full`}>
             <div className="mb-4 rounded-2xl p-5 md:p-6">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-ink)]">{copy.sections[4]}</p>
-              <h2 className="mt-3 text-2xl font-semibold text-[var(--color-ink)] md:text-3xl">{referencesSectionTitle}</h2>
+              <h2 className="type-section-heading mt-3 text-[var(--color-ink)]">{referencesSectionTitle}</h2>
               <p className="mt-3 max-w-4xl text-sm leading-7 text-zinc-700 md:text-base">{copy.notesHint}</p>
             </div>
             {hasReferencesGrid && (

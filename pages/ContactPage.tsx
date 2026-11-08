@@ -141,7 +141,7 @@ export default function ContactPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           >
-            <h2 className="text-3xl font-semibold leading-tight tracking-[-0.025em] md:text-4xl">{text.formTitle}</h2>
+            <h2 className="type-section-heading">{text.formTitle}</h2>
             <div className="mt-8 grid gap-6 md:grid-cols-2">
               <label className="block text-sm font-semibold">
                 {text.name}

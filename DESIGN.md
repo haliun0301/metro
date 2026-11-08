@@ -29,6 +29,14 @@ colors:
   city: "#28A873"
 
 typography:
+  implementation: "Use Inter with Noto Sans SC and system fallbacks across interface text, maps, and charts. Use tabular figures for numerical data; preserve data-driven text sizing in visualizations."
+  sharedRoles:
+    page-heading: "type-page-heading: responsive 40–72px, 600 weight"
+    detail-heading: "type-detail-heading: responsive 32–48px, 600 weight"
+    section-heading: "type-section-heading: responsive 24–32px, 600 weight"
+    body: "16px regular; 14px for secondary text"
+    label: "12px semibold; reserve smaller sizes for constrained chart annotations"
+  # The following values document the original Figma starter system.
   display:
     fontFamily: Inter
     fontSize: 80px
@@ -90,13 +98,13 @@ typography:
     lineHeight: 1.38
     letterSpacing: 0
   label:
-    fontFamily: Saans
+    fontFamily: Inter
     fontSize: 12px
     fontWeight: 600
     lineHeight: 1.33
     letterSpacing: 0
   caption:
-    fontFamily: Saans
+    fontFamily: Inter
     fontSize: 12px
     fontWeight: 456
     lineHeight: 1.33

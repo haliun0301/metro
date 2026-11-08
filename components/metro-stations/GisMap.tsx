@@ -15,6 +15,8 @@ import React, {
         startTransition,
         useMemo,
         useCallback,
+        lazy,
+        Suspense,
         type CSSProperties,
 } from "react"
 import type { GisMapProps, MetroStation } from "../../types";
@@ -24,6 +26,7 @@ import { METRO_AREAS, normalizeMetroAreaName } from "../../data/metro-stations/m
 import { useHistoryLayer } from "../../utils/navigation";
 import StationSearch from "../ui/StationSearch";
 import MetroLineCheckboxRow from "../ui/MetroLineCheckboxRow";
+const AtlasBasemap = lazy(() => import("../map/AtlasBasemap"));
 
 // UI spacing constants used for popups and pointer arrows
 const GAP_PX = 14 // space between popup and dot
@@ -138,7 +141,18 @@ function GisMap(props: GisMapProps) {
     const [currentMapStyle, setCurrentMapStyle] = useState<
         "streets" | "satellite" | "terrain"
     >(mapStyle)
+    const [atlasStatus, setAtlasStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+    const [showLoadingTiles, setShowLoadingTiles] = useState(false)
     const language = propLanguage || props.defaultLanguage || "en"
+
+    useEffect(() => {
+        if (currentMapStyle !== "streets" || atlasStatus !== 'loading') {
+            setShowLoadingTiles(false)
+            return
+        }
+        const timer = window.setTimeout(() => setShowLoadingTiles(true), 1200)
+        return () => window.clearTimeout(timer)
+    }, [currentMapStyle, atlasStatus])
 
     // Area menu state
     const [showAreaMenu, setShowAreaMenu] = useState(false)
@@ -552,26 +566,29 @@ function GisMap(props: GisMapProps) {
         containerDimensions
 
     const visibleTiles = useMemo(() => {
-        const tiles: Array<{ x: number; y: number; url: string }> = []
+        const tiles: Array<{ x: number; y: number; size: number; url: string }> = []
+        if (currentMapStyle === "streets" && (atlasStatus === 'ready' || (atlasStatus === 'loading' && !showLoadingTiles))) return tiles
         const currentZ = isStatic ? zoom : currentZoom
+        const tileZoom = Math.floor(currentZ)
+        const tileSize = 256 * Math.pow(2, currentZ - tileZoom)
         const currentStyle = isStatic ? mapStyle : currentMapStyle
-        const scale = Math.pow(2, currentZ)
+        const scale = Math.pow(2, tileZoom)
         const maxTile = scale - 1
-        const centerTileX = Math.floor(centerPixel.x / 256)
-        const centerTileY = Math.floor(centerPixel.y / 256)
+        const centerTileX = Math.floor(centerPixel.x / tileSize)
+        const centerTileY = Math.floor(centerPixel.y / tileSize)
 
         if (isStatic) {
             // Only render center tile for static
             const url = tileUrls[currentStyle]
-                .replace("{z}", currentZ.toString())
+                .replace("{z}", tileZoom.toString())
                 .replace("{x}", centerTileX.toString())
                 .replace("{y}", centerTileY.toString())
                         .replace("{r}", "")
                         .replace("{s}", "a")
-            tiles.push({ x: centerTileX * 256, y: centerTileY * 256, url })
+            tiles.push({ x: centerTileX * tileSize, y: centerTileY * tileSize, size: tileSize, url })
         } else {
-            const tilesX = Math.min(Math.ceil(containerWidth / 256) + 2, 10)
-            const tilesY = Math.min(Math.ceil(containerHeight / 256) + 2, 10)
+            const tilesX = Math.ceil(containerWidth / (2 * tileSize)) + 1
+            const tilesY = Math.ceil(containerHeight / (2 * tileSize)) + 1
 
             for (let dy = -tilesY; dy <= tilesY; dy++) {
                 for (let dx = -tilesX; dx <= tilesX; dx++) {
@@ -580,14 +597,15 @@ function GisMap(props: GisMapProps) {
                     tileX = ((tileX % scale) + scale) % scale
                     if (tileY < 0 || tileY > maxTile) continue
                     const url = tileUrls[currentStyle]
-                        .replace("{z}", currentZ.toString())
+                        .replace("{z}", tileZoom.toString())
                         .replace("{x}", tileX.toString())
                         .replace("{y}", tileY.toString())
                         .replace("{r}", "")
                         .replace("{s}", ["a", "b", "c", "d"][(Math.abs(tileX + tileY) % 4)])
                     tiles.push({
-                        x: (centerTileX + dx) * 256,
-                        y: tileY * 256,
+                        x: (centerTileX + dx) * tileSize,
+                        y: tileY * tileSize,
+                        size: tileSize,
                         url,
                     })
                 }
@@ -605,6 +623,8 @@ function GisMap(props: GisMapProps) {
         currentMapStyle,
         mapStyle,
         tileUrls,
+        atlasStatus,
+        showLoadingTiles,
     ])
 
     // Parse bulk stations (JSON or GeoJSON) and merge with manual list
@@ -881,13 +901,18 @@ function GisMap(props: GisMapProps) {
         return transferCoords
     }, [stations, isStatic])
 
+    const stationPixels = useMemo(
+        () => visibleStations.map((station) => latLngToPixel(station.lat, station.lng, currentZoom)),
+        [visibleStations, latLngToPixel, currentZoom]
+    )
+
     // Memoize line segments
     const lineSegments = useMemo(() => {
         if (isStatic || !showMetroStations || visibleLines.size === 0) return []
 
         const segments: Array<{
             lineName: string
-            points: Array<{ x: number; y: number }>
+            pathData: string
             color: string
         }> = []
 
@@ -916,16 +941,13 @@ function GisMap(props: GisMapProps) {
 
                 const points = route.coordinates.map(coord => {
                     const pixel = latLngToPixel(coord.lat, coord.lng, currentZoom);
-                    return {
-                        x: pixel.x - centerPixel.x + containerWidth / 2,
-                        y: pixel.y - centerPixel.y + containerHeight / 2,
-                    };
+                    return pixel;
                 });
 
                 if (points.length >= 2) {
                     segments.push({
                         lineName: `line-${route.lineId}`,
-                        points,
+                        pathData: points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" "),
                         color: route.color
                     });
                 }
@@ -977,16 +999,13 @@ function GisMap(props: GisMapProps) {
             // Convert all coordinates to screen pixels
             const points = coordinates.map((coord: { lat: number; lng: number }) => {
                 const pixel = latLngToPixel(coord.lat, coord.lng, currentZoom)
-                return {
-                    x: pixel.x - centerPixel.x + containerWidth / 2,
-                    y: pixel.y - centerPixel.y + containerHeight / 2,
-                }
+                return pixel
             })
 
             if (points.length >= 2) {
                 segments.push({
                     lineName: `route-${routeKey}`,
-                    points,
+                    pathData: points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" "),
                     color: lineColor,
                 })
             }
@@ -1000,10 +1019,6 @@ function GisMap(props: GisMapProps) {
         routesMap,
         metroRoutes,
         currentZoom,
-        centerPixel.x,
-        centerPixel.y,
-        containerWidth,
-        containerHeight,
         latLngToPixel,
         stations,
     ])
@@ -1531,8 +1546,8 @@ function GisMap(props: GisMapProps) {
                             position: "absolute",
                             left: offsetX,
                             top: offsetY,
-                            width: 256,
-                            height: 256,
+                            width: tile.size,
+                            height: tile.size,
                             backgroundImage: `url(${tile.url})`,
                             backgroundSize: "cover",
                             pointerEvents: "none",
@@ -1548,6 +1563,31 @@ function GisMap(props: GisMapProps) {
                     />
                 )
             })}
+
+            {currentMapStyle === "streets" && (
+                <Suspense fallback={null}>
+                    <AtlasBasemap lat={centerLat} lng={centerLng} zoom={currentZoom} language={language} showAttribution={atlasStatus === 'ready'} onStatusChange={setAtlasStatus} />
+                </Suspense>
+            )}
+            {currentMapStyle === "streets" && atlasStatus === 'error' && (
+                <div role="status" className="atlas-error">
+                    {language === "zh" ? "自定义底图不可用，现显示备用地图。" : "Custom basemap unavailable. Showing the fallback map."}
+                </div>
+            )}
+            {currentMapStyle === "streets" && (atlasStatus === 'error' || (atlasStatus === 'loading' && showLoadingTiles)) && (
+                <div className="atlas-attribution" onMouseDown={(event) => event.stopPropagation()}>
+                    &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors
+                </div>
+            )}
+            {currentMapStyle !== "streets" && (
+                <div className="atlas-attribution" onMouseDown={(event) => event.stopPropagation()}>
+                    {currentMapStyle === "terrain" ? (
+                        <>Map data &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors, map style &copy; <a href="https://opentopomap.org" target="_blank" rel="noreferrer">OpenTopoMap</a></>
+                    ) : (
+                        <>Tiles &copy; <a href="https://www.esri.com/" target="_blank" rel="noreferrer">Esri</a> and contributors</>
+                    )}
+                </div>
+            )}
 
             {/* Modern plain color overlay for a muted, contemporary look */}
             {modernPlain && (
@@ -1582,34 +1622,19 @@ function GisMap(props: GisMapProps) {
                         zIndex: 500,
                     }}
                 >
-                            {lineSegments.map((segment) => {
-                        if (segment.points.length === 2) {
-                            // Simple line segment
-                            return (
-                                <line
-                                    key={segment.lineName}
-                                    x1={segment.points[0].x}
-                                    y1={segment.points[0].y}
-                                    x2={segment.points[1].x}
-                                    y2={segment.points[1].y}
-                                            stroke={segment.color}
-                                            strokeOpacity={0.78}
-                                    strokeWidth={lineWidth}
-                                    strokeLinecap="round"
-                                />
-                            )
-                        } else {
-                            // Polyline for exact route
-                            const pathData = segment.points
-                                .map(
-                                    (point, i) =>
-                                        `${i === 0 ? "M" : "L"} ${point.x} ${point.y}`
-                                )
-                                .join(" ")
-                                return (
+                    <g transform={`translate(${containerWidth / 2 - centerPixel.x} ${containerHeight / 2 - centerPixel.y})`}>
+                            {lineSegments.map((segment) => (
+                                <React.Fragment key={segment.lineName}>
                                 <path
-                                    key={segment.lineName}
-                                    d={pathData}
+                                    d={segment.pathData}
+                                    stroke="rgba(255,255,255,0.85)"
+                                    strokeWidth={lineWidth + 2}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    fill="none"
+                                />
+                                <path
+                                    d={segment.pathData}
                                     stroke={segment.color}
                                     strokeOpacity={0.78}
                                     strokeWidth={lineWidth}
@@ -1617,9 +1642,9 @@ function GisMap(props: GisMapProps) {
                                     strokeLinejoin="round"
                                     fill="none"
                                 />
-                            )
-                        }
-                    })}
+                                </React.Fragment>
+                            ))}
+                    </g>
                 </svg>
             )}
 
@@ -1963,15 +1988,15 @@ function GisMap(props: GisMapProps) {
             {/* ========== COMPONENT: Metro stations ========== */}
             {showMetroStations && currentZoom <= 18 &&
                 visibleStations.map((station, index) => {
-                    const stationPixel = latLngToPixel(
-                        station.lat,
-                        station.lng,
-                        currentZoom
-                    )
+                    const stationPixel = stationPixels[index]
                     const offsetX =
                         stationPixel.x - centerPixel.x + containerWidth / 2
                     const offsetY =
                         stationPixel.y - centerPixel.y + containerHeight / 2
+                    if (hoveredStation !== index && (
+                        offsetX < -240 || offsetX > containerWidth + 240 ||
+                        offsetY < -240 || offsetY > containerHeight + 240
+                    )) return null
                                         const isHovered = hoveredStation === index
                                         const stationColor = station.lineColor || "#E91E63"
                                         const isOutside = !isCoordinateInsideActiveArea(station.lat, station.lng)
@@ -1982,8 +2007,8 @@ function GisMap(props: GisMapProps) {
                                         const effectiveShadow = isOutside
                                                 ? "0 1px 4px rgba(0,0,0,0.06)"
                                                 : isHovered
-                                                ? `0 0 20px ${stationColor}80, 0 4px 12px rgba(0,0,0,0.2)`
-                                                : `0 0 8px ${stationColor}40, 0 2px 6px rgba(0,0,0,0.1)`
+                                                ? "0 2px 8px rgba(38,56,61,0.3)"
+                                                : "0 1px 3px rgba(38,56,61,0.2)"
                     const stationKey = `${station.lat.toFixed(4)},${station.lng.toFixed(4)}`
                     const isTransferStation = transferStations.has(stationKey)
                     const isAnimating = animatingStationKey === getStationAnimationKey(station)
@@ -2376,7 +2401,10 @@ function GisMap(props: GisMapProps) {
                         {['streets', 'satellite', 'terrain'].map((style) => (
                             <button
                                 key={style}
-                                onClick={() => startTransition(() => setCurrentMapStyle(style as any))}
+                                onClick={() => startTransition(() => {
+                                    if (style === 'streets' && currentMapStyle !== 'streets') setAtlasStatus('loading')
+                                    setCurrentMapStyle(style as "streets" | "satellite" | "terrain")
+                                })}
                                 onMouseEnter={() => startTransition(() => setHoveredMapStyle(style))}
                                 onMouseLeave={() => startTransition(() => setHoveredMapStyle(null))}
                                 aria-label={style}
@@ -2403,7 +2431,7 @@ function GisMap(props: GisMapProps) {
                                         borderRadius: 999,
                                         backgroundSize: 'cover',
                                         backgroundPosition: 'center',
-                                        backgroundImage: `url(${tileUrls[style as keyof typeof tileUrls].replace("{z}", "12").replace("{x}", "3423").replace("{y}", "1790")})`
+                                        backgroundImage: `url(${tileUrls[style as keyof typeof tileUrls].replace("{z}", "12").replace("{x}", "3345").replace("{y}", "1785").replace("{s}", "a")})`
                                     }}
                                 />
                             </button>

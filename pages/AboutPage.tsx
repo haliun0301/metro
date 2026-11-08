@@ -10,7 +10,7 @@ import { THEMATIC_TOPICS } from '../data/metro-city/thematicTopics';
 const copy = {
   en: {
     kicker: 'About us · 关于我们',
-    title: ['The city', 'in motion.'],
+    title: ['History told by', 'rapid transit.'],
     lead: 'Shenzhen Metro Atlas is an interactive urban research exhibition. We connect stations, people, and urban change to make the everyday journeys shaping Shenzhen visible.',
     scroll: 'Read on',
     missionLabel: 'Our purpose',
@@ -97,29 +97,30 @@ export default function AboutPage() {
       theme={{ chapterColor: 'var(--color-primary)', backgroundColor: '#02090c' }}
       className="landing-scroll relative h-[100svh] min-h-[560px] overflow-y-auto overflow-x-hidden bg-[#02090c] text-white"
     >
-      <header className="bg-[var(--color-canvas)] px-6 pb-16 pt-32 text-[var(--color-ink)] md:px-12 md:pb-24 md:pt-40 lg:px-20">
+      <header className="bg-[var(--primitive-green)] px-6 pb-16 pt-32 text-[var(--color-ink)] md:px-12 md:pb-24 md:pt-40 lg:px-20">
         <div className="mx-auto max-w-[1440px]">
           <div>
             <motion.p
-              className="mb-5 text-[var(--text-label)] font-semibold uppercase tracking-[0.28em] text-[var(--color-primary)]"
+              className="mb-5 text-[var(--text-label)] font-semibold uppercase tracking-[0.28em] text-[var(--color-ink)]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
               {text.kicker}
             </motion.p>
             <motion.h1
-              className="text-5xl font-semibold leading-none tracking-[-0.05em] md:text-7xl [text-wrap:balance]"
+              className="max-w-6xl text-[clamp(3.2rem,8vw,8rem)] font-black uppercase leading-[0.82] tracking-[-0.06em] [text-wrap:balance]"
               initial={{ opacity: 0, y: 28 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             >
-              {text.title[0]}{language === 'en' ? ' ' : ''}{text.title[1]}
+              <span className="block text-white">{text.title[0]}</span>
+              <span className="block text-[var(--color-ink)]">{text.title[1]}</span>
             </motion.h1>
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--color-text-muted)] md:text-xl">{text.lead}</p>
+            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--color-ink)]/80 md:text-xl">{text.lead}</p>
             <button
               type="button"
               onClick={() => document.getElementById('mission')?.scrollIntoView({ behavior: 'smooth' })}
-              className="mt-8 inline-flex items-center gap-3 rounded-[var(--radius-pill)] bg-[var(--color-primary)] px-6 py-3 text-sm font-semibold text-[var(--color-on-primary)] transition hover:opacity-85"
+              className="mt-8 inline-flex items-center gap-3 rounded-[var(--radius-pill)] bg-white px-6 py-3 text-sm font-semibold text-[var(--color-ink)] transition hover:bg-white/85"
             >
               {text.scroll} <span aria-hidden="true">↓</span>
             </button>
@@ -136,7 +137,7 @@ export default function AboutPage() {
 
       <section className="relative z-10 bg-white px-6 py-20 text-[var(--color-ink)] md:px-12 md:py-28 lg:px-20">
         <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl font-semibold leading-tight tracking-[-0.04em] md:text-4xl">{text.teamLabel}</h2>
+          <h2 className="type-section-heading">{text.teamLabel}</h2>
           <p className="mx-auto mt-4 max-w-3xl text-base leading-7 text-[var(--color-text-muted)] md:text-lg">{text.team}</p>
         </div>
         <div className="mx-auto mt-12 grid max-w-5xl justify-items-center gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">

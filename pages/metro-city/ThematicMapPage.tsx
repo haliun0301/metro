@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { CircleMarker, MapContainer, Popup, TileLayer, Tooltip } from 'react-leaflet';
+import { lazy, Suspense, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { CircleMarker, MapContainer, Popup, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 import { useAppLanguage } from '../../hooks/useAppLanguage';
 import { STATIONS } from '../../data/metro-stations/stations';
 import { METRO_IMPACT_PLACES, type MetroImpactPlace } from '../../data/metro-city/metroImpactPlaces';
-import { THEMATIC_TOPICS } from '../../data/metro-city/thematicTopics';
+import { getThemeRoute, THEMATIC_TOPICS } from '../../data/metro-city/thematicTopics';
 import PageShell from '../../components/ui/PageShell';
-import CityThemeCard from '../../components/ui/CityThemeCard';
+import ThemeSidebar from '../../components/metro-city/ThemeSidebar';
+const CityAtlasLayer = lazy(() => import('../../components/map/CityAtlasLayer'));
 
 const customPlaceTranslations: Record<string, string> = {
   '东门/老街': 'Dongmen / Laojie',
@@ -80,13 +82,15 @@ const stationTranslations = new Map(
 
 const uiCopy = {
   title: { en: 'Shenzhen Metro Development Impact Map', zh: '深圳地铁发展影响地点分布图' },
-  instruction: { en: 'Hover to preview · select a circle for interview notes', zh: '悬停预览 · 点击圆点查看访谈记录' },
-  themeMenu: { en: 'Theme options', zh: '主题菜单' },
   mentions: { en: 'mentions', zh: '次提及' },
   evidence: { en: 'Interview evidence', zh: '访谈记录' },
   more: { en: 'More details will be added.', zh: '更多内容待补充。' },
   legend: { en: 'Mentions', zh: '提及次数' },
 } as const;
+
+// Keep the impact map on its established orange theme. Size carries the
+// mention scale; a light outline and hover lift separate overlapping places.
+export const CITY_MAP_MARKER_COLOR = 'var(--primitive-orange)';
 
 const legendItems = [
   { label: '1–3', radius: 6 },
@@ -118,101 +122,118 @@ function getNotes(place: MetroImpactPlace, language: 'en' | 'zh') {
   return place.notesZh.map((note) => note === 'More' ? uiCopy.more.en : note);
 }
 
-export default function ThematicMapPage() {
-  const { language } = useAppLanguage('en');
-  const [selectedThemeIndex, setSelectedThemeIndex] = useState(2);
-  const themeButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const selectedTheme = THEMATIC_TOPICS[selectedThemeIndex];
+export function ImpactPlacesLayer({ language }: { language: 'en' | 'zh' }) {
   const numberFormatter = useMemo(() => new Intl.NumberFormat(language === 'zh' ? 'zh-CN' : 'en-US'), [language]);
 
-  useEffect(() => {
-    themeButtonRefs.current[selectedThemeIndex]?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
-    });
-  }, [selectedThemeIndex]);
+  return (
+    <>
+      {METRO_IMPACT_PLACES.map((place) => {
+        const displayName = language === 'zh' ? place.nameZh : getEnglishName(place.nameZh);
+        const notes = getNotes(place, language);
+        return (
+          <CircleMarker
+            key={place.id}
+            center={place.coordinates}
+            radius={place.radius}
+            pathOptions={{
+              className: 'metro-city-circle-marker',
+              stroke: false,
+              fillColor: CITY_MAP_MARKER_COLOR,
+              fillOpacity: 0.78,
+            }}
+            eventHandlers={{
+              mouseover: (event) => event.target.setStyle({ fillOpacity: 1 }),
+              mouseout: (event) => event.target.setStyle({ fillOpacity: 0.78 }),
+            }}
+          >
+            <Tooltip sticky direction="top" opacity={1} className="metro-city-tooltip">
+              <div className="max-w-[20rem] py-1">
+                <div className="font-semibold text-[var(--color-ink)]">{displayName}</div>
+                  <div className="mt-1 text-xs" style={{ color: CITY_MAP_MARKER_COLOR }}>
+                  {numberFormatter.format(place.mentions)} {uiCopy.mentions[language]}
+                </div>
+                <p className="mt-2 line-clamp-3 text-xs leading-5 text-[var(--color-text-muted)]">{notes[0]}</p>
+              </div>
+            </Tooltip>
+
+            <Popup maxWidth={420} minWidth={260} className="metro-city-popup">
+              <article className="max-h-[24rem] overflow-y-auto pr-1">
+                <div className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-[var(--color-city)]">
+                  {uiCopy.evidence[language]}
+                </div>
+                <h2 className="mt-2 text-xl font-semibold leading-tight text-[var(--color-ink)]">{displayName}</h2>
+                <div className="mt-2 text-xs font-semibold text-[var(--color-text-muted)]">
+                  {numberFormatter.format(place.mentions)} {uiCopy.mentions[language]}
+                </div>
+                <div className="mt-4 h-px bg-[var(--color-city)]/45" />
+                <div className="mt-4 space-y-3 text-sm leading-6 text-[var(--color-ink)]">
+                  {notes.map((note, index) => <p key={`${place.id}-note-${index}`}>{note}</p>)}
+                </div>
+              </article>
+            </Popup>
+          </CircleMarker>
+        );
+      })}
+    </>
+  );
+}
+
+export const IMPACT_LEGEND_ITEMS = legendItems;
+
+export const METRO_CITY_MAP_STYLES = `
+  .leaflet-container { font-family: var(--font-sans); background: var(--color-canvas); }
+  .metro-city-circle-marker:focus { outline: none !important; }
+  .metro-city-circle-marker:focus-visible { filter: drop-shadow(0 0 3px color-mix(in srgb, var(--color-city) 80%, transparent)); }
+  .leaflet-top.leaflet-left { top: 3.5rem !important; left: auto !important; right: max(1rem, calc(50% - 22rem)) !important; }
+  .leaflet-control-zoom { overflow: hidden; margin: 0 !important; border: 1px solid rgb(255 255 255 / .42) !important; border-radius: 12px !important; box-shadow: inset 0 1px 0 rgb(255 255 255 / .28), 0 18px 55px rgb(38 56 61 / .16) !important; backdrop-filter: blur(24px) saturate(140%); }
+  .leaflet-control-zoom a { color: white !important; border-color: rgb(255 255 255 / .2) !important; background: rgb(38 56 61 / .3) !important; }
+  .metro-city-tooltip { border: 0 !important; border-radius: 14px !important; box-shadow: 0 16px 45px rgba(38,56,61,.18) !important; padding: 10px 12px !important; }
+  .metro-city-tooltip::before { border-top-color: var(--color-canvas) !important; }
+  .metro-city-popup .leaflet-popup-content-wrapper { border-radius: 18px; box-shadow: 0 22px 60px rgba(38,56,61,.24); }
+  .metro-city-popup .leaflet-popup-content { margin: 18px 20px; }
+  .metro-city-popup .leaflet-popup-tip { box-shadow: none; }
+`;
+
+export default function ThematicMapPage() {
+  const { language } = useAppLanguage('en');
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const themeParam = Number(searchParams.get('theme'));
+  const selectedThemeIndex = Number.isInteger(themeParam) && themeParam >= 1 && themeParam <= THEMATIC_TOPICS.length ? themeParam - 1 : null;
+  const handleSelectTheme = (index: number) => navigate(getThemeRoute(index));
 
   return (
     <PageShell theme={{ chapterColor: 'var(--color-city)' }} className="relative h-dvh w-full overflow-hidden">
-    <main
-      className="relative h-dvh w-full overflow-hidden bg-[var(--color-canvas)] text-[var(--color-ink)]"
-    >
-      <MapContainer
-        center={[22.58, 114.05]}
-        zoom={11}
-        minZoom={9}
-        maxZoom={18}
-        className="h-full w-full"
-        zoomControl
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxZoom={19}
-        />
+    <main className="relative flex h-dvh w-full overflow-hidden bg-[var(--color-canvas)] text-[var(--color-ink)]">
+      <ThemeSidebar language={language} selectedIndex={selectedThemeIndex} onSelect={handleSelectTheme} variant="map" />
 
-        {METRO_IMPACT_PLACES.map((place) => {
-          const displayName = language === 'zh' ? place.nameZh : getEnglishName(place.nameZh);
-          const notes = getNotes(place, language);
+      <section className="relative min-w-0 flex-1 lg:[&_.leaflet-left]:left-[23rem]!">
+        <MapContainer
+          center={[22.58, 114.05]}
+          zoom={11}
+          minZoom={9}
+          maxZoom={18}
+          className="h-full w-full"
+          zoomControl={false}
+        >
+        <Suspense fallback={null}><CityAtlasLayer language={language} /></Suspense>
 
-          return (
-            <CircleMarker
-              key={place.id}
-              center={place.coordinates}
-              radius={place.radius}
-              pathOptions={{
-                color: 'var(--color-city)',
-                fillColor: 'var(--color-city)',
-                fillOpacity: 0.36,
-                opacity: 0.78,
-                weight: 2,
-              }}
-            >
-              <Tooltip sticky direction="top" opacity={1} className="metro-city-tooltip">
-                <div className="max-w-[20rem] py-1">
-                  <div className="font-semibold text-[var(--color-ink)]">{displayName}</div>
-                  <div className="mt-1 text-xs text-[var(--color-city)]">
-                    {numberFormatter.format(place.mentions)} {uiCopy.mentions[language]}
-                  </div>
-                  <p className="mt-2 line-clamp-3 text-xs leading-5 text-[var(--color-text-muted)]">{notes[0]}</p>
-                </div>
-              </Tooltip>
+        <ImpactPlacesLayer language={language} />
+        </MapContainer>
 
-              <Popup maxWidth={420} minWidth={260} className="metro-city-popup">
-                <article className="max-h-[24rem] overflow-y-auto pr-1">
-                  <div className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-[var(--color-city)]">
-                    {uiCopy.evidence[language]}
-                  </div>
-                  <h2 className="mt-2 text-xl font-semibold leading-tight text-[var(--color-ink)]">{displayName}</h2>
-                  <div className="mt-2 text-xs font-semibold text-[var(--color-text-muted)]">
-                    {numberFormatter.format(place.mentions)} {uiCopy.mentions[language]}
-                  </div>
-                  <div className="mt-4 h-px bg-[var(--color-city)]/45" />
-                  <div className="mt-4 space-y-3 text-sm leading-6 text-[var(--color-ink)]">
-                    {notes.map((note, index) => <p key={`${place.id}-note-${index}`}>{note}</p>)}
-                  </div>
-                </article>
-              </Popup>
-            </CircleMarker>
-          );
-        })}
-      </MapContainer>
-
-      <section className="pointer-events-none absolute left-1/2 top-5 z-[var(--z-overlay)] w-[min(38rem,calc(100%-8rem))] -translate-x-1/2 text-center">
-        <div className="inline-block rounded-[var(--radius-sm)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)]/95 px-6 py-3 shadow-[var(--shadow-panel)] backdrop-blur-xl">
-          <h1 className="text-base font-semibold tracking-[-0.01em] text-[var(--color-ink)] md:text-lg">{uiCopy.title[language]}</h1>
-          <p className="mt-1 text-xs text-[var(--color-text-muted)]">{uiCopy.instruction[language]}</p>
+      <section className="pointer-events-none absolute left-1/2 top-14 z-[var(--z-overlay)] w-[calc(100%-2rem)] -translate-x-1/2 text-center md:top-14 md:w-[min(44rem,calc(100%-8rem))]">
+        <div className="metro-map-title-glass inline-block max-w-full rounded-[var(--radius-md)] px-6 py-4 sm:px-9 sm:py-5">
+          <h1 className="text-[var(--text-subtitle)] font-semibold leading-tight tracking-[0.01em] text-white drop-shadow-[0_2px_12px_rgb(0_0_0_/_0.28)] sm:text-[var(--text-title)]">{uiCopy.title[language]}</h1>
         </div>
       </section>
 
-      <aside className="pointer-events-none absolute bottom-[12rem] right-5 z-[var(--z-overlay)] hidden rounded-[var(--radius-sm)] border border-[var(--color-hairline-soft)] bg-[var(--color-canvas)]/95 p-4 shadow-[var(--shadow-panel)] backdrop-blur-xl md:block">
-        <div className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-[var(--color-text-muted)]">{uiCopy.legend[language]}</div>
+      <aside className="metro-map-glass-panel pointer-events-none absolute bottom-5 right-5 z-[var(--z-overlay)] hidden rounded-[var(--radius-md)] p-4 text-white md:block">
+        <div className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-white">{uiCopy.legend[language]}</div>
         <div className="mt-3 space-y-2">
           {legendItems.map((item) => (
-            <div key={item.label} className="flex items-center gap-3 text-xs text-[var(--color-ink)]">
+            <div key={item.label} className="flex items-center gap-3 text-xs text-white">
               <span className="flex h-9 w-9 items-center justify-center" aria-hidden="true">
-                <span className="rounded-full border-2 border-[var(--color-city)] bg-[var(--color-city)]/35" style={{ width: item.radius * 2, height: item.radius * 2 }} />
+                  <span className="rounded-full border border-white/90" style={{ width: item.radius * 2, height: item.radius * 2, backgroundColor: CITY_MAP_MARKER_COLOR }} />
               </span>
               <span>{item.label}</span>
             </div>
@@ -220,44 +241,8 @@ export default function ThematicMapPage() {
         </div>
       </aside>
 
-      <section className="pointer-events-none absolute inset-x-0 bottom-0 z-[var(--z-floating)] px-3 pb-3 md:px-6 md:pb-6">
-        <div className="pointer-events-auto mx-auto max-w-7xl rounded-[1.75rem] border border-white/25 bg-[var(--color-ink)]/95 p-4 shadow-[var(--shadow-panel)] backdrop-blur-2xl">
-          <div className="flex items-center justify-between gap-4 px-1">
-            <div>
-              <div className="text-[0.65rem] font-bold uppercase tracking-[0.24em] text-[var(--color-city)]">{uiCopy.themeMenu[language]}</div>
-              <div className="mt-1 line-clamp-1 text-sm font-medium text-white/90">{selectedTheme[language]}</div>
-            </div>
-            <div className="shrink-0 text-xs tabular-nums text-white/45">{String(selectedThemeIndex + 1).padStart(2, '0')} / {THEMATIC_TOPICS.length}</div>
-          </div>
-
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {THEMATIC_TOPICS.map((topic, index) => {
-              const isActive = index === selectedThemeIndex;
-              return (
-                <CityThemeCard
-                  key={topic.en}
-                  ref={(element) => { themeButtonRefs.current[index] = element; }}
-                  index={index}
-                  title={topic[language]}
-                  active={isActive}
-                  onClick={() => setSelectedThemeIndex(index)}
-                />
-              );
-            })}
-          </div>
-        </div>
+      <style>{METRO_CITY_MAP_STYLES}</style>
       </section>
-
-      <style>{`
-        .leaflet-container { font-family: var(--font-sans); background: var(--color-canvas); }
-        .leaflet-control-zoom { border: 0 !important; box-shadow: 0 12px 35px rgba(38,56,61,.16) !important; }
-        .leaflet-control-zoom a { color: var(--color-ink) !important; border-color: var(--color-hairline-soft) !important; background: var(--color-canvas) !important; }
-        .metro-city-tooltip { border: 0 !important; border-radius: 14px !important; box-shadow: 0 16px 45px rgba(38,56,61,.18) !important; padding: 10px 12px !important; }
-        .metro-city-tooltip::before { border-top-color: var(--color-canvas) !important; }
-        .metro-city-popup .leaflet-popup-content-wrapper { border-radius: 18px; box-shadow: 0 22px 60px rgba(38,56,61,.24); }
-        .metro-city-popup .leaflet-popup-content { margin: 18px 20px; }
-        .metro-city-popup .leaflet-popup-tip { box-shadow: none; }
-      `}</style>
     </main>
     </PageShell>
   );

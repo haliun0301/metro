@@ -41,3 +41,16 @@ const storyModules = import.meta.glob('./person-stories/*.json', {
 export function getPersonStory(personId: string) {
   return Object.values(storyModules).find((story) => story.personId === personId);
 }
+
+export function getPersonStorySectionParagraphs(sectionId: PersonStorySectionId) {
+  return Object.entries(storyModules)
+    .filter(([path]) => !path.endsWith('/_template.json'))
+    .flatMap(([, story]) => {
+    const section = story.sections.find((item) => item.id === sectionId);
+
+    return (section?.paragraphs ?? [])
+      .map((text) => text.trim())
+      .filter(Boolean)
+      .map((text) => ({ personId: story.personId, text }));
+  });
+}

@@ -36,6 +36,7 @@ export interface ColumnDiagramProps {
     width?: number
     height?: number
     highlightedYear?: string | null
+    compact?: boolean
 }
 
 const defaultData: DataPoint[] = [
@@ -88,6 +89,7 @@ export default function ColumnDiagram({
     width,
     height,
     highlightedYear = null,
+    compact = false,
 }: ColumnDiagramProps) {
     const containerRef = useRef<HTMLDivElement | null>(null)
     const isInView = useInView(containerRef, {
@@ -209,6 +211,135 @@ export default function ColumnDiagram({
     const getBarHeightPercent = (value: number) => {
         if (safeMax <= 0) return 0
         return (value / safeMax) * 100
+    }
+
+    if (compact) {
+        const activeYear = hovered?.year ?? highlightedYear
+        const hasActiveYear = activeYear !== null
+        const activeTotal = data.find((d) => d.year === activeYear)?.total ?? null
+        const tickValues: number[] = []
+        for (let v = 10; v <= safeMax; v += 10) tickValues.push(v)
+        const activeTick =
+            activeTotal === null || tickValues.length === 0
+                ? null
+                : tickValues.reduce((a, b) =>
+                      Math.abs(b - activeTotal) < Math.abs(a - activeTotal) ? b : a
+                  )
+        const mutedColor = "#A8A8B0"
+        const activeColor = "#2B2B3A"
+
+        return (
+            <div
+                ref={containerRef}
+                style={{
+                    position: "relative",
+                    width: width || "100%",
+                    height: height || 200,
+                    display: "flex",
+                    flexDirection: "row",
+                    gap: 8,
+                    boxSizing: "border-box",
+                    ...style,
+                }}
+            >
+                <div style={{ width: 24, display: "flex", flexDirection: "column" }}>
+                    <div style={{ position: "relative", flex: 1 }}>
+                        {tickValues.map((v) => (
+                            <span
+                                key={v}
+                                style={{
+                                    position: "absolute",
+                                    right: 0,
+                                    bottom: `${(v / safeMax) * 100}%`,
+                                    transform: "translateY(50%)",
+                                    fontSize: 12,
+                                    lineHeight: 1,
+                                    fontWeight: activeTick === v ? 700 : 500,
+                                    color: activeTick === v ? activeColor : mutedColor,
+                                }}
+                            >
+                                {v}
+                            </span>
+                        ))}
+                    </div>
+                    <div style={{ height: 44 }} />
+                </div>
+                <div style={{ flex: 1, display: "flex", flexDirection: "row", gap: 4, minWidth: 0 }}>
+                    {data.map((d, index) => {
+                        const isActive = !hasActiveYear || activeYear === d.year
+                        return (
+                            <div
+                                key={d.year}
+                                onClick={() => onColumnClick?.(d)}
+                                onMouseEnter={() => {
+                                    startTransition(() => setHovered(d))
+                                    onColumnHover?.(d)
+                                }}
+                                onMouseLeave={() => {
+                                    startTransition(() => setHovered(null))
+                                    onColumnHover?.(null)
+                                }}
+                                aria-label={`Total in ${d.year}: ${d.total} people`}
+                                style={{
+                                    flex: 1,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    cursor: "pointer",
+                                    minWidth: 0,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        flex: 1,
+                                        width: "100%",
+                                        display: "flex",
+                                        alignItems: "flex-end",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <motion.div
+                                        initial={{ height: 0 }}
+                                        animate={{ height: animateIn ? `${getBarHeightPercent(d.total)}%` : 0 }}
+                                        transition={{ duration: 0.6, delay: index * 0.08, ease: "easeOut" }}
+                                        style={{
+                                            width: 8,
+                                            borderRadius: 4,
+                                            backgroundColor: isActive ? columnColor : "#D1D1D6",
+                                            transition: "background-color 160ms ease",
+                                        }}
+                                    />
+                                </div>
+                                <div
+                                    style={{
+                                        height: 44,
+                                        paddingTop: 6,
+                                        boxSizing: "border-box",
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        alignItems: "flex-start",
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            writingMode: "vertical-rl",
+                                            transform: "rotate(180deg)",
+                                            fontSize: 12,
+                                            lineHeight: 1,
+                                            whiteSpace: "nowrap",
+                                            fontWeight: isActive ? 700 : 500,
+                                            color: isActive ? activeColor : mutedColor,
+                                        }}
+                                    >
+                                        {d.year}
+                                    </span>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            </div>
+        )
     }
 
     return (

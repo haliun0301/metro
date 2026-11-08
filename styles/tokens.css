@@ -38,6 +38,9 @@
   --text-subtitle: 20px;
   --text-title: 24px;
   --text-display: 56px;
+  --text-page-heading: clamp(2.5rem, 5vw, 4.5rem);
+  --text-detail-heading: clamp(2rem, 3vw, 3rem);
+  --text-section-heading: clamp(1.5rem, 2.5vw, 2rem);
 
   --weight-regular: 400;
   --weight-medium: 500;

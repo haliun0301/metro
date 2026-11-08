@@ -1,4 +1,5 @@
 import { useMemo, useState, startTransition, useEffect, useRef, useCallback, type CSSProperties } from "react"
+import { createPortal } from "react-dom"
 import { motion } from "framer-motion"
 import { useNavigate } from "react-router-dom"
 import { PeopleData } from "../../data/metro-people/people"
@@ -35,6 +36,12 @@ export const defaultPeople: Person[] = PeopleData as Person[]
 export const PEOPLE_GENDER_COLORS = {
     male: "#167C9A",
     female: "#D96578",
+} as const
+
+const detailIconPaths = {
+    occupation: "M3 7h18v13H3z M9 7V4h6v3 M3 12h18",
+    origin: "M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0z M12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6z",
+    birth: "M4 5h16v16H4z M8 3v4 M16 3v4 M4 10h16",
 } as const
 
 // Minimal person icon - filled style
@@ -1128,40 +1135,60 @@ export default function PeopleCircles({
                 const birthLabel = person && typeof person.yearOfBirth === "number"
                     ? language === "zh" ? `${person.yearOfBirth} 年出生` : `Born ${person.yearOfBirth}`
                     : ""
-                const briefIntro = [occupationLabel, originLabel, birthLabel].filter(Boolean).join(" · ")
-                const hoverCard = person ? (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                const briefIntro = [
+                    { type: "occupation", label: occupationLabel },
+                    { type: "origin", label: originLabel },
+                    { type: "birth", label: birthLabel },
+                ] as const
+                const visibleDetails = briefIntro.filter((detail) => detail.label)
+                const hoverCard = person && isHovered && containerRef.current ? createPortal(
+                    <div
                         style={{
                             position: "absolute",
-                            left: "50%",
-                            bottom: "calc(100% + 10px)",
-                            width: 176,
-                            marginLeft: -88,
-                            padding: "9px 10px",
-                            borderRadius: 10,
-                            border: "1px solid rgba(35,35,35,0.12)",
-                            background: "#FFFFFF",
-                            color: "#232323",
-                            textAlign: "left",
-                            boxShadow: "none",
-                            boxSizing: "border-box",
-                            fontFamily: "var(--font-sans)",
-                            fontSize: "var(--text-small)",
-                            fontWeight: "var(--weight-regular)",
+                            left: `${pos.xPercent}%`,
+                            top: `calc(${pos.yPercent}% - ${size * targetScale / 2 + 10}px)`,
+                            transform: "translate(-50%, -100%)",
+                            zIndex: 101,
                             pointerEvents: "none",
                         }}
                         aria-hidden="true"
                     >
-                        <div style={{ fontSize: "var(--text-small)", fontWeight: "var(--weight-semibold)", lineHeight: 1.35 }}>{displayName}</div>
-                        {briefIntro && (
-                            <div style={{ marginTop: 4, color: "#626C67", fontSize: "var(--text-caption)", lineHeight: 1.45 }}>
-                                {briefIntro}
-                            </div>
-                        )}
-                    </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.97 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                            style={{
+                                width: 176,
+                                padding: "9px 10px",
+                                borderRadius: 10,
+                                border: "1px solid var(--color-hairline)",
+                                background: "var(--color-canvas)",
+                                color: "var(--color-ink)",
+                                textAlign: "left",
+                                boxShadow: "none",
+                                boxSizing: "border-box",
+                                fontFamily: "var(--font-sans)",
+                                fontSize: "var(--text-small)",
+                                fontWeight: "var(--weight-regular)",
+                                pointerEvents: "none",
+                            }}
+                        >
+                            <div style={{ fontSize: "var(--text-small)", fontWeight: "var(--weight-semibold)", lineHeight: 1.35 }}>{displayName}</div>
+                            {visibleDetails.length > 0 && (
+                                <div style={{ display: "grid", gap: 4, marginTop: 6, color: "var(--color-text-muted)", fontSize: "var(--text-caption)", lineHeight: 1.45 }}>
+                                    {visibleDetails.map((detail) => (
+                                        <div key={detail.type} style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
+                                            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "0 0 14px", marginTop: 2 }}>
+                                                <path d={detailIconPaths[detail.type]} />
+                                            </svg>
+                                            <span>{detail.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </motion.div>
+                    </div>,
+                    containerRef.current
                 ) : null
 
                 return (

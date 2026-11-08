@@ -1,6 +1,92 @@
-@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap');
 @import "tailwindcss";
 @import "./styles/tokens.css";
+
+.metro-map-title-glass,
+.metro-map-glass-panel,
+.metro-map-glass-surface {
+  border: 1px solid rgb(255 255 255 / 0.2);
+  background-color: rgb(38 56 61 / 0.18);
+  box-shadow: inset -1px 0 rgb(255 255 255 / 0.16);
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+}
+
+.metro-map-title-glass h1,
+.metro-map-glass-surface h1 {
+  color: var(--primitive-white);
+}
+
+.metro-map-glass-rail {
+  border: 0;
+  border-right: 1px solid rgb(255 255 255 / 0.2);
+}
+
+@media (min-width: 1024px) {
+  .metro-map-glass-rail {
+    border: 0;
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .metro-map-title-glass {
+    background-color: var(--color-canvas);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .metro-map-glass-panel {
+    background-color: var(--color-canvas);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .metro-map-glass-surface {
+    background-color: var(--color-canvas);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+}
+
+.atlas-attribution {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  z-index: 3000;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #26383d;
+  font-size: 10px;
+  line-height: 1.4;
+  cursor: auto;
+}
+
+.atlas-attribution a {
+  color: #26383d;
+  text-decoration: underline;
+}
+
+.atlas-error {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  z-index: 3000;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #26383d;
+  color: white;
+  font-size: 12px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.city-atlas-fallback {
+  filter: grayscale(0.7) brightness(0.85) contrast(0.9);
+}
 
 :root {
   font-family: var(--font-sans);
@@ -127,7 +213,8 @@ a:focus-visible {
 }
 
 .atlas-menu-panel {
-  background: color-mix(in srgb, var(--color-people) 97%, #10262A 3%);
+  background: color-mix(in srgb, var(--color-people) 92%, transparent);
+  backdrop-filter: blur(12px);
   animation: atlas-menu-panel-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -198,4 +285,177 @@ h3,
 h4,
 p {
   font-family: inherit;
+}
+
+.type-page-heading,
+.type-detail-heading,
+.type-section-heading {
+  font-family: var(--font-sans);
+  font-weight: var(--weight-semibold);
+  text-wrap: balance;
+}
+
+.type-page-heading {
+  font-size: var(--text-page-heading);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+
+.type-detail-heading {
+  font-size: var(--text-detail-heading);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+.type-section-heading {
+  font-size: var(--text-section-heading);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.metro-people-chart-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 1.25rem !important;
+}
+
+.metro-people-chart-card {
+  width: 100%;
+  min-width: 0;
+  min-height: 13rem;
+  box-sizing: border-box;
+  padding: 0.75rem !important;
+  border: 1px solid color-mix(in srgb, var(--color-hairline) 72%, transparent) !important;
+  border-radius: 1rem !important;
+  background: var(--color-canvas) !important;
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.metro-people-column-chart-title {
+  margin-bottom: 0.75rem;
+}
+
+.metro-people-chart-card:hover {
+  border-color: color-mix(in srgb, var(--color-people) 42%, var(--color-hairline));
+  background: var(--color-canvas) !important;
+  transform: translateY(-2px);
+}
+
+.metro-people-chart-card.is-active {
+  border-color: var(--color-people) !important;
+  background: color-mix(in srgb, var(--color-people) 5%, var(--color-canvas)) !important;
+}
+
+.metro-people-chart-card:focus-within {
+  outline: 2px solid var(--color-people);
+  outline-offset: 2px;
+}
+
+@media (min-width: 1200px) {
+  .metro-people-chart-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metro-people-occupation-chart {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  .metro-people-main {
+    z-index: 56;
+    flex-direction: column !important;
+  }
+
+  .metro-people-graph-nav {
+    z-index: 56;
+    flex: 0 0 auto !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    gap: 0.5rem !important;
+    padding: 6.5rem 1rem 0.75rem !important;
+    background: var(--color-canvas);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .metro-people-graph-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .metro-people-graph-nav > button {
+    flex: 0 0 auto;
+    max-width: 15rem;
+    padding: 0.55rem 0.8rem !important;
+    border: 1px solid color-mix(in srgb, var(--color-hairline) 72%, transparent) !important;
+    border-radius: 999px !important;
+    background: color-mix(in srgb, var(--color-canvas) 88%, transparent) !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.04em !important;
+    text-transform: none !important;
+  }
+
+  .metro-people-graph-nav > button[aria-pressed="true"] {
+    border-color: var(--color-people) !important;
+    background: var(--color-people) !important;
+    color: var(--color-canvas) !important;
+    opacity: 1 !important;
+  }
+
+  .metro-people-center-stage {
+    display: block !important;
+    flex: 1 1 0;
+    min-height: 0;
+    pointer-events: none;
+  }
+
+  .metro-people-sidebar {
+    position: relative;
+    z-index: 56;
+    flex: 0 0 60dvh !important;
+    height: 60dvh;
+    max-height: 60dvh;
+    width: 100%;
+    padding: 0.25rem 1rem 1.5rem !important;
+    overflow-y: auto !important;
+    background: var(--color-canvas);
+  }
+
+  .metro-people-chart-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem !important;
+    background: var(--color-canvas);
+  }
+
+  .metro-people-chart-card {
+    min-height: 12rem;
+    padding: 0.5rem !important;
+    border-radius: 0.875rem !important;
+  }
+
+  .metro-people-occupation-chart {
+    width: 100%;
+    min-width: 0;
+    padding: 0.75rem !important;
+    border: 1px solid var(--color-hairline) !important;
+    border-radius: 1rem !important;
+    background: var(--color-canvas) !important;
+  }
+
+  .metro-people-circle-stage {
+    z-index: 45 !important;
+    top: 9.5rem !important;
+    bottom: 60dvh !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .metro-people-chart-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .metro-people-chart-card {
+    min-height: 11rem;
+  }
 }

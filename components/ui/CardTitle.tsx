@@ -10,7 +10,7 @@ type CardTitleProps = {
 export default function CardTitle({ children, size = 'sm', color = 'var(--color-ink)', className = '' }: CardTitleProps) {
   return (
     <h3
-      className={`w-full text-center font-semibold ${size === 'md' ? 'mb-5 text-base' : 'mb-1 text-[13px]'} ${className}`}
+      className={`w-full text-center font-semibold ${size === 'md' ? 'mb-5 text-base' : 'mb-1 text-sm'} ${className}`}
       style={{ color }}
     >
       {children}

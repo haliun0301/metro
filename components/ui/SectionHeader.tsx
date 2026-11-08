@@ -25,7 +25,7 @@ export default function SectionHeader({
           {eyebrow}
         </p>
       )}
-      <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-[-0.025em] md:text-4xl">
+      <h2 className="type-section-heading mt-3">
         {title}
       </h2>
       {description && (

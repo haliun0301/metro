@@ -39,13 +39,14 @@ function AboutSection() {
       <div className="mx-auto grid max-w-[1440px] gap-14 lg:grid-cols-[.9fr_1.1fr] lg:gap-24">
         <div>
           <p className="text-[var(--text-label)] font-semibold uppercase tracking-[0.28em] text-white/60">About us · 关于我们</p>
-          <h2 className="mt-6 max-w-xl text-[clamp(3.2rem,8vw,8rem)] font-black uppercase leading-[.82] tracking-[-.06em]">The city<br /><span className="text-[var(--color-primary)]">in motion.</span></h2>
+          <h2 className="mt-6 max-w-xl text-[clamp(1.6rem,4.2vw,5rem)] font-black uppercase leading-none tracking-[-0.045em]">History told by<br /><span className="text-[var(--color-primary)]">rapid transit.</span></h2>
         </div>
         <div className="flex flex-col justify-end gap-10 lg:pb-2">
-          <p className="max-w-2xl text-xl leading-relaxed text-white/85 md:text-2xl">Shenzhen Metro Atlas is an interactive portrait of a city that never stands still. We connect stations, people, and urban change to make the everyday journeys shaping Shenzhen visible.</p>
-          <div className="grid max-w-xl grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-md)] bg-white/20 text-sm">
-            <div className="bg-white/10 p-5"><span className="block text-3xl font-bold text-[var(--color-primary)]">3</span><span className="mt-2 block text-white/60">ways to read the city</span></div>
-            <div className="bg-white/10 p-5"><span className="block text-3xl font-bold text-[var(--color-primary)]">∞</span><span className="mt-2 block text-white/60">stories in motion</span></div>
+          <p className="max-w-2xl text-xl leading-relaxed text-white/85 md:text-2xl">Through our research, we tell Shenzhen’s story through its stations, people, urban change, and the journeys connecting them.</p>
+          <div className="grid max-w-3xl grid-cols-1 gap-px overflow-hidden rounded-[var(--radius-md)] bg-white/20 text-sm sm:grid-cols-3">
+            <div className="bg-white/10 p-5"><span className="block text-sm font-semibold text-white/80">metro lines</span><span className="mt-3 block text-6xl font-black leading-none text-[var(--color-primary)]">17</span></div>
+            <div className="bg-white/10 p-5"><span className="block text-sm font-semibold text-white/80">stations</span><span className="mt-3 block text-6xl font-black leading-none text-[var(--color-primary)]">407</span></div>
+            <div className="bg-white/10 p-5"><span className="block text-sm font-semibold text-white/80">people profiles</span><span className="mt-3 block text-6xl font-black leading-none text-[var(--color-primary)]">111</span></div>
           </div>
           <Link to="/about" className="self-start text-sm font-semibold uppercase tracking-[0.16em] underline-offset-8 hover:underline">Read more about us →</Link>
         </div>
@@ -213,7 +214,7 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(3,21,28,.94)_0%,rgba(6,31,38,.68)_53%,rgba(3,26,28,.2)_100%)]" />
         <div className="relative z-10 grid h-full grid-rows-[auto_1fr_auto] px-6 pb-8 pt-24 md:px-12 md:pb-10 lg:px-20">
           <motion.header className="flex items-center justify-end pb-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <span className="hidden font-serif text-lg italic sm:block">Shenzhen · 深圳</span>
+            <span className="hidden text-lg font-medium sm:block">Shenzhen · 深圳</span>
           </motion.header>
           <div className="grid content-center py-8">
             <div>

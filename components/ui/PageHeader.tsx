@@ -31,7 +31,7 @@ export default function PageHeader({
               {eyebrow}
             </p>
           )}
-          <h1 className="text-5xl font-semibold leading-none tracking-[-0.05em] md:text-7xl [text-wrap:balance]">
+          <h1 className="type-page-heading">
             {title}
           </h1>
           {description && (

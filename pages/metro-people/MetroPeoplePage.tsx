@@ -5,11 +5,10 @@ import { PeopleData } from "../../data/metro-people/people"
 import PeopleCircles, { PEOPLE_GENDER_COLORS, type Person } from "../../components/metro-people/PeopleCircles"
 import CircularDiagram, { type Segment } from "../../components/metro-people/CircularDiagram"
 import ColumnDiagram, { type DataPoint } from "../../components/metro-people/ColumnDiagram"
-import OccupationDiagram from "../../components/metro-people/OccupationDiagram"
+import OccupationDiagram, { OCCUPATION_CATEGORY_COLORS } from "../../components/metro-people/OccupationDiagram"
 import { useAppLanguage } from "../../hooks/useAppLanguage"
 import PageShell from "../../components/ui/PageShell"
 import CardTitle from "../../components/ui/CardTitle"
-import ChapterTabs from "../../components/ui/ChapterTabs"
 
 // Left-panel year layout:
 // 1 = columns that mirror the bar chart
@@ -31,18 +30,6 @@ interface OccupationSummary {
     label: string
     labelCn: string
     category: OccupationCategoryName
-}
-
-const occupationCategoryColors: Record<OccupationCategoryName, string> = {
-    "Business & Enterprise": "#2196F3",
-    "Non-Working / Other Status": "#9E9E9E",
-    "Finance & Commerce": "#4CAF50",
-    "STEM": "#FF9800",
-    "Education & Academia": "#9C27B0",
-    "Public Sector & State-Owned": "#E91E63",
-    "Operations & Logistics": "#00BCD4",
-    "Professional Services": "#795548",
-    "Personal & Retail Services": "#607D8B",
 }
 
 const occupationLayoutKeys: Record<OccupationCategoryName, string> = {
@@ -104,8 +91,6 @@ const uiCopy = {
     sizeHintAge: { en: "Older people appear as larger circles.", zh: "年龄越大，圆点越大。" },
     sizeHintResidence: { en: "People who have lived longer in Shenzhen appear as larger circles. Shenzhen-born residents use lifetime residence.", zh: "在深圳居住时间越长，圆点越大。深圳出生居民按终身居住年限计算。" },
     sizeHintUniform: { en: "All people use the same circle size.", zh: "所有人使用相同圆点大小。" },
-    tabDemographic: { en: "Demographic", zh: "人口特征" },
-    tabOccupation: { en: "Occupation", zh: "职业" },
     genderDistribution: { en: "Gender Distribution", zh: "性别分布" },
     originDistribution: { en: "Origin Distribution", zh: "来源分布" },
     people: { en: "People", zh: "人数" },
@@ -314,8 +299,6 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
         width: typeof window === "undefined" ? 1440 : window.innerWidth,
         height: typeof window === "undefined" ? 900 : window.innerHeight,
     }))
-    // Tab state: "demographic" or "occupation"
-    const [activeTab, setActiveTab] = useState<"demographic" | "occupation">("demographic")
     // Dark/light mode state
     const [darkMode, setDarkMode] = useState<boolean>(false)
 
@@ -461,8 +444,8 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
     ].filter((segment) => segment.value > 0)
 
     const originData: Segment[] = [
-        { label: uiCopy.shenzhenBorn[language], value: filteredPeople.filter((person) => person.shenzhenBorn === true).length, color: "#4CAF50" },
-        { label: uiCopy.migrated[language], value: filteredPeople.filter((person) => person.shenzhenBorn === false).length, color: "#FF9800" },
+        { label: uiCopy.shenzhenBorn[language], value: filteredPeople.filter((person) => person.shenzhenBorn === true).length, color: "var(--color-city)" },
+        { label: uiCopy.migrated[language], value: filteredPeople.filter((person) => person.shenzhenBorn === false).length, color: "var(--color-primary)" },
     ].filter((segment) => segment.value > 0)
 
     const birthDecadeData: DataPoint[] = Object.entries(
@@ -521,7 +504,7 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
                 existing.subCategories.push({ label: item.label, value: item.value, labelCn: item.labelCn })
             } else {
                 acc[item.category] = {
-                    color: occupationCategoryColors[item.category as OccupationCategoryName],
+                    color: OCCUPATION_CATEGORY_COLORS[item.category],
                     value: item.value,
                     subCategories: [{ label: item.label, value: item.value, labelCn: item.labelCn }],
                 }
@@ -548,6 +531,17 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
         border: "var(--color-hairline)",
         faded: "var(--color-text-muted)",
     }
+    const rightChartSize = viewportSize.width < 900 ? 136 : 156
+    const rightCardStyle: CSSProperties = {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 0,
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+    }
     const graphGlassStyle: CSSProperties = {
         border: "1px solid color-mix(in srgb, var(--color-hairline) 80%, transparent)",
         background: "color-mix(in srgb, var(--color-canvas) 88%, transparent)",
@@ -558,27 +552,16 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
     }
 
     const graphOptions = [
-        { id: "gender" as const, label: uiCopy.genderDistribution[language], mode: "gender" as const, tab: "demographic" as const },
-        { id: "origin" as const, label: uiCopy.originDistribution[language], mode: "origin" as const, tab: "demographic" as const },
-        { id: "birthDecade" as const, label: uiCopy.birthDecade[language], mode: "birthDecade" as const, tab: "demographic" as const },
-        { id: "arrivalDecade" as const, label: uiCopy.arrivalYear[language], mode: "arrivalDecade" as const, tab: "demographic" as const },
-        { id: "occupationDistribution" as const, label: uiCopy.occupationDistribution[language], mode: "occupation" as const, tab: "occupation" as const },
+        { id: "gender" as const, label: uiCopy.genderDistribution[language], mode: "gender" as const },
+        { id: "origin" as const, label: uiCopy.originDistribution[language], mode: "origin" as const },
+        { id: "birthDecade" as const, label: uiCopy.birthDecade[language], mode: "birthDecade" as const },
+        { id: "arrivalDecade" as const, label: uiCopy.arrivalYear[language], mode: "arrivalDecade" as const },
+        { id: "occupationDistribution" as const, label: uiCopy.occupationDistribution[language], mode: "occupation" as const },
     ]
     const selectedGraphTitle = graphOptions.find((option) => option.id === selectedGraphId)?.label
-    const isCenteredPieLayout = circleLayoutMode === "gender" || circleLayoutMode === "origin"
-    const compactMenuWidth = 224
-    const centeredPieXPercent = isCenteredPieLayout
-        ? (50 * viewportSize.width) / Math.max(1, viewportSize.width - compactMenuWidth)
-        : 50
-    const graphColorState = (graphId: typeof selectedGraphId): CSSProperties => {
-        const isColorActive = selectedGraphId === graphId || hoveredGraphId === graphId
-        return {
-            filter: isColorActive ? "grayscale(0) saturate(1)" : "grayscale(1) saturate(0)",
-            opacity: isColorActive ? 1 : 0.48,
-            borderColor: isColorActive ? "rgba(35, 35, 35, 0.34)" : "rgba(35, 35, 35, 0.16)",
-            transition: "filter 220ms ease, opacity 220ms ease",
-        }
-    }
+    const LEFT_PANEL_WIDTH = 300
+    const RIGHT_PANEL_WIDTH = Math.min(440, Math.max(320, Math.round(viewportSize.width * 0.31)))
+    const isCompactLayout = viewportSize.width <= 900
 
     const landingOverlay = showLanding ? (
             <div
@@ -684,8 +667,8 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
                         zIndex: 2,
                         textAlign: "center",
                         color: "#232323",
-                        fontFamily: "'Architects Daughter', cursive",
                         fontSize: "clamp(18px, 1.55vw, 30px)",
+                        fontWeight: "var(--weight-medium)",
                         lineHeight: 1.15,
                         whiteSpace: "nowrap",
                     }}
@@ -717,15 +700,16 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
         >
             {landingOverlay}
             <div
+                className="metro-people-circle-stage"
                 style={{
                     position: "absolute",
                     zIndex: 55,
-                    left: `${landingSlideProgress * 28}px`,
-                    top: `${landingSlideProgress * 22}px`,
-                    bottom: `${landingSlideProgress * 36}px`,
-                    width: isSidebarOpen
-                        ? `calc(${100 - 38 * landingSlideProgress}% - ${56 * landingSlideProgress}px)`
-                        : `calc(100% - ${224 * landingSlideProgress}px)`,
+                    left: `${landingSlideProgress * (isCompactLayout ? 0 : LEFT_PANEL_WIDTH)}px`,
+                    top: `${landingSlideProgress * (isCompactLayout ? 0 : 72)}px`,
+                    bottom: `${landingSlideProgress * (isCompactLayout ? 0 : 36)}px`,
+                    width: isCompactLayout
+                        ? "100%"
+                        : `calc(100% - ${(LEFT_PANEL_WIDTH + RIGHT_PANEL_WIDTH) * landingSlideProgress}px)`,
                     overflow: "visible",
                     pointerEvents: landingSlideProgress >= 0.98 ? "auto" : "none",
                 }}
@@ -742,9 +726,9 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
                     language={language}
                     occupationOrder={occupationDiagramData.map((item) => occupationLayoutKeys[item.label as OccupationCategoryName])}
                     getOccupationCategory={(person) => occupationLayoutKeys[normalizeOccupation(person).category]}
-                    pieCenterXPercent={isCenteredPieLayout ? centeredPieXPercent : isSidebarOpen ? 62 : 50}
-                    pieScale={isCenteredPieLayout ? 1 : isSidebarOpen ? 0.85 : 1}
-                    centerLayouts={!isSidebarOpen}
+                    pieCenterXPercent={50}
+                    pieScale={1}
+                    centerLayouts={true}
                     journeyProgress={showLanding ? landingSlideProgress : 1}
                     showLayoutLabels={isMainContentReady}
                     yearLayoutVariant={LEFT_PANEL_YEAR_LAYOUT_VARIANT}
@@ -826,7 +810,9 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
                 </div>
             ) : null}
             {/* Main content area */}
-            <div style={{
+            <div
+                className="metro-people-main"
+                style={{
                 display: "flex",
                 flex: 1,
                 overflow: "hidden",
@@ -838,78 +824,78 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
                 transform: isMainContentReady ? "translateY(0)" : "translateY(10px)",
                 transition: "opacity 220ms ease, transform 220ms ease",
                 willChange: "opacity, transform",
-            }}>
+                }}
+            >
+                {/* Left list: chooses the main graph */}
+                <nav
+                    className="metro-people-graph-nav"
+                    aria-label={language === "zh" ? "图表布局选项" : "Graph layout options"}
+                    style={{
+                        flex: `0 0 ${LEFT_PANEL_WIDTH}px`,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        gap: 18,
+                        padding: "96px 0 36px 42px",
+                        boxSizing: "border-box",
+                        minWidth: 0,
+                        zIndex: 56,
+                    }}
+                >
+                    {graphOptions.map((option) => {
+                        const isActive = selectedGraphId === option.id
+                        return (
+                            <button
+                                key={option.id}
+                                type="button"
+                                aria-pressed={isActive}
+                                onClick={() => {
+                                    setCircleLayoutMode(option.mode)
+                                    setSelectedGraphId(option.id)
+                                }}
+                                style={{
+                                    padding: 0,
+                                    border: "none",
+                                    background: "transparent",
+                                    color: isActive ? "var(--color-people)" : "var(--color-text-muted)",
+                                    opacity: isActive ? 1 : 0.55,
+                                    fontSize: isActive ? 18 : 16,
+                                    fontWeight: isActive ? 800 : 700,
+                                    letterSpacing: "0.1em",
+                                    textTransform: "uppercase",
+                                    textAlign: "left",
+                                    lineHeight: 1.2,
+                                    cursor: "pointer",
+                                    transition: "color 180ms ease, opacity 180ms ease",
+                                }}
+                            >
+                                {option.label}
+                            </button>
+                        )
+                    })}
+                </nav>
+
                 {/* People circles - main area */}
                 <div
+                    className="metro-people-center-stage"
                     style={{
-                        flex: isSidebarOpen ? "0 0 62%" : 1,
+                        flex: 1,
                         position: "relative",
                         minWidth: 0,
                         minHeight: 0,
                         overflow: "hidden",
-                        display: "flex",
-                        flexDirection: "column",
                         background: "transparent",
-                        borderRadius: 0,
-                        boxSizing: "border-box",
-                        padding: "22px 28px 36px",
-                        boxShadow: "none",
-                        transition: "flex 240ms ease",
                     }}
-                >
-                    <div style={{ position: "absolute", top: "50%", left: 52, zIndex: 10, width: "min(42%, 390px)", transform: "translateY(-50%)", textAlign: "left", pointerEvents: "none" }}>
-                        <div
-                            aria-live="polite"
-                            style={{
-                                color: colors.text,
-                                fontSize: 20,
-                                fontWeight: 700,
-                                letterSpacing: "0.1em",
-                                textTransform: "uppercase",
-                            }}
-                        >
-                            {selectedGraphTitle}
-                        </div>
-                    </div>
-                    <div style={{ position: "relative", width: isSidebarOpen ? "calc(100% - 48px)" : "100%", maxWidth: isSidebarOpen ? 920 : "none", alignSelf: "center", flex: 1, minHeight: 0, overflow: "hidden" }} />
-                </div>
+                    aria-live="polite"
+                    aria-label={selectedGraphTitle}
+                />
 
-                <button
-                    type="button"
-                    onClick={() => setIsSidebarOpen((isOpen) => !isOpen)}
-                    aria-label={isSidebarOpen ? uiCopy.closePanel[language] : uiCopy.openPanel[language]}
-                    aria-expanded={isSidebarOpen}
-                    style={{
-                        position: "absolute",
-                        top: "50%",
-                        right: isSidebarOpen ? "calc(38% - 22px)" : "162px",
-                        zIndex: 20,
-                        width: 44,
-                        height: 64,
-                        transform: "translateY(-50%)",
-                        border: "1px solid transparent",
-                        borderRadius: 16,
-                        background: "transparent",
-                        color: "var(--color-ink)",
-                        fontSize: 24,
-                        lineHeight: 1,
-                        cursor: "pointer",
-                        backdropFilter: "none",
-                        WebkitBackdropFilter: "none",
-                        boxShadow: "none",
-                        transition: "right 240ms ease, background 160ms ease",
-                    }}
-                >
-                    {isSidebarOpen ? "›" : "‹"}
-                </button>
-
-                {/* Sidebar with filters and diagrams */}
-                {isSidebarOpen ? (
+                {/* Right panel: graphs that are not in the centre */}
                 <div
                     className="metro-people-sidebar"
                     style={{
-                        flex: "0 0 38%",
-                        padding: "24px 36px 68px",
+                        flex: `0 0 ${RIGHT_PANEL_WIDTH}px`,
+                        padding: "100px 36px 24px 12px",
                         boxSizing: "border-box",
                         borderLeft: "none",
                         display: "flex",
@@ -1104,66 +1090,34 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
                     </div>
                     )}
 
-                    <ChapterTabs
-                        className="w-full"
-                        activeId={isFiltersOpen ? "filters" : activeTab}
-                        tabs={[
-                            { id: "demographic", label: uiCopy.tabDemographic[language] },
-                            { id: "occupation", label: uiCopy.tabOccupation[language] },
-                            { id: "filters", label: uiCopy.filters[language] },
-                        ]}
-                        onChange={(id) => {
-                            if (id === "filters") {
-                                setIsFiltersOpen((isOpen) => !isOpen)
-                                return
-                            }
-                            setIsFiltersOpen(false)
-                            setActiveTab(id as "demographic" | "occupation")
-                        }}
-                    />
-
                     {/* Tab Content */}
-                    {isFiltersOpen ? null : activeTab === "demographic" ? (
-                        <>
-                            {/* Circular Diagrams Row */}
+                    {isFiltersOpen ? null : (
                             <div
                                 style={{
                                     display: "flex",
-                                    flexDirection: "row",
-                                    gap: demographicGap,
-                                    flex: "1 1 0",
-                                    minHeight: 0,
+                                    flexDirection: "column",
+                                    gap: 20,
+                                    minWidth: 0,
                                 }}
+                                className="metro-people-chart-grid"
                             >
                                 <div
+                                    className={`metro-people-chart-card${selectedGraphId === "gender" ? " is-active" : ""}`}
                                     onMouseEnter={() => setHoveredGraphId("gender")}
                                     onMouseLeave={() => setHoveredGraphId(null)}
                                     onClick={() => {
                                         setCircleLayoutMode("gender")
                                         setSelectedGraphId("gender")
                                     }}
-                                    style={{
-                                        flex: 1,
-                                        minWidth: 200,
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        padding: demographicCardPadding,
-                                        borderRadius: 12,
-                                        ...graphGlassStyle,
-                                        ...graphColorState("gender"),
-                                        cursor: "pointer",
-                                        transition: "border-color 180ms ease",
-                                    }}
+                                    style={rightCardStyle}
                                 >
                                     <CardTitle color={colors.text}>
                                         {uiCopy.genderDistribution[language]}
                                     </CardTitle>
                                     <CircularDiagram
                                         segments={genderData}
-                                        size={demographicChartSize}
-                                        showLegend={true}
+                                        size={rightChartSize}
+                                        showLegend={false}
                                         showCenterTotal={true}
                                         backgroundColor="transparent"
                                         highlightedLabel={hoveredGender}
@@ -1180,34 +1134,22 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
                                 </div>
 
                                 <div
+                                    className={`metro-people-chart-card${selectedGraphId === "origin" ? " is-active" : ""}`}
                                     onMouseEnter={() => setHoveredGraphId("origin")}
                                     onMouseLeave={() => setHoveredGraphId(null)}
                                     onClick={() => {
                                         setCircleLayoutMode("origin")
                                         setSelectedGraphId("origin")
                                     }}
-                                    style={{
-                                        flex: 1,
-                                        minWidth: 200,
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        padding: demographicCardPadding,
-                                        borderRadius: 12,
-                                        ...graphGlassStyle,
-                                        ...graphColorState("origin"),
-                                        cursor: "pointer",
-                                        transition: "border-color 180ms ease",
-                                    }}
+                                    style={rightCardStyle}
                                 >
                                     <CardTitle color={colors.text}>
                                         {uiCopy.originDistribution[language]}
                                     </CardTitle>
                                     <CircularDiagram
                                         segments={originData}
-                                        size={demographicChartSize}
-                                        showLegend={true}
+                                        size={rightChartSize}
+                                        showLegend={false}
                                         showCenterTotal={true}
                                         centerLabel={uiCopy.people[language]}
                                         backgroundColor="transparent"
@@ -1223,47 +1165,25 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
                                         }}
                                     />
                                 </div>
-                            </div>
 
-                            {/* Column Diagrams Row */}
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "row",
-                                    gap: demographicGap,
-                                    flex: "1 1 0",
-                                    minHeight: 0,
-                                }}
-                            >
                                 <div
+                                    className={`metro-people-chart-card${selectedGraphId === "birthDecade" ? " is-active" : ""}`}
                                     onMouseEnter={() => setHoveredGraphId("birthDecade")}
                                     onMouseLeave={() => setHoveredGraphId(null)}
                                     onClick={() => {
                                         setCircleLayoutMode("birthDecade")
                                         setSelectedGraphId("birthDecade")
                                     }}
-                                    style={{
-                                        flex: 1,
-                                        minWidth: 200,
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        padding: demographicCardPadding,
-                                        borderRadius: 12,
-                                        ...graphGlassStyle,
-                                        ...graphColorState("birthDecade"),
-                                        cursor: "pointer",
-                                        transition: "border-color 180ms ease",
-                                    }}
+                                    style={rightCardStyle}
                                 >
-                                    <CardTitle color={colors.text}>
+                                    <CardTitle className="metro-people-column-chart-title" color={colors.text}>
                                         {uiCopy.birthDecade[language]}
                                     </CardTitle>
                                     <ColumnDiagram
                                         data={birthDecadeData}
-                                        height={demographicChartSize}
-                                        columnColor="#2196F3"
+                                        compact
+                                        height={170}
+                                        columnColor="var(--color-people)"
                                         showGrid={true}
                                         gridSteps={4}
                                         backgroundColor="transparent"
@@ -1281,34 +1201,23 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
                                 </div>
 
                                 <div
+                                    className={`metro-people-chart-card${selectedGraphId === "arrivalDecade" ? " is-active" : ""}`}
                                     onMouseEnter={() => setHoveredGraphId("arrivalDecade")}
                                     onMouseLeave={() => setHoveredGraphId(null)}
                                     onClick={() => {
                                         setCircleLayoutMode("arrivalDecade")
                                         setSelectedGraphId("arrivalDecade")
                                     }}
-                                    style={{
-                                        flex: 1,
-                                        minWidth: 200,
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        padding: demographicCardPadding,
-                                        borderRadius: 12,
-                                        ...graphGlassStyle,
-                                        ...graphColorState("arrivalDecade"),
-                                        cursor: "pointer",
-                                        transition: "border-color 180ms ease",
-                                    }}
+                                    style={rightCardStyle}
                                 >
-                                    <CardTitle color={colors.text}>
+                                    <CardTitle className="metro-people-column-chart-title" color={colors.text}>
                                         {uiCopy.arrivalYear[language]}
                                     </CardTitle>
                                     <ColumnDiagram
                                         data={residenceYearData}
-                                        height={demographicChartSize}
-                                        columnColor="#9C27B0"
+                                        compact
+                                        height={170}
+                                        columnColor="var(--color-accent)"
                                         showGrid={true}
                                         gridSteps={4}
                                         backgroundColor="transparent"
@@ -1324,94 +1233,30 @@ export default function MetroPeoplePage({ people, jsonData, style }: MetroPeople
                                         }}
                                     />
                                 </div>
-                            </div>
-                        </>
-                    ) : (
-                        /* Occupation Tab Content */
-                        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                            <div
-                                onMouseEnter={() => setHoveredGraphId("occupationDistribution")}
-                                onMouseLeave={() => setHoveredGraphId(null)}
-                                onClick={() => {
-                                    setCircleLayoutMode("occupation")
-                                    setSelectedGraphId("occupationDistribution")
-                                }}
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    padding: 20,
-                                    borderRadius: 12,
-                                    ...graphGlassStyle,
-                                    ...graphColorState("occupationDistribution"),
-                                    cursor: "pointer",
-                                    transition: "border-color 180ms ease",
-                                }}
-                            >
-                                <CardTitle size="md" color={colors.text}>
-                                    {uiCopy.occupationDistribution[language]}
-                                </CardTitle>
-                                <OccupationDiagram
-                                    data={occupationDiagramData}
-                                    highlightedLabel={hoveredOccupation}
-                                    onHoverOccupation={handleHoverOccupation}
-                                    language={language}
-                                />
-                            </div>
 
+                        <div
+                            className={`metro-people-chart-card metro-people-occupation-chart${selectedGraphId === "occupationDistribution" ? " is-active" : ""}`}
+                            onMouseEnter={() => setHoveredGraphId("occupationDistribution")}
+                            onMouseLeave={() => setHoveredGraphId(null)}
+                            onClick={() => {
+                                setCircleLayoutMode("occupation")
+                                setSelectedGraphId("occupationDistribution")
+                            }}
+                            style={rightCardStyle}
+                        >
+                            <CardTitle color={colors.text}>
+                                {uiCopy.occupationDistribution[language]}
+                            </CardTitle>
+                            <OccupationDiagram
+                                data={occupationDiagramData}
+                                highlightedLabel={hoveredOccupation}
+                                onHoverOccupation={handleHoverOccupation}
+                                language={language}
+                            />
                         </div>
+                            </div>
                     )}
                 </div>
-                ) : (
-                    <aside
-                        aria-label={language === "zh" ? "图表布局选项" : "Graph layout options"}
-                        style={{
-                            flex: "0 0 168px",
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "center",
-                            gap: 8,
-                            padding: 8,
-                            margin: 8,
-                            minWidth: 0,
-                        }}
-                    >
-                        {graphOptions.map((option, index) => {
-                            const isActive = selectedGraphId === option.id
-                            return (
-                                <button
-                                    key={`${option.mode}-${index}`}
-                                    type="button"
-                                    aria-pressed={isActive}
-                                    onClick={() => {
-                                        setActiveTab(option.tab)
-                                        setCircleLayoutMode(option.mode)
-                                        setSelectedGraphId(option.id)
-                                    }}
-                                    style={{
-                                        width: "100%",
-                                        padding: "10px 8px",
-                                        borderRadius: 10,
-                                        border: "none",
-                                        background: "transparent",
-                                        color: colors.text,
-                                        fontSize: 11,
-                                        fontWeight: 600,
-                                        lineHeight: 1.3,
-                                        textAlign: "center",
-                                        cursor: "pointer",
-                                        backdropFilter: "none",
-                                        WebkitBackdropFilter: "none",
-                                        boxShadow: "none",
-                                    }}
-                                >
-                                    {option.label}
-                                </button>
-                            )
-                        })}
-                    </aside>
-                )}
             </div>
         </PageShell>
     )

@@ -339,7 +339,7 @@ export default function PersonDetailPage() {
             <div className="w-32 md:w-36">
               <ProfilePortrait person={person} />
             </div>
-            <h1 className="mt-7 text-4xl font-semibold leading-tight md:text-5xl">{displayName}</h1>
+            <h1 className="type-detail-heading mt-7">{displayName}</h1>
             <p className="mt-3 text-base leading-7 text-white/84">
               {language === 'zh' ? person.occupationCn || person.occupation : person.occupation || person.occupationCn || text.unknown}
             </p>

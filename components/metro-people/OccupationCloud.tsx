@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
+import { startTransition, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react"
 import { motion, useInView } from "framer-motion"
 
 type Language = "en" | "zh"
@@ -15,6 +15,12 @@ export interface OccupationCloudProps {
     highlightedLabel?: string | null
     onHoverOccupation?: (label: string | null) => void
     language?: Language
+    categoryColorMap?: Record<string, string>
+    showLegend?: boolean
+    showSummary?: boolean
+    animateOnMount?: boolean
+    renderHoverContent?: (item: OccupationItem) => ReactNode
+    hoverAvoidSelector?: string
     style?: CSSProperties
 }
 
@@ -110,20 +116,27 @@ export default function OccupationCloud({
     highlightedLabel,
     onHoverOccupation,
     language = "en",
+    categoryColorMap,
+    showLegend = true,
+    showSummary = true,
+    animateOnMount = false,
+    renderHoverContent,
+    hoverAvoidSelector,
     style,
 }: OccupationCloudProps) {
     const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+    const [hoverPosition, setHoverPosition] = useState<{ left: number; top: number; maxHeight: number; placement: "above" | "below" } | null>(null)
     const [animateIn, setAnimateIn] = useState(false)
     const containerRef = useRef<HTMLDivElement | null>(null)
     const isInView = useInView(containerRef, { margin: "0px 0px -10% 0px", once: true })
 
     useEffect(() => {
-        if (!isInView || animateIn) return
+        if ((!isInView && !animateOnMount) || animateIn) return
         const timer = window.setTimeout(() => {
             startTransition(() => setAnimateIn(true))
         }, 100)
         return () => window.clearTimeout(timer)
-    }, [isInView, animateIn])
+    }, [isInView, animateIn, animateOnMount])
     
     const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data])
     const maxValue = useMemo(() => Math.max(...data.map((d) => d.value)), [data])
@@ -153,14 +166,65 @@ export default function OccupationCloud({
 
     const isAnyHighlighted = highlightedLabel !== null || hoveredItem !== null
     const activeHighlight = hoveredItem || highlightedLabel
+    const resolvedCategoryColors = { ...categoryColors, ...categoryColorMap }
 
-    const handleMouseEnter = (label: string) => {
+    const handleMouseEnter = (label: string, element: HTMLElement) => {
+        const rect = element.getBoundingClientRect()
+        const maxWidth = Math.min(renderHoverContent ? 680 : 360, window.innerWidth - 32)
+        const minCenter = maxWidth / 2 + 16
+        const maxCenter = window.innerWidth - maxWidth / 2 - 16
+        let left = Math.max(minCenter, Math.min(rect.left + rect.width / 2, maxCenter))
+        let safeTop = 8
+        let safeBottom = window.innerHeight - 8
+        const avoidRect = hoverAvoidSelector
+            ? document.querySelector(hoverAvoidSelector)?.getBoundingClientRect()
+            : null
+
+        const overlapsAvoidArea = avoidRect
+            && left - maxWidth / 2 < avoidRect.right
+            && left + maxWidth / 2 > avoidRect.left
+
+        if (avoidRect && overlapsAvoidArea) {
+            const rightCenter = avoidRect.right + maxWidth / 2 + 8
+            const leftCenter = avoidRect.left - maxWidth / 2 - 8
+            if (rightCenter + maxWidth / 2 <= window.innerWidth - 8) {
+                left = Math.max(minCenter, rightCenter)
+            } else if (leftCenter - maxWidth / 2 >= 8) {
+                left = Math.min(maxCenter, leftCenter)
+            } else {
+                const anchorCenter = (rect.top + rect.bottom) / 2
+                if (anchorCenter <= avoidRect.top) {
+                    safeBottom = Math.min(safeBottom, avoidRect.top - 8)
+                } else if (anchorCenter >= avoidRect.bottom) {
+                    safeTop = Math.max(safeTop, avoidRect.bottom + 8)
+                } else if (avoidRect.top - safeTop >= safeBottom - avoidRect.bottom) {
+                    safeBottom = avoidRect.top - 8
+                } else {
+                    safeTop = avoidRect.bottom + 8
+                }
+            }
+        }
+
+        const aboveSpace = rect.top - 10 - safeTop
+        const belowSpace = safeBottom - rect.bottom - 10
+        const placement = aboveSpace >= belowSpace ? "above" : "below"
+        const availableHeight = Math.max(0, placement === "above" ? aboveSpace : belowSpace)
+
         setHoveredItem(label)
+        setHoverPosition({
+            left,
+            top: placement === "above"
+                ? Math.max(safeTop, Math.min(rect.top - 10, safeBottom))
+                : Math.max(safeTop, Math.min(rect.bottom + 10, safeBottom)),
+            maxHeight: Math.max(1, Math.min(560, window.innerHeight * 0.75, availableHeight)),
+            placement,
+        })
         onHoverOccupation?.(label)
     }
 
     const handleMouseLeave = () => {
         setHoveredItem(null)
+        setHoverPosition(null)
         onHoverOccupation?.(null)
     }
 
@@ -202,7 +266,7 @@ export default function OccupationCloud({
                     const isHighlighted = activeHighlight === item.label
                     const isGreyedOut = isAnyHighlighted && !isHighlighted
                     const fontSize = getFontSize(item.value)
-                    const color = categoryColors[item.category || "Other"] || "#666"
+                    const color = resolvedCategoryColors[item.category || "Other"] || "#666"
                     const displayColor = isGreyedOut ? "#D1D5DB" : color
                     const bgColor = isHighlighted 
                         ? lightenColor(color, 0.85)
@@ -235,7 +299,7 @@ export default function OccupationCloud({
                                     : "none",
                                 whiteSpace: "nowrap",
                             }}
-                            onMouseEnter={() => handleMouseEnter(item.label)}
+                            onMouseEnter={(event) => handleMouseEnter(item.label, event.currentTarget)}
                             onMouseLeave={handleMouseLeave}
                             title={`${item.label}: ${item.value} (${((item.value / total) * 100).toFixed(1)}%)`}
                         >
@@ -258,46 +322,48 @@ export default function OccupationCloud({
             </div>
 
             {/* Category Legend */}
-            <div
-                style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 12,
-                    justifyContent: "center",
-                    padding: "12px 16px",
-                    borderTop: "1px solid rgba(0,0,0,0.08)",
-                }}
-            >
-                {categories.map(([category, count]) => {
-                    const color = categoryColors[category] || "#666"
-                    return (
-                        <div
-                            key={category}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                                fontSize: 11,
-                                color: "#555",
-                            }}
-                        >
+            {showLegend && (
+                <div
+                    style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 12,
+                        justifyContent: "center",
+                        padding: "12px 16px",
+                        borderTop: "1px solid rgba(0,0,0,0.08)",
+                    }}
+                >
+                    {categories.map(([category, count]) => {
+                        const color = resolvedCategoryColors[category] || "#666"
+                        return (
                             <div
+                                key={category}
                                 style={{
-                                    width: 10,
-                                    height: 10,
-                                    borderRadius: 3,
-                                    backgroundColor: color,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    fontSize: 11,
+                                    color: "#555",
                                 }}
-                            />
-                            <span style={{ fontWeight: 500 }}>{category}</span>
-                            <span style={{ color: "#999" }}>({count})</span>
-                        </div>
-                    )
-                })}
-            </div>
+                            >
+                                <div
+                                    style={{
+                                        width: 10,
+                                        height: 10,
+                                        borderRadius: 3,
+                                        backgroundColor: color,
+                                    }}
+                                />
+                                <span style={{ fontWeight: 500 }}>{category}</span>
+                                <span style={{ color: "#999" }}>({count})</span>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
 
             {/* Hover Detail Card */}
-            {hoveredItem && (
+            {hoveredItem && !renderHoverContent && (
                 <div
                     style={{
                         padding: 16,
@@ -310,7 +376,7 @@ export default function OccupationCloud({
                     {(() => {
                         const item = data.find(d => d.label === hoveredItem)
                         if (!item) return null
-                        const color = categoryColors[item.category || "Other"] || "#666"
+                        const color = resolvedCategoryColors[item.category || "Other"] || "#666"
                         const percentage = ((item.value / total) * 100).toFixed(1)
                         
                         return (
@@ -372,33 +438,54 @@ export default function OccupationCloud({
                                 </div>
                             </div>
                         )
+                    })(                    )}
+
+                </div>
+            )}
+
+            {hoveredItem && renderHoverContent && hoverPosition && (
+                <div
+                    role="tooltip"
+                    className={`pointer-events-none fixed z-[var(--z-floating)] ${renderHoverContent ? 'w-[min(42.5rem,calc(100vw-2rem))]' : 'w-[min(22.5rem,calc(100vw-2rem))]'} overflow-y-auto rounded-[var(--radius-sm)] border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4 text-[var(--color-ink)] shadow-[var(--shadow-panel)]`}
+                    style={{
+                        left: hoverPosition.left,
+                        top: hoverPosition.top,
+                        maxHeight: hoverPosition.maxHeight,
+                        transform: hoverPosition.placement === "above" ? "translate(-50%, -100%)" : "translateX(-50%)",
+                    }}
+                >
+                    {(() => {
+                        const item = data.find((entry) => entry.label === hoveredItem)
+                        return item ? renderHoverContent(item) : null
                     })()}
                 </div>
             )}
 
             {/* Summary Stats */}
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "space-around",
-                    gap: 16,
-                    paddingTop: 12,
-                    borderTop: "1px solid rgba(0,0,0,0.08)",
-                }}
-            >
-                <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: "#333" }}>{total}</div>
-                    <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase" }}>{uiCopy.totalPeople[language]}</div>
+            {showSummary && (
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "space-around",
+                        gap: 16,
+                        paddingTop: 12,
+                        borderTop: "1px solid rgba(0,0,0,0.08)",
+                    }}
+                >
+                    <div style={{ textAlign: "center" }}>
+                        <div style={{ fontSize: 28, fontWeight: 700, color: "#333" }}>{total}</div>
+                        <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase" }}>{uiCopy.totalPeople[language]}</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                        <div style={{ fontSize: 28, fontWeight: 700, color: "#2196F3" }}>{data.length}</div>
+                        <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase" }}>{uiCopy.occupations[language]}</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                        <div style={{ fontSize: 28, fontWeight: 700, color: "#4CAF50" }}>{categories.length}</div>
+                        <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase" }}>{uiCopy.categories[language]}</div>
+                    </div>
                 </div>
-                <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: "#2196F3" }}>{data.length}</div>
-                    <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase" }}>{uiCopy.occupations[language]}</div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: "#4CAF50" }}>{categories.length}</div>
-                    <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase" }}>{uiCopy.categories[language]}</div>
-                </div>
-            </div>
+            )}
         </div>
     )
 }

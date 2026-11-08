@@ -116,7 +116,7 @@ export default function CircularDiagram({
     }, [segments])
 
     const radius = 40
-    const strokeWidth = 16
+    const strokeWidth = 8
     const circumference = 2 * Math.PI * radius
 
     const segmentRenderData = useMemo(() => {
@@ -236,17 +236,13 @@ export default function CircularDiagram({
                         const segmentLabel = normalizedSegments[index]?.label
                         const isHighlighted = highlightedLabel === segmentLabel
                         const isDimmed = highlightedLabel !== null && !isHighlighted
-                        const effectiveStrokeWidth = isHovered || isHighlighted
-                            ? strokeWidth + 2
-                            : strokeWidth
-
                         return (
                             <motion.path
                                 key={index}
                                 d={segment.path}
                                 fill="none"
                                 stroke={isDimmed ? "#CCCCCC" : segment.color}
-                                strokeWidth={effectiveStrokeWidth}
+                                strokeWidth={strokeWidth}
                                 strokeLinecap="round"
                                 initial={{ pathLength: 0 }}
                                 animate={{

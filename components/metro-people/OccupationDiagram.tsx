@@ -29,9 +29,6 @@ export interface OccupationDiagramProps {
 const uiCopy = {
     person: { en: "person", zh: "人" },
     people: { en: "people", zh: "人" },
-    totalPeople: { en: "Total People", zh: "总人数" },
-    categories: { en: "Categories", zh: "类别数" },
-    occupations: { en: "Occupations", zh: "职业数" },
 } as const
 
 const categoryTranslations: Record<string, string> = {
@@ -46,11 +43,23 @@ const categoryTranslations: Record<string, string> = {
     "Personal & Retail Services": "个人与零售服务",
 }
 
+export const OCCUPATION_CATEGORY_COLORS: Record<string, string> = {
+    "Business & Enterprise": "var(--color-people)",
+    "Non-Working / Other Status": "var(--color-text-muted)",
+    "Finance & Commerce": "var(--color-city)",
+    "STEM": "var(--color-primary)",
+    "Education & Academia": "var(--color-accent)",
+    "Public Sector & State-Owned": "color-mix(in srgb, var(--color-accent) 70%, var(--color-ink))",
+    "Operations & Logistics": "color-mix(in srgb, var(--color-city) 55%, var(--color-ink))",
+    "Professional Services": "color-mix(in srgb, var(--color-people) 55%, var(--color-text-muted))",
+    "Personal & Retail Services": "color-mix(in srgb, var(--color-primary) 60%, var(--color-ink))",
+}
+
 const defaultOccupationData: OccupationData[] = [
     { 
         label: "Business & Enterprise", 
         value: 30, 
-        color: "#2196F3", // Blue
+        color: OCCUPATION_CATEGORY_COLORS["Business & Enterprise"],
         subCategories: [
             { label: "Self-employed", value: 10 },
             { label: "Enterprise manager", value: 9 },
@@ -63,7 +72,7 @@ const defaultOccupationData: OccupationData[] = [
     { 
         label: "Non-Working / Other Status", 
         value: 27, 
-        color: "#9E9E9E", // Grey
+        color: OCCUPATION_CATEGORY_COLORS["Non-Working / Other Status"],
         subCategories: [
             { label: "Student", value: 19 },
             { label: "Retiree", value: 5 },
@@ -74,7 +83,7 @@ const defaultOccupationData: OccupationData[] = [
     { 
         label: "Finance & Commerce", 
         value: 12, 
-        color: "#4CAF50", // Green
+        color: OCCUPATION_CATEGORY_COLORS["Finance & Commerce"],
         subCategories: [
             { label: "Finance", value: 5 },
             { label: "Banking industry", value: 3 },
@@ -86,7 +95,7 @@ const defaultOccupationData: OccupationData[] = [
     { 
         label: "STEM", 
         value: 11, 
-        color: "#FF9800", // Orange
+        color: OCCUPATION_CATEGORY_COLORS["STEM"],
         subCategories: [
             { label: "Engineer", value: 3 },
             { label: "IT industry", value: 2 },
@@ -100,7 +109,7 @@ const defaultOccupationData: OccupationData[] = [
     { 
         label: "Education & Academia", 
         value: 11, 
-        color: "#9C27B0", // Purple
+        color: OCCUPATION_CATEGORY_COLORS["Education & Academia"],
         subCategories: [
             { label: "University teacher", value: 7 },
             { label: "Middle school teacher", value: 3 },
@@ -110,7 +119,7 @@ const defaultOccupationData: OccupationData[] = [
     { 
         label: "Public Sector & State-Owned", 
         value: 5, 
-        color: "#E91E63", // Pink
+        color: OCCUPATION_CATEGORY_COLORS["Public Sector & State-Owned"],
         subCategories: [
             { label: "State-owned enterprises", value: 3 },
             { label: "Government agency", value: 2 },
@@ -119,7 +128,7 @@ const defaultOccupationData: OccupationData[] = [
     { 
         label: "Operations & Logistics", 
         value: 4, 
-        color: "#00BCD4", // Cyan
+        color: OCCUPATION_CATEGORY_COLORS["Operations & Logistics"],
         subCategories: [
             { label: "Logistics industry", value: 3 },
             { label: "Service industry", value: 1 },
@@ -128,7 +137,7 @@ const defaultOccupationData: OccupationData[] = [
     { 
         label: "Professional Services", 
         value: 2, 
-        color: "#795548", // Brown
+        color: OCCUPATION_CATEGORY_COLORS["Professional Services"],
         subCategories: [
             { label: "Lawyer", value: 1 },
             { label: "Pharmacist", value: 1 },
@@ -137,7 +146,7 @@ const defaultOccupationData: OccupationData[] = [
     { 
         label: "Personal & Retail Services", 
         value: 2, 
-        color: "#607D8B", // Blue Grey
+        color: OCCUPATION_CATEGORY_COLORS["Personal & Retail Services"],
         subCategories: [
             { label: "Beautician", value: 1 },
             { label: "Migrant worker", value: 1 },
@@ -145,70 +154,12 @@ const defaultOccupationData: OccupationData[] = [
     },
 ]
 
-// Category color mapping for word cloud
-const categoryColorMap: Record<string, string> = {
-    "Business & Enterprise": "#2196F3",
-    "Non-Working / Other Status": "#9E9E9E",
-    "Finance & Commerce": "#4CAF50",
-    "STEM": "#FF9800",
-    "Education & Academia": "#9C27B0",
-    "Public Sector & State-Owned": "#E91E63",
-    "Operations & Logistics": "#00BCD4",
-    "Professional Services": "#795548",
-    "Personal & Retail Services": "#607D8B",
+function lightenColor(color: string, percent: number): string {
+    return `color-mix(in srgb, ${color} ${(1 - percent) * 100}%, var(--color-canvas))`
 }
 
-// All individual occupations for word cloud with category and English labels
-const defaultAllOccupations = [
-    { label: "Student", value: 19, labelCN: "学生", category: "Non-Working / Other Status" },
-    { label: "Self-employed", value: 10, labelCN: "自营业者", category: "Business & Enterprise" },
-    { label: "Enterprise manager", value: 9, labelCN: "企业高管", category: "Business & Enterprise" },
-    { label: "Enterprise employee", value: 8, labelCN: "企业员工", category: "Business & Enterprise" },
-    { label: "University teacher", value: 7, labelCN: "大学教师", category: "Education & Academia" },
-    { label: "Finance", value: 5, labelCN: "金融行业", category: "Finance & Commerce" },
-    { label: "Retiree", value: 5, labelCN: "退休工人", category: "Non-Working / Other Status" },
-    { label: "Engineer", value: 3, labelCN: "工程师", category: "STEM" },
-    { label: "State-owned enterprises", value: 3, labelCN: "国企职员", category: "Public Sector & State-Owned" },
-    { label: "Logistics industry", value: 3, labelCN: "物流行业", category: "Operations & Logistics" },
-    { label: "Banking industry", value: 3, labelCN: "银行业", category: "Finance & Commerce" },
-    { label: "Middle school teacher", value: 3, labelCN: "中学老师", category: "Education & Academia" },
-    { label: "IT industry", value: 2, labelCN: "IT行业", category: "STEM" },
-    { label: "Financial industry", value: 2, labelCN: "财务", category: "Finance & Commerce" },
-    { label: "Communication industry", value: 2, labelCN: "通信行业", category: "STEM" },
-    { label: "Full-time housewife", value: 2, labelCN: "家庭主妇", category: "Non-Working / Other Status" },
-    { label: "Government agency", value: 2, labelCN: "政府机关", category: "Public Sector & State-Owned" },
-    { label: "Beautician", value: 1, labelCN: "美容师", category: "Personal & Retail Services" },
-    { label: "Restaurant owner", value: 1, labelCN: "餐饮老板", category: "Business & Enterprise" },
-    { label: "Sales", value: 1, labelCN: "销售行业", category: "Business & Enterprise" },
-    { label: "Ride-hailing driver", value: 1, labelCN: "网约车司机", category: "Operations & Logistics" },
-    { label: "Lawyer", value: 1, labelCN: "律师", category: "Professional Services" },
-    { label: "Pharmacist", value: 1, labelCN: "药师", category: "Professional Services" },
-    { label: "Designer", value: 1, labelCN: "设计行业", category: "STEM" },
-    { label: "Real estate", value: 1, labelCN: "房地产行业", category: "Finance & Commerce" },
-    { label: "Service industry", value: 1, labelCN: "服务行业", category: "Operations & Logistics" },
-    { label: "Migrant worker", value: 1, labelCN: "务工", category: "Personal & Retail Services" },
-]
-
-function lightenColor(hex: string, percent: number): string {
-    const cleanHex = hex.replace('#', '')
-    const r = parseInt(cleanHex.substring(0, 2), 16)
-    const g = parseInt(cleanHex.substring(2, 4), 16)
-    const b = parseInt(cleanHex.substring(4, 6), 16)
-    const newR = Math.min(255, Math.round(r + (255 - r) * percent))
-    const newG = Math.min(255, Math.round(g + (255 - g) * percent))
-    const newB = Math.min(255, Math.round(b + (255 - b) * percent))
-    return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`
-}
-
-function darkenColor(hex: string, percent: number): string {
-    const cleanHex = hex.replace('#', '')
-    const r = parseInt(cleanHex.substring(0, 2), 16)
-    const g = parseInt(cleanHex.substring(2, 4), 16)
-    const b = parseInt(cleanHex.substring(4, 6), 16)
-    const newR = Math.max(0, Math.round(r * (1 - percent)))
-    const newG = Math.max(0, Math.round(g * (1 - percent)))
-    const newB = Math.max(0, Math.round(b * (1 - percent)))
-    return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`
+function darkenColor(color: string, percent: number): string {
+    return `color-mix(in srgb, ${color} ${(1 - percent) * 100}%, var(--color-ink))`
 }
 
 export default function OccupationDiagram({
@@ -234,19 +185,6 @@ export default function OccupationDiagram({
     
     const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data])
     const maxValue = useMemo(() => Math.max(...data.map((d) => d.value), 1), [data])
-
-    const allOccupations = useMemo(() => {
-        const derived = data.flatMap((category) =>
-            (category.subCategories || []).map((subCategory) => ({
-                label: subCategory.label,
-                value: subCategory.value,
-                labelCN: subCategory.labelCn || subCategory.label,
-                category: category.label,
-            }))
-        )
-
-        return derived.length > 0 ? derived : defaultAllOccupations
-    }, [data])
 
     const effectiveHighlight = highlightedLabel
     const isAnyHighlighted = effectiveHighlight !== null
@@ -274,7 +212,7 @@ export default function OccupationDiagram({
             }}
         >
             {/* Horizontal bar chart */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {data.map((item, index) => {
                     const isHighlighted = effectiveHighlight === item.label || 
                         item.subCategories?.some(sub => sub.label === effectiveHighlight)
@@ -289,7 +227,7 @@ export default function OccupationDiagram({
                             style={{
                                 display: "flex",
                                 flexDirection: "column",
-                                gap: 4,
+                                gap: 2,
                                 transition: "all 0.3s ease",
                             }}
                             onMouseEnter={() => handleMouseEnter(item.label)}
@@ -300,11 +238,11 @@ export default function OccupationDiagram({
                                 style={{
                                     display: "flex",
                                     alignItems: "center",
-                                    gap: 12,
+                                    gap: 10,
                                     cursor: "pointer",
                                     opacity: isGreyedOut ? 0.4 : 1,
                                     transition: "all 0.2s ease",
-                                    padding: "6px 0",
+                                    padding: "2px 0",
                                 }}
                             >
                                 {/* Label */}
@@ -327,12 +265,12 @@ export default function OccupationDiagram({
                                 <div
                                     style={{
                                         flex: 1,
-                                        height: isExpanded ? 32 : 28,
+                                        height: 8,
                                         backgroundColor: "rgba(0,0,0,0.05)",
                                         borderRadius: 6,
                                         overflow: "hidden",
                                         position: "relative",
-                                        transition: "height 0.2s ease",
+                                        transition: "background-color 0.2s ease",
                                     }}
                                 >
                                     {isExpanded && item.subCategories ? (
@@ -368,16 +306,6 @@ export default function OccupationDiagram({
                                                         }}
                                                         title={`${language === "zh" ? (sub.labelCn || sub.label) : sub.label}: ${sub.value}`}
                                                     >
-                                                        {sub.value >= 3 && (
-                                                            <span style={{ 
-                                                                fontSize: 9, 
-                                                                fontWeight: 600, 
-                                                                color: "#fff",
-                                                                textShadow: "0 1px 2px rgba(0,0,0,0.4)",
-                                                            }}>
-                                                                {sub.value}
-                                                            </span>
-                                                        )}
                                                     </div>
                                                 )
                                             })}
@@ -401,16 +329,6 @@ export default function OccupationDiagram({
                                                 transformOrigin: "left center",
                                             }}
                                         >
-                                            {item.value >= 5 && (
-                                                <span style={{ 
-                                                    fontSize: 11, 
-                                                    fontWeight: 700, 
-                                                    color: "#fff",
-                                                    textShadow: "0 1px 2px rgba(0,0,0,0.3)"
-                                                }}>
-                                                    {item.value}
-                                                </span>
-                                            )}
                                         </motion.div>
                                     )}
                                 </div>
@@ -418,15 +336,18 @@ export default function OccupationDiagram({
                                 {/* Percentage */}
                                 <div
                                     style={{
-                                        width: 50,
-                                        fontSize: 12,
-                                        fontWeight: isHighlighted ? 600 : 400,
-                                        color: isGreyedOut ? "#9CA3AF" : "#666",
-                                        textAlign: "left",
+                                        width: 62,
                                         flexShrink: 0,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 4,
+                                        fontSize: 11,
+                                        whiteSpace: "nowrap",
+                                        color: isGreyedOut ? "#9CA3AF" : "#666",
                                     }}
                                 >
-                                    {percentage}%
+                                    <span style={{ fontWeight: 600, color: isGreyedOut ? "#9CA3AF" : "#333" }}>{item.value}</span>
+                                    <span>{percentage}%</span>
                                 </div>
                             </div>
 
@@ -434,14 +355,14 @@ export default function OccupationDiagram({
                             {isExpanded && item.subCategories && (
                                 <div
                                     style={{
-                                        marginLeft: 172,
-                                        marginRight: 62,
-                                        padding: "8px 12px",
+                                        boxSizing: "border-box",
+                                        width: "100%",
+                                        padding: "4px 6px",
                                         background: "rgba(0,0,0,0.03)",
                                         borderRadius: 8,
-                                        display: "flex",
-                                        flexWrap: "wrap",
-                                        gap: 8,
+                                        display: "grid",
+                                        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                                        gap: "2px 8px",
                                     }}
                                 >
                                     {item.subCategories.map((sub, subIndex) => {
@@ -449,33 +370,33 @@ export default function OccupationDiagram({
                                             <div
                                                 key={subIndex}
                                                 style={{
+                                                    minWidth: 0,
                                                     display: "flex",
                                                     alignItems: "center",
-                                                    gap: 6,
-                                                    padding: "4px 8px",
-                                                    background: lightenColor(item.color, 0.85),
-                                                    borderRadius: 4,
-                                                    border: `1px solid ${lightenColor(item.color, 0.6)}`,
+                                                    gap: 4,
+                                                    overflow: "hidden",
                                                     transition: "all 0.2s ease",
                                                 }}
                                             >
                                                 <div
                                                     style={{
-                                                        width: 8,
-                                                        height: 8,
+                                                        width: 6,
+                                                        height: 6,
+                                                        flex: "0 0 auto",
                                                         borderRadius: "50%",
                                                         backgroundColor: subIndex % 2 === 0 
                                                             ? item.color 
                                                             : lightenColor(item.color, 0.3),
                                                     }}
                                                 />
-                                                <span style={{ fontSize: 11, color: "#444", fontWeight: 500 }}>
+                                                <span style={{ minWidth: 0, fontSize: 10, color: "#444", fontWeight: 500, lineHeight: 1.15 }}>
                                                     {language === "zh" ? (sub.labelCn || sub.label) : sub.label}
                                                 </span>
-                                                <span style={{ 
-                                                    fontSize: 11, 
+                                                <span style={{
+                                                    fontSize: 10,
                                                     color: darkenColor(item.color, 0.2), 
-                                                    fontWeight: 700 
+                                                    fontWeight: 700,
+                                                    flex: "0 0 auto",
                                                 }}>
                                                     ({sub.value})
                                                 </span>
@@ -489,36 +410,6 @@ export default function OccupationDiagram({
                 })}
             </div>
 
-            {/* Summary stats */}
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "space-around",
-                    gap: 16,
-                    paddingTop: 16,
-                    marginTop: 8,
-                    borderTop: "1px solid rgba(0,0,0,0.08)",
-                }}
-            >
-                <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: "#333" }}>{total}</div>
-                    <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                        {uiCopy.totalPeople[language]}
-                    </div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: "#E91E63" }}>{data.length}</div>
-                    <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                        {uiCopy.categories[language]}
-                    </div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: "#9C27B0" }}>{allOccupations.length}</div>
-                    <div style={{ fontSize: 11, color: "#666", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                        {uiCopy.occupations[language]}
-                    </div>
-                </div>
-            </div>
         </div>
     )
 }
