@@ -1,25 +1,20 @@
 import { useMemo } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
-import ThemeSidebar from '../../components/metro-city/ThemeSidebar';
 import OccupationCloud from '../../components/metro-people/OccupationCloud';
 import type { Person } from '../../components/metro-people/PeopleCircles';
-import PageShell from '../../components/ui/PageShell';
-import { useAppLanguage } from '../../hooks/useAppLanguage';
 import { PeopleData } from '../../data/metro-people/people';
 import { getPersonStorySectionParagraphs } from '../../data/metro-people/personStories';
-import { getThemeRoute, THEMATIC_TOPICS } from '../../data/metro-city/thematicTopics';
+
+type Language = 'en' | 'zh';
 
 const WORD_CLOUD_TOPICS = [
   {
     index: 8,
     sectionId: 'metro-impact-on-my-life',
     en: {
-      introduction: 'What changes when distance becomes easier to cross? Explore the words one interviewee used to describe the metro’s impact on everyday life.',
       empty: 'No interview text is available for this theme yet.',
     },
     zh: {
-      introduction: '当跨越距离变得容易，日常生活会如何改变？通过一位受访者的原文，了解地铁如何影响个人生活。',
       empty: '此主题目前没有可用的访谈文本。',
     },
   },
@@ -27,11 +22,9 @@ const WORD_CLOUD_TOPICS = [
     index: 9,
     sectionId: 'metro-impact-on-shenzhen',
     en: {
-      introduction: 'From property and population to the places people visit, explore how one interviewee describes the metro’s wider influence on Shenzhen.',
       empty: 'No interview text is available for this theme yet.',
     },
     zh: {
-      introduction: '从房价与人口到人们到访的地点，通过一位受访者的原文，了解地铁对深圳城市发展的影响。',
       empty: '此主题目前没有可用的访谈文本。',
     },
   },
@@ -112,23 +105,20 @@ const uiCopy = {
   participants: { en: 'participants', zh: '位受访者' },
   quote: { en: 'Interview perspective', zh: '访谈观点' },
   unnamedParticipant: { en: 'Interview participant', zh: '访谈受访者' },
-  backToThemes: { en: 'Explore all city themes', zh: '浏览所有城市主题' },
-  notFound: { en: 'This word cloud could not be found', zh: '找不到这个词云主题' },
   sourceDisclosure: {
     en: 'Current sample: one participant. Counts reflect the adjectives found in the available excerpts.',
     zh: '当前样本：1 位受访者。词频仅统计现有访谈片段中的形容词。',
   },
 } as const;
 
-export default function ThematicWordCloudPage() {
-  const { language } = useAppLanguage('en');
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const requestedIndex = Number(searchParams.get('theme')) - 1;
-  const cloudTopic = WORD_CLOUD_TOPICS.find((topic) => topic.index === requestedIndex);
-  const selectedIndex = cloudTopic?.index ?? null;
-  const handleSelectTheme = (index: number) => navigate(getThemeRoute(index));
-
+export function ThematicWordCloudContent({
+  topicIndex,
+  language,
+}: {
+  topicIndex: number;
+  language: Language;
+}) {
+  const cloudTopic = WORD_CLOUD_TOPICS.find((topic) => topic.index === topicIndex);
   const paragraphs = useMemo(
     () => cloudTopic
       ? getPersonStorySectionParagraphs(cloudTopic.sectionId)
@@ -144,42 +134,10 @@ export default function ThematicWordCloudPage() {
   const cloudColorMap = useMemo(() => ({ [categoryLabel]: '#28A873' }), [categoryLabel]);
   const interviewCount = new Set(paragraphs.map(({ personId }) => personId)).size;
 
-  if (!cloudTopic) {
-    return (
-      <PageShell theme={{ chapterColor: 'var(--color-city)' }} className="relative h-dvh w-full overflow-hidden">
-        <div className="relative flex h-full w-full flex-col overflow-hidden lg:flex-row">
-          <ThemeSidebar language={language} selectedIndex={null} onSelect={handleSelectTheme} layout="reserved" />
-          <section className="flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-y-auto px-6 pt-20">
-            <div className="max-w-lg text-center">
-              <h1 className="text-3xl font-semibold tracking-tight">{uiCopy.notFound[language]}</h1>
-              <Link to="/thematicmap" className="mt-6 inline-flex text-sm font-semibold text-[var(--color-city)] underline underline-offset-4">
-                {uiCopy.backToThemes[language]}
-              </Link>
-            </div>
-          </section>
-        </div>
-      </PageShell>
-    );
-  }
-
-  const topic = THEMATIC_TOPICS[cloudTopic.index];
+  if (!cloudTopic) return null;
 
   return (
-    <PageShell theme={{ chapterColor: 'var(--color-city)' }} className="relative h-dvh w-full overflow-hidden">
-      <div className="relative flex h-full w-full flex-col overflow-hidden lg:flex-row">
-        <ThemeSidebar language={language} selectedIndex={selectedIndex} onSelect={handleSelectTheme} layout="reserved" />
-        <section className="min-h-0 min-w-0 flex-1 overflow-y-auto">
-          <main className="mx-auto min-h-full w-full max-w-[1440px] px-5 pb-12 pt-24 sm:px-8 lg:px-14 lg:pt-32">
-            <header className="max-w-5xl border-b border-[var(--color-hairline)] pb-8 sm:pb-10">
-              <h1 className="type-page-heading">
-                {topic[language]}
-              </h1>
-              <p className="mt-5 max-w-3xl text-base leading-7 text-[var(--color-text-muted)] sm:text-lg sm:leading-8">
-                {cloudTopic[language].introduction}
-              </p>
-            </header>
-
-            <section aria-labelledby="word-cloud-heading" className="max-w-5xl pt-7 sm:pt-9">
+    <section aria-labelledby="word-cloud-heading" className="max-w-5xl pt-7 sm:pt-9">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2 id="word-cloud-heading" className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
@@ -305,10 +263,6 @@ export default function ThematicWordCloudPage() {
                   </div>
                 ))}
               </div>
-            </section>
-          </main>
-        </section>
-      </div>
-    </PageShell>
+    </section>
   );
 }

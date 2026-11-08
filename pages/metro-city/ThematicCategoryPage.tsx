@@ -1,17 +1,12 @@
 import { useMemo } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
-import ThemeSidebar from '../../components/metro-city/ThemeSidebar';
 import type { Person } from '../../components/metro-people/PeopleCircles';
-import PageShell from '../../components/ui/PageShell';
-import { useAppLanguage } from '../../hooks/useAppLanguage';
 import { PeopleData } from '../../data/metro-people/people';
 import {
   METRO_CITY_BENCHMARKS,
   METRO_CITY_SCOPE_NOTE,
 } from '../../data/metro-city/categoryMetroBenchmarks';
 import { getPersonStorySectionParagraphs } from '../../data/metro-people/personStories';
-import { getThemeRoute, THEMATIC_TOPICS } from '../../data/metro-city/thematicTopics';
 
 type Language = 'en' | 'zh';
 type Localized = Record<Language, string>;
@@ -23,24 +18,9 @@ type ComparisonItem = {
 };
 
 const CATEGORY_TOPICS = [
-  {
-    index: 6,
-    kind: 'transport',
-    en: 'Compare the metro with buses and private cars through one interview account. Mode references are text mentions, not ridership or modal share.',
-    zh: '通过一位受访者的叙述比较地铁、公交车与私家车。图表统计的是文本提及次数，不代表客流或出行分担率。',
-  },
-  {
-    index: 7,
-    kind: 'groups',
-    en: 'Compare who is represented in the interview sample by gender, place of origin, and generation. These profile counts do not measure how groups use the metro.',
-    zh: '按性别、来源地与出生年代比较受访者样本构成。这些个人资料统计不代表不同群体的地铁使用情况。',
-  },
-  {
-    index: 10,
-    kind: 'cities',
-    en: 'A temporary comparison mockup using official 2024 figures for four city rail systems. Replace these benchmarks when the project dataset is ready.',
-    zh: '使用四座城市官方 2024 年数据制作的临时比较示例。项目数据准备好后，可替换这些基准数据。',
-  },
+  { index: 6, kind: 'transport' },
+  { index: 7, kind: 'groups' },
+  { index: 10, kind: 'cities' },
 ] as const;
 
 const people = PeopleData as Person[];
@@ -49,7 +29,6 @@ const sourceInterviewSize = people.length;
 const mutedBarColor = '#9BADA9';
 
 const copy = {
-  invalid: { en: 'This comparison could not be found', zh: '找不到这个比较主题' },
   modeChart: { en: 'References in the interview', zh: '访谈中的提及次数' },
   modeChartNote: { en: 'Mentions across the available interview text', zh: '现有访谈文本中的提及次数' },
   mode: { en: 'Metro mode', zh: '交通方式' },
@@ -86,7 +65,6 @@ const copy = {
     en: 'Benchmark figures are temporary and come from official city reports. Network length and ridership definitions vary by system; see each source and the chart notes before comparing.',
     zh: '基准数据为临时示例，来自官方城市报告。各系统的运营里程与客流统计口径有所不同；比较前请参阅各来源及图表说明。',
   },
-  explore: { en: 'Explore all city themes', zh: '浏览所有城市主题' },
 } as const;
 
 const modeDefinitions = [
@@ -251,15 +229,14 @@ function getLocalizedModeItems(paragraphs: Array<{ personId: string; text: strin
   });
 }
 
-export default function ThematicCategoryPage() {
-  const { language } = useAppLanguage('en');
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const requestedIndex = Number(searchParams.get('theme')) - 1;
-  const categoryTopic = CATEGORY_TOPICS.find((topic) => topic.index === requestedIndex);
-  const selectedIndex = categoryTopic?.index ?? null;
-  const handleSelectTheme = (index: number) => navigate(getThemeRoute(index));
-
+export function ThematicCategoryContent({
+  topicIndex,
+  language,
+}: {
+  topicIndex: number;
+  language: Language;
+}) {
+  const categoryTopic = CATEGORY_TOPICS.find((topic) => topic.index === topicIndex);
   const transportParagraphs = useMemo(
     () => getPersonStorySectionParagraphs('metro-vs-other-transport'),
     [],
@@ -270,45 +247,12 @@ export default function ThematicCategoryPage() {
   );
   const profileDistributions = useMemo(() => getProfileDistributions(language), [language]);
 
-  if (!categoryTopic) {
-    return (
-      <PageShell theme={{ chapterColor: 'var(--color-city)' }} className="relative h-dvh w-full overflow-hidden">
-        <div className="relative flex h-full w-full flex-col overflow-hidden lg:flex-row">
-          <ThemeSidebar language={language} selectedIndex={null} onSelect={handleSelectTheme} layout="reserved" />
-          <section className="flex min-h-0 min-w-0 flex-1 items-center justify-center overflow-y-auto px-6 pt-20">
-            <div className="max-w-lg text-center">
-              <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-ink)]">{copy.invalid[language]}</h1>
-              <Link
-                to="/thematicmap"
-                className="mt-6 inline-flex text-sm font-semibold text-[var(--color-city)] underline underline-offset-4"
-              >
-                {copy.explore[language]}
-              </Link>
-            </div>
-          </section>
-        </div>
-      </PageShell>
-    );
-  }
+  if (!categoryTopic) return null;
 
-  const topic = THEMATIC_TOPICS[categoryTopic.index];
   const transportInterviewCount = new Set(transportParagraphs.map(({ personId }) => personId)).size;
 
   return (
-    <PageShell theme={{ chapterColor: 'var(--color-city)' }} className="relative h-dvh w-full overflow-hidden">
-      <div className="relative flex h-full w-full flex-col overflow-hidden lg:flex-row">
-        <ThemeSidebar language={language} selectedIndex={selectedIndex} onSelect={handleSelectTheme} layout="reserved" />
-        <section className="min-h-0 min-w-0 flex-1 overflow-y-auto">
-          <main className="mx-auto min-h-full w-full max-w-[1440px] px-5 pb-14 pt-24 sm:px-8 lg:px-14 lg:pt-32">
-            <header className="max-w-5xl border-b border-[var(--color-hairline)] pb-8 sm:pb-10">
-              <h1 className="type-page-heading text-[var(--color-ink)]">
-                {topic[language]}
-              </h1>
-              <p className="mt-5 max-w-3xl text-base leading-7 text-[var(--color-text-muted)] sm:text-lg sm:leading-8">
-                {categoryTopic[language]}
-              </p>
-            </header>
-
+    <>
             {categoryTopic.kind === 'transport' && (
               <section aria-labelledby="transport-comparison-heading" className="max-w-5xl pt-8 sm:pt-10">
                 <div className="flex flex-wrap items-end justify-between gap-3">
@@ -404,7 +348,6 @@ export default function ThematicCategoryPage() {
                       color: city.city.en === 'Shenzhen' ? 'var(--color-city)' : mutedBarColor,
                     }))}
                     scale={900}
-                    language={language}
                     axisLabel={copy.kilometers[language]}
                   />
                   <ComparisonBars
@@ -445,9 +388,6 @@ export default function ThematicCategoryPage() {
                 </section>
               </section>
             )}
-          </main>
-        </section>
-      </div>
-    </PageShell>
+    </>
   );
 }

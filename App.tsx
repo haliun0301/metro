@@ -5,7 +5,7 @@
     quickly find where each major view is rendered.
 */
 import { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useLocation, useParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import GlobalTopBar from './components/GlobalTopBar';
 import MetroMapPage from './pages/metro-stations/MetroMapPage';
 import ThematicMapPage from './pages/metro-city/ThematicMapPage';
@@ -16,8 +16,6 @@ const AboutPage = lazy(() => import('./pages/AboutPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
 const MetroPeoplePage = lazy(() => import('./pages/metro-people/MetroPeoplePage'));
 const ThematicEssayPage = lazy(() => import('./pages/metro-city/ThematicEssayPage'));
-const ThematicWordCloudPage = lazy(() => import('./pages/metro-city/ThematicWordCloudPage'));
-const ThematicCategoryPage = lazy(() => import('./pages/metro-city/ThematicCategoryPage'));
 const StationDetailPage = lazy(() => import('./pages/metro-stations/StationDetailPage'));
 const PersonDetailPage = lazy(() => import('./pages/metro-people/PersonDetailPage'));
 
@@ -94,13 +92,19 @@ function AppShell() {
         <Route path="/thematicmap" element={<ThematicMapPage />} />
         <Route path="/thematicmap/:themeId" element={<MapThemePage />} />
         <Route path="/thematic-essay" element={<ThematicEssayPage />} />
-        <Route path="/thematic-word-cloud" element={<ThematicWordCloudPage />} />
-        <Route path="/thematic-category" element={<ThematicCategoryPage />} />
+        <Route path="/thematic-word-cloud" element={<LegacyEssayRedirect />} />
+        <Route path="/thematic-category" element={<LegacyEssayRedirect />} />
         <Route path="/stations/:stationSlug" element={<StationDetailPage />} />
       </Routes>
       </Suspense>
     </>
   );
+}
+
+function LegacyEssayRedirect() {
+  const location = useLocation();
+
+  return <Navigate to={`/thematic-essay${location.search || '?theme=1'}`} replace />;
 }
 
 function MetroPeopleRoute() {

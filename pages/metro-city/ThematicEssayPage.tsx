@@ -4,11 +4,12 @@ import ThemeSidebar from '../../components/metro-city/ThemeSidebar';
 import PageShell from '../../components/ui/PageShell';
 import { useAppLanguage } from '../../hooks/useAppLanguage';
 import { getThemeRoute, THEMATIC_TOPICS } from '../../data/metro-city/thematicTopics';
+import { ThematicCategoryContent } from './ThematicCategoryPage';
+import { ThematicWordCloudContent } from './ThematicWordCloudPage';
 
 const essays = [
   {
     en: {
-      introduction: 'A city’s transport story is also a story about changing distances: which journeys feel possible, how long they take, and what becomes part of an ordinary day.',
       chapters: [
         ['Distance becomes a daily decision', 'As the network reaches further across Shenzhen, a trip is measured by more than kilometres. Transfers, station access, and the rhythm of the day all shape whether a place feels near or far.'],
         ['A growing city, read through its journeys', 'Residents experience urban change at street level: in a familiar route that shifts, a new interchange, or a neighbourhood that becomes easier to reach. These journeys offer a human-scale way to read the city’s expansion.'],
@@ -16,7 +17,6 @@ const essays = [
       ],
     },
     zh: {
-      introduction: '一座城市的交通故事，也是一段关于距离如何变化的故事：哪些出行变得可行、需要多久，以及什么逐渐融入日常。',
       chapters: [
         ['距离成为日常选择', '随着地铁网络延伸至深圳更多区域，出行不再只由公里数决定。换乘、车站接驳与一天的时间节奏，都会影响一处地方在人们心中是近还是远。'],
         ['沿着出行轨迹阅读成长中的城市', '居民在街道尺度上感受城市变化：熟悉的路线发生改变，新的换乘节点出现，或某个片区变得更容易抵达。日常出行让城市扩张有了可感知的尺度。'],
@@ -26,7 +26,6 @@ const essays = [
   },
   {
     en: {
-      introduction: 'A metro carriage is more than a corridor between stations. For a few minutes, it is a shared interior where different routines meet in close proximity.',
       chapters: [
         ['A public room in motion', 'People bring fragments of the city into the carriage: a workday beginning, a school journey, a message answered, a quiet pause between destinations. The space belongs to everyone and no one for long.'],
         ['Small rituals, shared space', 'Where we stand, how we make room, and when we offer a seat are everyday negotiations. These small gestures help reveal how strangers learn to share a public environment.'],
@@ -34,7 +33,6 @@ const essays = [
       ],
     },
     zh: {
-      introduction: '地铁车厢不只是连接车站的通道。在短短几分钟里，不同的生活节奏在这个共享的室内空间里相遇。',
       chapters: [
         ['一间移动中的公共房间', '人们把城市生活的片段带进车厢：开始一天的工作、上学路上的片刻、回复一条消息，或在抵达下一站前稍作停顿。这个空间属于每个人，却不会为任何人停留太久。'],
         ['共享空间里的日常默契', '站在哪里、如何让出空间、什么时候为他人让座，都是日常的协商。这些细微举动展现了陌生人如何共同使用公共空间。'],
@@ -44,7 +42,6 @@ const essays = [
   },
   {
     en: {
-      introduction: 'A first metro ride is an encounter with a city’s systems—and with the small decisions that turn an unfamiliar journey into a familiar one.',
       chapters: [
         ['Finding a way in', 'Before the train moves, a new rider reads signs, follows flows of people, and works out where to enter. The station is often the first lesson in how the city organizes movement.'],
         ['Learning the rhythm', 'The route becomes legible one choice at a time: which platform, when to transfer, and where to wait. Each step adds a little confidence to an unfamiliar trip.'],
@@ -52,7 +49,6 @@ const essays = [
       ],
     },
     zh: {
-      introduction: '第一次乘坐地铁，是与一座城市的运行系统相遇，也是把陌生旅程变成熟悉路线的过程。',
       chapters: [
         ['找到入口', '列车出发之前，初次乘客要读懂指引、观察人流，并判断从哪里进入。车站往往是理解这座城市如何组织出行的第一课。'],
         ['熟悉出行节奏', '路线通过一次次选择变得清晰：走向哪个站台、何时换乘、在哪里等候。每一步都为陌生旅程增加一点把握。'],
@@ -62,7 +58,6 @@ const essays = [
   },
   {
     en: {
-      introduction: 'A useful network is not finished when a line opens. Looking at everyday friction—crowding, transfers, access, and clarity—helps turn experience into practical questions for improvement.',
       chapters: [
         ['Notice where the journey gets difficult', 'The whole trip matters, not only the time spent on the train. Getting to a station, moving between platforms, and finding the right exit all shape how accessible the network feels.'],
         ['Design for different everyday needs', 'A route that works for one passenger may be demanding for another. Clear information, step-free connections, comfortable transfers, and room to move are part of making a system usable across ages and abilities.'],
@@ -70,7 +65,6 @@ const essays = [
       ],
     },
     zh: {
-      introduction: '线路开通并不意味着网络体验已经完善。关注拥挤、换乘、接驳与信息指引中的日常阻碍，才能把乘车体验转化为具体的改进问题。',
       chapters: [
         ['留意旅程在哪些地方变得困难', '重要的不只是列车上的时间，完整旅程同样重要。如何到达车站、在站台之间移动、找到正确出口，都会影响人们感受到的可达性。'],
         ['回应不同的日常需要', '对一位乘客顺畅的路线，对另一位乘客可能并不轻松。清晰的信息、无障碍连接、舒适的换乘与充足的通行空间，都是让不同年龄与能力的人使用网络的重要部分。'],
@@ -84,6 +78,10 @@ const essayTopicIndices = THEMATIC_TOPICS
   .map((topic, index) => topic.format === 'essay' ? index : -1)
   .filter((index) => index >= 0);
 
+const narrativeTopicIndices = THEMATIC_TOPICS
+  .map((topic, index) => topic.format === 'essay' && topic.contentType === 'narrative' ? index : -1)
+  .filter((index) => index >= 0);
+
 export default function ThematicEssayPage() {
   const { language } = useAppLanguage('en');
   const navigate = useNavigate();
@@ -94,9 +92,10 @@ export default function ThematicEssayPage() {
     && THEMATIC_TOPICS[requestedIndex]?.format === 'essay'
     ? requestedIndex
     : -1;
+  const selectedTopic = topicIndex >= 0 ? THEMATIC_TOPICS[topicIndex] : undefined;
   const handleSelectTheme = (index: number) => navigate(getThemeRoute(index));
 
-  if (topicIndex < 0) {
+  if (topicIndex < 0 || !selectedTopic || selectedTopic.format !== 'essay') {
     return (
       <PageShell theme={{ chapterColor: 'var(--color-city)' }} className="relative h-dvh w-full overflow-hidden">
         <div className="relative flex h-full w-full flex-col overflow-hidden lg:flex-row">
@@ -122,9 +121,10 @@ export default function ThematicEssayPage() {
     );
   }
 
+  const topic = selectedTopic;
+  const narrativePosition = narrativeTopicIndices.indexOf(topicIndex);
+  const copy = narrativePosition >= 0 ? essays[narrativePosition][language] : null;
   const essayPosition = essayTopicIndices.indexOf(topicIndex);
-  const topic = THEMATIC_TOPICS[topicIndex];
-  const copy = essays[essayPosition][language];
   const previousTopicIndex = essayTopicIndices[essayPosition - 1];
   const nextTopicIndex = essayTopicIndices[essayPosition + 1];
 
@@ -136,65 +136,72 @@ export default function ThematicEssayPage() {
           <main className="mx-auto min-h-full w-full max-w-[1440px] px-5 pb-16 pt-24 sm:px-8 lg:px-14 lg:pt-32">
             <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-20">
               <article className="min-w-0">
-            <header className="border-b border-[var(--color-hairline)] pb-9 sm:pb-12">
-              <h1 className="type-page-heading mt-6 max-w-5xl">
-                {topic[language]}
-              </h1>
-              <p className="mt-7 max-w-3xl text-lg leading-8 text-[var(--color-text-muted)] sm:text-xl sm:leading-9">
-                {copy.introduction}
-              </p>
-            </header>
-
-            <div className="grid gap-10 pt-10 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:gap-14 sm:pt-14">
-              <aside className="self-start sm:sticky sm:top-8">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-city)]">
-                  {language === 'zh' ? '本文导读' : 'In this essay'}
-                </p>
-                <nav aria-label={language === 'zh' ? '本文章节' : 'Essay chapters'} className="mt-4">
-                  <ol className="space-y-3">
-                    {copy.chapters.map(([title], index) => (
-                      <li key={title}>
-                        <a
-                          href={`#chapter-${index + 1}`}
-                          className="group flex gap-3 text-sm leading-6 text-[var(--color-text-muted)] transition hover:text-[var(--color-city)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-city)]"
-                        >
-                          <span className="text-xs tabular-nums text-[var(--color-city)]">
-                            {String(index + 1).padStart(2, '0')}
-                          </span>
-                          <span>{title}</span>
-                        </a>
-                      </li>
-                    ))}
-                  </ol>
-                </nav>
-                <div className="mt-8 border-t border-[var(--color-hairline)] pt-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[var(--color-text-faint)]">
-                    {language === 'zh' ? '研究主题' : 'Research theme'}
+                <header className="border-b border-[var(--color-hairline)] pb-9 sm:pb-12">
+                  <h1 className="type-page-heading max-w-5xl text-[var(--color-ink)]">
+                    {topic[language]}
+                  </h1>
+                  <p className="mt-5 max-w-3xl text-base leading-7 text-[var(--color-text-muted)] sm:text-lg sm:leading-8">
+                    {topic.introduction[language]}
                   </p>
-                  <p className="mt-2 text-sm font-medium leading-6">{topic[language]}</p>
-                </div>
-              </aside>
+                </header>
 
-              <div className="max-w-2xl">
-                {copy.chapters.map(([title, body], index) => (
-                  <section
-                    key={title}
-                    id={`chapter-${index + 1}`}
-                    className="scroll-mt-10 border-t border-[var(--color-hairline)] py-8 first:border-0 first:pt-0 sm:py-10"
-                  >
-                    <p className="text-xs font-semibold tabular-nums tracking-[0.12em] text-[var(--color-city)]">
-                      {String(index + 1).padStart(2, '0')}
-                    </p>
-                    <h2 className="type-section-heading mt-3">
-                      {title}
-                    </h2>
-                    <p className="mt-5 text-base leading-8 text-[var(--color-text-muted)] sm:text-lg sm:leading-9">
-                      {body}
-                    </p>
-                  </section>
-                ))}
-              </div>
-            </div>
+                {copy ? (
+                  <div className="grid gap-10 pt-10 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:gap-14 sm:pt-14">
+                    <aside className="self-start sm:sticky sm:top-8">
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--color-city)]">
+                        {language === 'zh' ? '本文导读' : 'In this essay'}
+                      </p>
+                      <nav aria-label={language === 'zh' ? '本文章节' : 'Essay chapters'} className="mt-4">
+                        <ol className="space-y-3">
+                          {copy.chapters.map((chapter, index) => {
+                            const title = chapter[0];
+                            return (
+                            <li key={title}>
+                              <a
+                                href={`#chapter-${index + 1}`}
+                                className="group flex gap-3 text-sm leading-6 text-[var(--color-text-muted)] transition hover:text-[var(--color-city)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-city)]"
+                              >
+                                <span className="text-xs tabular-nums text-[var(--color-city)]">
+                                  {String(index + 1).padStart(2, '0')}
+                                </span>
+                                <span>{title}</span>
+                              </a>
+                            </li>
+                            );
+                          })}
+                        </ol>
+                      </nav>
+                      <div className="mt-8 border-t border-[var(--color-hairline)] pt-5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[var(--color-text-faint)]">
+                          {language === 'zh' ? '研究主题' : 'Research theme'}
+                        </p>
+                        <p className="mt-2 text-sm font-medium leading-6">{topic[language]}</p>
+                      </div>
+                    </aside>
+
+                    <div className="max-w-2xl">
+                      {copy.chapters.map(([title, body], index) => (
+                        <section
+                          key={title}
+                          id={`chapter-${index + 1}`}
+                          className="scroll-mt-10 border-t border-[var(--color-hairline)] py-8 first:border-0 first:pt-0 sm:py-10"
+                        >
+                          <p className="text-xs font-semibold tabular-nums tracking-[0.12em] text-[var(--color-city)]">
+                            {String(index + 1).padStart(2, '0')}
+                          </p>
+                          <h2 className="type-section-heading mt-3">{title}</h2>
+                          <p className="mt-5 text-base leading-8 text-[var(--color-text-muted)] sm:text-lg sm:leading-9">
+                            {body}
+                          </p>
+                        </section>
+                      ))}
+                    </div>
+                  </div>
+                ) : topic.contentType.startsWith('comparison-') ? (
+                  <ThematicCategoryContent topicIndex={topicIndex} language={language} />
+                ) : (
+                  <ThematicWordCloudContent topicIndex={topicIndex} language={language} />
+                )}
 
             <footer className="mt-6 flex flex-wrap items-center justify-between gap-5 border-t border-[var(--color-hairline)] pt-7">
               <Link

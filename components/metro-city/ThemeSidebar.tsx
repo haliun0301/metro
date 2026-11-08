@@ -18,18 +18,9 @@ const copy = {
   none: { en: 'Select a theme to begin', zh: '选择一个主题开始' },
 } as const;
 
-const formatLabels = {
-  essay: { en: 'Essay', zh: '文章' },
-  map: { en: 'Map', zh: '地图' },
-  category: { en: 'Category', zh: '分类' },
-  'word-cloud': { en: 'Word cloud', zh: '词云' },
-} as const;
-
 const formatColors = {
   essay: 'var(--color-primary)',
   map: 'var(--color-people)',
-  category: 'var(--color-accent)',
-  'word-cloud': 'var(--color-city)',
 } as const;
 
 export default function ThemeSidebar({ language, selectedIndex, onSelect, layout = 'overlay', variant = 'default' }: ThemeSidebarProps) {
